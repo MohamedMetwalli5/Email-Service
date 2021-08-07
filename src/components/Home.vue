@@ -27,7 +27,7 @@
 
 <script>
 import firebase from "firebase";
-// import "firebase/auth";
+import "firebase/auth";
 export default {
   name: "Home",
   props: {
@@ -48,7 +48,7 @@ export default {
           (user) => {
             console.log("Signed in successfully!");
             console.log(user.data);
-            // here we want the user to go to its mail box
+            window.location.href = "/emails";
           },
           (err) => {
             console.log("There is no user with this email and password!");

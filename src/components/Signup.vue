@@ -38,7 +38,7 @@
 
 <script>
 import firebase from "firebase";
-// import "firebase/auth";
+import "firebase/auth";
 export default {
   name: "Signup",
   props: {
@@ -59,6 +59,7 @@ export default {
           (user) => {
             console.log(user.data);
             console.log("A user signed up successfully!");
+            window.location.href = "/emails";
           },
           (err) => {
             console.log("Wrong Email or password!");

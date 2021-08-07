@@ -66,6 +66,9 @@
           Sent 📧
         </button>
       </div>
+      <div pageOptionDiv>
+        <button class="pageOption" @click="LogOut()">Logout 🚪</button>
+      </div>
     </div>
     <div class="displayColumn">
       <div>
@@ -103,16 +106,9 @@
               </ul>
             </div>
           </li>
-          <button
-            class="emailsOperationButton"
-            @click="Seacrh(this.document.text.value)"
-          >
-            Search<input type="text" id="searchText" value="" />
-          </button>
-          <button class="menuElement" @click="open()">open</button>
         </ul>
         <div id="pageNumberOptionsDiv">
-          <h2>1 2 3 4</h2>
+          <h2>&nbsp; 1 2 3 4</h2>
           <input
             type="radio"
             id="pageNumberOneOption"
@@ -146,7 +142,7 @@
         </div>
         <br />
       </div>
-      <table class="table">
+      <table id="table-box">
         <tr id="titleRow">
           <td class="checkBoxClass">&nbsp;</td>
           <td @click="Sort('Sender')">Sender</td>
@@ -226,77 +222,6 @@
           <td class="rOption">{{ priority[4] }}</td>
           <td class="rOption">{{ date[4] }}</td>
         </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 6"
-            />
-          </td>
-          <td class="rOption">{{ sender[5] }}</td>
-          <td class="rOption">{{ subject[5] }}</td>
-          <td class="rOption">{{ priority[5] }}</td>
-          <td class="rOption">{{ date[5] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 7"
-            />
-          </td>
-
-          <td class="rOption">{{ sender[6] }}</td>
-          <td class="rOption">{{ subject[6] }}</td>
-          <td class="rOption">{{ priority[6] }}</td>
-          <td class="rOption">{{ date[6] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 8"
-            />
-          </td>
-          <td class="rOption">{{ sender[7] }}</td>
-          <td class="rOption">{{ subject[7] }}</td>
-          <td class="rOption">{{ priority[7] }}</td>
-          <td class="rOption">{{ date[7] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 9"
-            />
-          </td>
-          <td class="rOption">{{ sender[8] }}</td>
-          <td class="rOption">{{ subject[8] }}</td>
-          <td class="rOption">{{ priority[8] }}</td>
-          <td class="rOption">{{ date[8] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 10"
-            />
-          </td>
-          <td class="rOption">{{ sender[9] }}</td>
-          <td class="rOption">{{ subject[9] }}</td>
-          <td class="rOption">{{ priority[9] }}</td>
-          <td class="rOption">{{ date[9] }}</td>
-        </tr>
       </table>
     </div>
     <!-- -->
@@ -304,6 +229,8 @@
 </template>
 
 <script>
+import firebase from "firebase";
+import "firebase/auth";
 export default {
   name: "Emails",
   data: function () {
@@ -317,11 +244,32 @@ export default {
       senderFilterText: "null",
       subjectFilterText: "null",
       sortText: "null",
-      searchText: "null",
       pageNumber: 1,
       folderName: "inbox",
       namePointer: 0,
     };
+  },
+  methods: {
+    // This function checks the status of the user whether he is logged in or note by printing his status
+    CheckAuthStatus() {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          console.log("The user logged in!");
+        } else {
+          console.log("The user logged out!");
+        }
+      });
+    },
+    // This functions sign the user out
+    LogOut() {
+      firebase
+        .auth()
+        .signOut()
+        .then(() => {
+          console.log("The user logged out!");
+        });
+      this.CheckAuthStatus();
+    },
   },
 };
 </script>
@@ -330,6 +278,10 @@ export default {
   display: flex;
   background-color: rgb(255, 238, 0);
   height: 100%;
+  min-height: 100%;
+  width: 100%;
+  min-width: 100%;
+  background-position-x: fixed;
 }
 .ButtonsGroup {
   background-image: linear-gradient(-45deg, rgb(59, 203, 228), magenta);
@@ -372,7 +324,7 @@ export default {
 #optionsColumn {
   background: linear-gradient(-45deg, rgb(238, 189, 30), rgb(255, 238, 0));
   float: left;
-  width: 190px;
+  width: 200px;
   padding: 10px;
   height: 100%;
   border: solid;
@@ -388,6 +340,7 @@ export default {
   height: 1000px;
 }
 #sendOption {
+  text-align: center;
   height: 100%;
   margin-top: 150px;
   border-radius: 20px;
@@ -396,7 +349,7 @@ export default {
   background: white;
   font-size: 40px;
   font-weight: bold;
-  margin-bottom: 30px;
+  margin-bottom: 50px;
   margin-top: 20px;
 }
 #sendOption:hover {
@@ -411,8 +364,7 @@ export default {
   background: white;
   font-size: 30px;
   font-weight: bold;
-  margin: auto;
-  margin-bottom: 30px;
+  margin-bottom: 50px;
 }
 .pageOption:hover {
   background: rgb(129, 241, 148);
@@ -421,49 +373,51 @@ export default {
   background-image: black;
   color: aqua;
 }
-.table {
+#table-box {
   margin: auto;
   width: 100%;
-  height: 100%;
+  height: 70%;
   border-radius: 20px;
   border: solid;
   border-color: white;
 }
 #titleRow {
   border-radius: 20px;
-  width: 100%;
-  height: 10%;
+  width: 90%;
+  height: 8%;
   font-size: 35px;
   font-weight: bolder;
+  border-radius: 50px;
   color: rgb(243, 45, 184);
+  text-align: center;
+  background-color: rgb(255, 217, 0);
   margin: auto;
   margin-bottom: 10px;
-  border-bottom: solid;
-  border-color: cyan;
+  border-bottom: soli;
 }
 .row {
   border: solid;
-  border-radius: 20px;
+  border-radius: 30px;
   border-bottom: black;
   color: black;
-  margin: auto;
-  margin-bottom: 5px;
-  font-size: 20px;
+  font-size: 30px;
+  height: 45px;
 }
 .row:hover {
   background: rgb(108, 240, 174);
 }
 .rOption {
   /* used to make the underline between emails */
+  margin-left: 3px;
   border-top: solid;
   border-bottom: rgb(0, 0, 0);
 }
 #pageNumberOptionsDiv {
   line-height: 5px;
   padding-bottom: 4px;
-  margin-top: 140px;
+  margin-top: 1.8%;
   border-radius: 25px;
-  margin-left: 40%;
+  margin-left: 45%;
   width: 100px;
   color: rgb(29, 201, 6);
   border: solid;
@@ -476,19 +430,21 @@ export default {
   border: solid;
   border-radius: 40px;
   background: blueviolet;
-  height: 30%;
+  height: 50px;
 }
 .emailsOperationButton {
   margin-right: 150px;
-  line-height: 30px;
+  line-height: 40px;
   float: left;
-  width: 120px;
+  width: 110px;
   color: rgb(255, 255, 255);
   border: solid;
   border-color: brown;
   border-radius: 20px;
   background: rgb(235, 74, 74);
-  height: 30px;
+  height: 90%;
+  font-size: 30px;
+  text-align: center;
 }
 .emailsOperationButton:hover {
   background: rgb(50, 230, 74);
@@ -502,14 +458,14 @@ export default {
 }
 .menuElement {
   float: left;
+  /* display: inline-block; */
   padding-left: 5px;
-  margin-left: 10px;
-  margin-right: 20px;
-  background: cyan;
+  /* margin-left: 10px;
+  margin-right: 20px; */
   color: black;
   border: solid;
   border-radius: 20px;
-  height: 30px;
+  height: 90%;
 }
 .menuElement:hover {
   background: rgb(9, 194, 194);
@@ -524,12 +480,6 @@ export default {
   border-color: brown;
   background: rgb(241, 103, 103);
   height: 30px;
-}
-#searchText {
-  margin-top: 10%;
-  height: 30px;
-  font-size: 20px;
-  background: whitesmoke;
 }
 #filterSubjectText {
   background: whitesmoke;
