@@ -1,26 +1,12 @@
 <template>
   <div id="container">
     <div id="optionsColumn">
+      <div id="user-info" style="font-size: 25px">{{ userEmail }}</div>
       <button id="sendOption" onclick="window.location.href='/SendEmail';">
         Send Email ✏️
       </button>
       <div pageOptionDiv>
-        <button
-          id="inboxBtn"
-          @click="
-            //SetButtonColorInbox(),
-            (pageOption = 'Inbox Mail ✉️'),
-              ChangePage(),
-              (pageNumber = 1),
-              (document.getElementById('pageNumberOneOption').value = true),
-              (document.getElementById('pageNumberOneOption').checked = true),
-              console.log('pageNumber'),
-              (folderName = 'Inbox')
-          "
-          class="pageOption"
-        >
-          Inbox 📫
-        </button>
+        <button id="inboxBtn" class="pageOption">Inbox 📫</button>
       </div>
       <div pageOptionDiv>
         <button
@@ -235,6 +221,7 @@ export default {
   name: "Emails",
   data: function () {
     return {
+      userEmail: "",
       pageOption: "Inbox Mail ✉️", //the folder name
       sender: [].fill(null),
       subject: [].fill(null),
@@ -254,9 +241,10 @@ export default {
     CheckAuthStatus() {
       firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-          console.log("The user logged in!");
+          this.userEmail = user.email;
+          console.log(user.email + " The user logged in!");
         } else {
-          console.log("The user logged out!");
+          console.log("The user logged out Now!");
         }
       });
     },
@@ -271,6 +259,9 @@ export default {
       this.CheckAuthStatus();
     },
   },
+  beforeMount() {
+    this.CheckAuthStatus();
+  },
 };
 </script>
 <style  scoped>
@@ -278,7 +269,7 @@ export default {
   display: flex;
   background-color: rgb(255, 238, 0);
   height: 100%;
-  min-height: 100%;
+  min-height: 1100px;
   width: 100%;
   min-width: 100%;
   background-position-x: fixed;
@@ -324,7 +315,7 @@ export default {
 #optionsColumn {
   background: linear-gradient(-45deg, rgb(238, 189, 30), rgb(255, 238, 0));
   float: left;
-  width: 200px;
+  width: 350px;
   padding: 10px;
   height: 100%;
   border: solid;
@@ -426,6 +417,7 @@ export default {
   display: inline-block;
   margin-top: auto;
   width: 100%;
+  max-width: 1430px;
   color: rgb(226, 40, 211);
   border: solid;
   border-radius: 40px;
