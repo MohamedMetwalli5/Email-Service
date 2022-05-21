@@ -215,8 +215,7 @@
 </template>
 
 <script>
-import firebase from "firebase";
-import "firebase/auth";
+
 export default {
   name: "Emails",
   data: function () {
@@ -239,24 +238,10 @@ export default {
   methods: {
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
-      firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-          this.userEmail = user.email;
-          console.log(user.email + " The user logged in!");
-        } else {
-          console.log("The user logged out Now!");
-        }
-      });
+      
     },
     // This functions sign the user out
     LogOut() {
-      firebase
-        .auth()
-        .signOut()
-        .then(() => {
-          console.log("The user logged out!");
-        });
-      this.CheckAuthStatus();
     },
   },
   beforeMount() {

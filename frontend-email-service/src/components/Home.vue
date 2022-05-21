@@ -26,8 +26,6 @@
 </template>
 
 <script>
-import firebase from "firebase";
-import "firebase/auth";
 export default {
   name: "Home",
   props: {
@@ -41,20 +39,6 @@ export default {
   },
   methods: {
     SignIn() {
-      firebase
-        .auth()
-        .signInWithEmailAndPassword(this.email, this.password)
-        .then(
-          (user) => {
-            console.log("Signed in successfully!");
-            console.log(user.data);
-            window.location.href = "/emails";
-          },
-          (err) => {
-            console.log("There is no user with this email and password!");
-            alert(err);
-          }
-        );
     },
   },
 };
