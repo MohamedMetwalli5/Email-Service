@@ -64,16 +64,21 @@
         <ul id="emailsOperationDiv">
           <li class="emailsOperationButton">
             Filter
+            
             <div class="subMenu-2">
               <ul>
-                <button class="menuElement" @click="Filter()">Subject</button>
-                <input type="text" id="filterSubjectText" />
-
-                <br />
-                <button class="menuElement" @click="Filter()">Sender</button>
-                <input type="text" id="filterSenderText" />
+                <div class="subMenuOption">
+                  <button class="menuElement" style="width: 30%;" @click="Filter()">Subject</button>
+                  <input type="text" id="filterSubjectText" />
+                </div>
+                
+                <div class="subMenuOption">
+                  <button class="menuElement" @click="Filter()">Sender</button>
+                  <input type="text" id="filterSenderText" />
+                </div>
               </ul>
             </div>
+
           </li>
           <li class="emailsOperationButton">
             Sort
@@ -331,9 +336,11 @@ export default {
   margin-top: 20px;
   cursor: pointer;
 }
+
 #sendOption:hover {
   background: rgb(108, 225, 240);
 }
+
 .pageOption {
   width: 190px;
   height: 100%;
@@ -345,14 +352,30 @@ export default {
   font-weight: bold;
   margin-bottom: 50px;
   cursor: pointer;
+  animation: shake 0.8s;
 }
+
+@keyframes shake{
+    0%{
+      transform: translateX(0)
+    }
+    25%{
+      transform: translateX(10px);
+    }
+      
+    50%{
+      transform: translateX(-10px);
+    }
+    100%{
+      transform: translateX(0px);
+    }
+}
+
 .pageOption:hover {
-  background: rgb(129, 241, 148);
+    background: rgb(129, 241, 148);
+    animation:  shake 0.8s  ;
 }
-.pageOptionDiv {
-  background-image: black;
-  color: aqua;
-}
+
 #table-box {
   margin: auto;
   width: 100%;
@@ -361,6 +384,7 @@ export default {
   border: solid;
   border-color: white;
 }
+
 #titleRow {
   border-top-right-radius: 20px;
   width: 90%;
@@ -380,8 +404,8 @@ export default {
   border-radius: 30px;
   border-bottom: black;
   color: black;
-  font-size: 30px;
-  height: 45px;
+  font-size: 25px;
+  height: 20px;
 }
 .row:hover {
   background: rgb(108, 240, 174);
@@ -394,7 +418,7 @@ export default {
 }
 #pageNumberOptionsDiv {
   line-height: 5px;
-  padding-bottom: 4px;
+  padding-bottom: 5px;
   margin-top: 1.8%;
   border-radius: 25px;
   margin-left: 45%;
@@ -436,19 +460,22 @@ export default {
   border-radius: 20px;
   background: rgb(235, 74, 74);
 }
+
 .menuElement {
   display: flex;
   float: left;
   padding-left: 5px;
   color: black;
   border: solid;
+  margin-left: 0px;
   border-radius: 20px;
-  height: 90%;
   cursor: pointer;
 }
+
 .menuElement:hover {
   background: rgb(9, 194, 194);
 }
+
 .emailsOperationButton:hover .subMenu-1 {
   text-align: left;
   margin-top: 0px;
@@ -460,10 +487,12 @@ export default {
   background: rgb(241, 103, 103);
   height: 30px;
 }
+
 #filterSubjectText {
   background: whitesmoke;
   border-radius: 10px;
 }
+
 #filterSenderText {
   background: whitesmoke;
   border-radius: 10px;
@@ -492,6 +521,12 @@ export default {
 
 #checkBoxClass{
   border-top-left-radius: 20px;
+}
+
+.subMenuOption{
+  display: flex;
+  float: left;
+  margin-bottom: 10px;
 }
 
 </style>
