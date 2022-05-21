@@ -2,7 +2,7 @@
   <div id="container">
     <div id="optionsColumn">
       <div id="user-info" style="font-size: 25px">{{ userEmail }}</div>
-      <button id="sendOption" onclick="SendEmail()">
+      <button id="sendOption" @click="SendEmail()">
         Send Email ✏️
       </button>
       <div pageOptionDiv>
@@ -217,7 +217,7 @@
         </tr>
       </table>
     </div>
-    <EmailForm :should-render="ShowEmailForm"/>
+    <EmailForm id="EmailForm" style="display: none;"/>
   </div>
 
 </template>
@@ -249,7 +249,9 @@ export default {
   },
   methods: {
     SendEmail () {
-      this.ShowEmailForm = true
+      console.log("fffffffffffffffffffffffffffffff");
+      TheEmailForm = document.body.getElementById("EmailForm");
+      TheEmailForm.style.display = "block";
     },
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
@@ -290,12 +292,6 @@ export default {
   font-style: oblique;
   width: 10%;
   height: 80%;
-  background-color: linear-gradient(
-    -100deg,
-    rgb(153, 35, 168),
-    rgb(213, 233, 31)
-  );
-  background: linear-gradient(-100deg, rgb(72, 212, 16), rgb(215, 236, 21));
   border-radius: 20px;
 }
 #theInboxTitle {
@@ -303,7 +299,6 @@ export default {
   line-height: 70px;
   font-size: 60px;
   color: rgb(36, 47, 196);
-  /* margin: auto; */
   margin-top: 0px;
   padding-left: 10px;
   padding-bottom: 1px;

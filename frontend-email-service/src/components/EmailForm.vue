@@ -1,4 +1,5 @@
 <template>
+
   <div id="container">
     <form style="border: solid; border-radius: 20px; height: 50%; padding: 20px; background-color: #069A8E;" action="action_page.php">
         <label for="To">To</label>
@@ -46,6 +47,7 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 #container {
+  display: block;
   margin-top: 10%;  
   border-radius: 20px;
   margin-left: 25%;  
@@ -100,9 +102,4 @@ label{
     border-radius: 20px;
 }
 
-/* .container {
-  border-radius: 5px;
-  background-color: #f2f2f2;
-  padding: 20px;
-} */
 </style>
