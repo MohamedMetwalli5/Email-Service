@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../components/Home.vue'
-import Signup from '../components/Signup.vue'
-import Emails from '../components/Emails.vue'
+import Home from '../views/Home.vue'
+import Signup from '../views/Signup.vue'
+import Emails from '../views/Emails.vue'
 
 
 

@@ -387,17 +387,14 @@ export default {
 
 #titleRow {
   border-top-right-radius: 20px;
-  width: 90%;
   height: 20px;
-  font-size: 35px;
+  font-size: 30px;
   font-weight: bolder;
-  border-radius: 50px;
   color: rgb(243, 45, 184);
   text-align: center;
   background-color: rgb(255, 217, 0);
   margin: auto;
-  margin-bottom: 10px;
-  border-bottom: soli;
+  border-bottom: solid;
 }
 .row {
   border: solid;
@@ -478,24 +475,26 @@ export default {
 
 .emailsOperationButton:hover .subMenu-1 {
   text-align: left;
-  margin-top: 0px;
+  margin-top: 2px;
   display: block;
   position: absolute;
   border-radius: 20px;
   border: solid;
   border-color: brown;
   background: rgb(241, 103, 103);
-  height: 30px;
+  height: auto;
+  float: left;
 }
 
 #filterSubjectText {
   background: whitesmoke;
-  border-radius: 10px;
+  border-radius: 20px;
+  margin-right: 12px;
 }
 
 #filterSenderText {
   background: whitesmoke;
-  border-radius: 10px;
+  border-radius: 20px;
 }
 .subMenu-2 {
   display: none;
@@ -508,7 +507,6 @@ export default {
 }
 .emailsOperationButton:hover .subMenu-2 {
   text-align: left;
-  margin-top: 0px;
   display: block;
   position: absolute;
   float: left;
@@ -516,7 +514,8 @@ export default {
   border-radius: 20px;
   border-color: brown;
   background: rgb(241, 103, 103);
-  width: 220px;
+  width: auto;
+  margin-top: 4px;
 }
 
 #checkBoxClass{

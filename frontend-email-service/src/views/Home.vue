@@ -1,45 +1,33 @@
 <template>
   <div id="container">
-    <h1 id="title" onclick="window.location.href='/';">Seamail</h1>
+    <h1 id="title" onclick="window.location.href='/emails';">Seamail</h1>
     <form id="login-form">
       <input
         type="email"
-        placeholder="UserName@seamail.com"
-        value=""
-        ref="emailRef"
-        v-model="email"
+        placeholder="Email"
         required
         class="text-box"
+        v-model="email"
       />
       <input
         type="password"
         placeholder="Password"
-        value=""
-        ref="passwordRef"
+        required
         v-model="password"
-        required
         class="text-box"
       />
-      <input
-        type="password"
-        placeholder="Repeat password"
-        value=""
-        required
-        class="text-box"
-      />
-      <input type="button" value="Sign up" id="submit" @click="SignUp()" />
+      <input type="button" value="Sign in" id="submit" @click="SignIn()" />
     </form>
     <h2>
-      Already have an account?
-      <a onclick="window.location.href='/';">Sign in</a>
+      Don't have an account?
+      <a style="cursor: pointer; color: blue;" onclick="window.location.href='/signup';">Sign up</a>
     </h2>
   </div>
 </template>
 
 <script>
-
 export default {
-  name: "Signup",
+  name: "Home",
   props: {
     msg: String,
   },
@@ -50,7 +38,7 @@ export default {
     };
   },
   methods: {
-    SignUp() {
+    SignIn() {
     },
   },
 };
@@ -73,7 +61,7 @@ export default {
   font-size: 8vw;
   color: rgb(252, 52, 52);
   margin-left: 34%;
-  margin-top: 1%;
+  margin-top: 8%;
   margin-bottom: 2vw;
   font-family: "Yanone Kaffeesatz", cursive;
   text-shadow: 0px 0px 0 rgb(236, 180, 180), 1px 0px 0 rgb(236, 180, 180),
@@ -87,12 +75,12 @@ export default {
 }
 .text-box {
   padding: 0.5vw;
-  width: 23vw;
+  width: 22vw;
   display: flex;
   height: 3vw;
   font-size: 2vw;
   margin: 2vw;
-  margin-left: 36%;
+  margin-left: 38%;
   border-radius: 30px;
 }
 #submit {
@@ -101,11 +89,11 @@ export default {
   height: 3vw;
   border-radius: 20px;
   font-size: 2vw;
-  margin-left: 44%;
+  margin-left: 45%;
   cursor: pointer;
 }
 h2 {
   font-size: 1.5vw;
-  margin-left: 36%;
+  margin-left: 39%;
 }
 </style>
