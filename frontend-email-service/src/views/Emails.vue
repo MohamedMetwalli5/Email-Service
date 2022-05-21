@@ -250,7 +250,7 @@ export default {
   methods: {
     SendEmail () {
       console.log("fffffffffffffffffffffffffffffff");
-      TheEmailForm = document.body.getElementById("EmailForm");
+      TheEmailForm = document.getElementById("EmailForm");
       TheEmailForm.style.display = "block";
     },
     // This function checks the status of the user whether he is logged in or note by printing his status
