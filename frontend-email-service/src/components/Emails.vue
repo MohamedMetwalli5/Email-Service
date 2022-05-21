@@ -56,6 +56,8 @@
         <button class="pageOption" @click="LogOut()">Logout 🚪</button>
       </div>
     </div>
+
+
     <div class="displayColumn">
       <div>
         <h1 id="theInboxTitle">{{ pageOption }}</h1>
@@ -130,11 +132,11 @@
       </div>
       <table id="table-box">
         <tr id="titleRow">
-          <td class="checkBoxClass">&nbsp;</td>
+          <td id="checkBoxClass">&nbsp;</td>
           <td @click="Sort('Sender')">Sender</td>
           <td @click="Sort('Subject')">Subject</td>
           <td @click="Sort('Priority')">Priority</td>
-          <td @click="Sort('Date')">Date</td>
+          <td @click="Sort('Date')" style="border-top-right-radius: 20px;">Date</td>
         </tr>
         <tr class="row">
           <td class="rOption">
@@ -327,6 +329,7 @@ export default {
   font-weight: bold;
   margin-bottom: 50px;
   margin-top: 20px;
+  cursor: pointer;
 }
 #sendOption:hover {
   background: rgb(108, 225, 240);
@@ -341,6 +344,7 @@ export default {
   font-size: 30px;
   font-weight: bold;
   margin-bottom: 50px;
+  cursor: pointer;
 }
 .pageOption:hover {
   background: rgb(129, 241, 148);
@@ -358,9 +362,9 @@ export default {
   border-color: white;
 }
 #titleRow {
-  border-radius: 20px;
+  border-top-right-radius: 20px;
   width: 90%;
-  height: 8%;
+  height: 20px;
   font-size: 35px;
   font-weight: bolder;
   border-radius: 50px;
@@ -399,15 +403,13 @@ export default {
   border: solid;
 }
 #emailsOperationDiv {
-  display: inline-block;
+  display: flex;
   margin-top: auto;
-  width: 100%;
-  max-width: 1430px;
   color: rgb(226, 40, 211);
   border: solid;
   border-radius: 40px;
   background: blueviolet;
-  height: 50px;
+  height: auto;
 }
 .emailsOperationButton {
   margin-right: 150px;
@@ -422,6 +424,7 @@ export default {
   height: 90%;
   font-size: 30px;
   text-align: center;
+  cursor: pointer;
 }
 .emailsOperationButton:hover {
   background: rgb(50, 230, 74);
@@ -434,15 +437,14 @@ export default {
   background: rgb(235, 74, 74);
 }
 .menuElement {
+  display: flex;
   float: left;
-  /* display: inline-block; */
   padding-left: 5px;
-  /* margin-left: 10px;
-  margin-right: 20px; */
   color: black;
   border: solid;
   border-radius: 20px;
   height: 90%;
+  cursor: pointer;
 }
 .menuElement:hover {
   background: rgb(9, 194, 194);
@@ -487,4 +489,9 @@ export default {
   background: rgb(241, 103, 103);
   width: 220px;
 }
+
+#checkBoxClass{
+  border-top-left-radius: 20px;
+}
+
 </style>
