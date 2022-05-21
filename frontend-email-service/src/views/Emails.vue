@@ -2,7 +2,7 @@
   <div id="container">
     <div id="optionsColumn">
       <div id="user-info" style="font-size: 25px">{{ userEmail }}</div>
-      <button id="sendOption" onclick="window.location.href='/SendEmail';">
+      <button id="sendOption" onclick="SendEmail()">
         Send Email ✏️
       </button>
       <div pageOptionDiv>
@@ -217,16 +217,21 @@
         </tr>
       </table>
     </div>
-    <!-- -->
+    <EmailForm :should-render="ShowEmailForm"/>
   </div>
+
 </template>
 
 <script>
-
+import EmailForm from '../components/EmailForm';
 export default {
   name: "Emails",
+  components:{
+    EmailForm,
+  },
   data: function () {
     return {
+      ShowEmailForm: false,
       userEmail: "",
       pageOption: "Inbox Mail ✉️", //the folder name
       sender: [].fill(null),
@@ -243,6 +248,9 @@ export default {
     };
   },
   methods: {
+    SendEmail () {
+      this.ShowEmailForm = true
+    },
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
       
@@ -257,6 +265,7 @@ export default {
 };
 </script>
 <style  scoped>
+
 #container {
   display: flex;
   background-color: rgb(255, 238, 0);
