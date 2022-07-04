@@ -62,7 +62,7 @@
         </button>
       </div>
       <div pageOptionDiv>
-        <button class="pageOption" style="" @click="LogOut()">Logout 🚪</button>
+        <button class="pageOption" id="LogOutOption" @click="LogOut()">Logout 🚪</button>
       </div>
     </div>
 
@@ -144,6 +144,8 @@
         </div>
         <br />
       </div>
+
+
       <table id="table-box">
         <tr id="titleRow">
           <td id="checkBoxClass">&nbsp;</td>
@@ -225,6 +227,8 @@
           <td class="rOption">{{ date[4] }}</td>
         </tr>
       </table>
+
+
     </div>
     <EmailForm id="EmailForm" ref= "EmailForm" style="display: none;"/>
   </div>
@@ -233,6 +237,7 @@
 
 <script>
 import EmailForm from '../components/EmailForm';
+const axios = require("axios").default;
 export default {
   name: "Emails",
   components:{
@@ -268,11 +273,36 @@ export default {
       
     },
     // This functions sign the user out
+    LoadEmails(LoadingMailsOption) {
+      if(LoadingMailsOption === "Inbox"){
+         axios
+            .get("http://localhost:8081/Emails", {
+              params: {
+                LoadingMailsOption: "Inbox",
+              },
+            })
+            .then((response) => {
+              console.log(response);
+            })
+            .catch((e) => {
+              console.log(e);
+            });
+
+      }else if(LoadingMailsOption === "Trash"){
+
+      }else if(LoadingMailsOption === "Drafts"){
+
+      }else if(LoadingMailsOption === "Sent"){
+
+      }
+    },
+    // This functions sign the user out
     LogOut() {
     },
   },
   beforeMount() {
     this.CheckAuthStatus();
+    this.LoadEmails("Inbox");
   },
 };
 </script>
@@ -374,6 +404,11 @@ export default {
     animation:  shake 0.8s  ;
 }
 
+#LogOutOption:hover {
+    background: rgb(244, 131, 131);
+    animation:  shake 0.8s  ;
+}
+
 @keyframes shake{
     0%{
       transform: translateX(0)
@@ -401,8 +436,8 @@ export default {
 
 #titleRow {
   border-top-right-radius: 20px;
-  height: 20px;
-  font-size: 30px;
+  height: 15px;
+  font-size: 40px;
   font-weight: bolder;
   color: rgb(243, 45, 184);
   text-align: center;
