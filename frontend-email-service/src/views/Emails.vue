@@ -349,7 +349,7 @@ export default {
   background-color: aqua;
 }
 #optionsColumn {
-  background: linear-gradient(-45deg, rgb(238, 189, 30), rgb(255, 238, 0));
+  background: linear-gradient(-45deg, rgb(30, 238, 78), rgb(255, 238, 0));
   float: left;
   width: 350px;
   padding: 10px;
@@ -441,7 +441,7 @@ export default {
   font-weight: bolder;
   color: rgb(243, 45, 184);
   text-align: center;
-  background-color: rgb(255, 217, 0);
+  background-color: rgb(85, 85, 80);
   margin: auto;
   border-bottom: solid;
 }
@@ -450,11 +450,12 @@ export default {
   border-radius: 30px;
   border-bottom: black;
   color: black;
+  background-color: rgb(227, 230, 230);
   font-size: 25px;
   height: 20px;
 }
 .row:hover {
-  background: rgb(108, 240, 174);
+  background: rgb(108, 240, 211);
 }
 .rOption {
   margin-left: 3px;
@@ -491,7 +492,7 @@ export default {
   border-radius: 20px;
   background: rgb(235, 74, 74);
   height: 90%;
-  font-size: 30px;
+  font-size: 40px;
   text-align: center;
   cursor: pointer;
 }
@@ -509,6 +510,7 @@ export default {
 .menuElement {
   display: flex;
   float: left;
+  font-size: 20px;
   padding-left: 5px;
   color: black;
   border: solid;
