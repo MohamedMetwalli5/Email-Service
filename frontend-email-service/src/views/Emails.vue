@@ -1,12 +1,21 @@
 <template>
   <div id="container">
+
     <div id="optionsColumn">
       <div id="user-info" style="font-size: 25px">{{ userEmail }}</div>
       <button id="sendOption" @click="SendEmail()">
         Send Email ✏️
       </button>
       <div pageOptionDiv>
-        <button id="inboxBtn" class="pageOption">Inbox 📫</button>
+        <button id="inboxBtn" class="pageOption"  
+        @click="
+              (pageOption = 'Inbox Mail📫'),
+              (pageNumber = 1),
+              (folderName = 'Draft')
+        "
+        >
+          Inbox 📫
+        </button>
       </div>
       <div pageOptionDiv>
         <button
@@ -53,14 +62,14 @@
         </button>
       </div>
       <div pageOptionDiv>
-        <button class="pageOption" @click="LogOut()">Logout 🚪</button>
+        <button class="pageOption" style="" @click="LogOut()">Logout 🚪</button>
       </div>
     </div>
 
 
     <div class="displayColumn">
       <div>
-        <h1 id="theInboxTitle">{{ pageOption }}</h1>
+        <h1 id="thePageTitle">{{ pageOption }}</h1>
         <ul id="emailsOperationDiv">
           <li class="emailsOperationButton">
             Filter
@@ -174,12 +183,12 @@
           <td class="rOption">{{ date[1] }}</td>
         </tr>
         <tr class="row">
-          <td>
+          <td class="rOption">
             <input
               type="radio"
               name="EmailsOption"
               value="false"
-              @click="namePointer = 2"
+              @click="namePointer = 3"
             />
           </td>
           <td class="rOption">{{ sender[2] }}</td>
@@ -207,7 +216,7 @@
               type="radio"
               name="EmailsOption"
               value="false"
-              @click="this.namePointer = 5"
+              @click="namePointer = 5"
             />
           </td>
           <td class="rOption">{{ sender[4] }}</td>
@@ -217,7 +226,7 @@
         </tr>
       </table>
     </div>
-    <EmailForm id="EmailForm" style="display: none;"/>
+    <EmailForm id="EmailForm" ref= "EmailForm" style="display: none;"/>
   </div>
 
 </template>
@@ -249,9 +258,10 @@ export default {
   },
   methods: {
     SendEmail () {
-      console.log("fffffffffffffffffffffffffffffff");
-      TheEmailForm = document.getElementById("EmailForm");
+      TheEmailForm = this.$refs.EmailForm;
       TheEmailForm.style.display = "block";
+      
+      console.log("gggggggggggggggggggggggggggggggggggg");
     },
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
@@ -294,10 +304,10 @@ export default {
   height: 80%;
   border-radius: 20px;
 }
-#theInboxTitle {
+#thePageTitle {
   text-align: center;
   line-height: 70px;
-  font-size: 60px;
+  font-size: 70px;
   color: rgb(36, 47, 196);
   margin-top: 0px;
   padding-left: 10px;
@@ -334,7 +344,7 @@ export default {
   border: solid;
   color: green;
   background: white;
-  font-size: 40px;
+  font-size: 50px;
   font-weight: bold;
   margin-bottom: 50px;
   margin-top: 20px;
@@ -346,17 +356,22 @@ export default {
 }
 
 .pageOption {
-  width: 190px;
+  width: 210px;
   height: 100%;
   border-radius: 20px;
   border: solid;
   color: green;
   background: white;
-  font-size: 30px;
+  font-size: 42px;
   font-weight: bold;
   margin-bottom: 50px;
   cursor: pointer;
   animation: shake 0.8s;
+}
+
+.pageOption:hover {
+    background: rgb(129, 241, 148);
+    animation:  shake 0.8s  ;
 }
 
 @keyframes shake{
@@ -375,15 +390,10 @@ export default {
     }
 }
 
-.pageOption:hover {
-    background: rgb(129, 241, 148);
-    animation:  shake 0.8s  ;
-}
-
 #table-box {
   margin: auto;
   width: 100%;
-  height: 70%;
+  height: 65%;
   border-radius: 20px;
   border: solid;
   border-color: white;
@@ -412,7 +422,6 @@ export default {
   background: rgb(108, 240, 174);
 }
 .rOption {
-  /* used to make the underline between emails */
   margin-left: 3px;
   border-top: solid;
   border-bottom: rgb(0, 0, 0);
@@ -531,5 +540,10 @@ export default {
   float: left;
   margin-bottom: 10px;
 }
+
+/* .pageOptionDiv{
+  width: 100%;
+  height: 200px;
+} */
 
 </style>
