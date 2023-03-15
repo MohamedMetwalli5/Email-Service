@@ -228,9 +228,8 @@
         </tr>
       </table>
 
-
     </div>
-    <EmailForm id="EmailForm" ref= "EmailForm" style="display: none;"/>
+    <EmailForm id="EmailForm" ref= "EmailForm" style="display: var(--visibility, none);"/>
   </div>
 
 </template>
@@ -356,7 +355,7 @@ export default {
   height: 100%;
   border: solid;
   border-radius: 15px;
-  border-color: red;
+  border-color: #55f49a;
   margin-top: 10px;
 }
 .displayColumn {
@@ -439,9 +438,9 @@ export default {
   height: 15px;
   font-size: 40px;
   font-weight: bolder;
-  color: rgb(243, 45, 184);
+  color: #ffffff;
   text-align: center;
-  background-color: rgb(85, 85, 80);
+  background-color: #95BDFF;
   margin: auto;
   border-bottom: solid;
 }
@@ -478,7 +477,7 @@ export default {
   color: rgb(226, 40, 211);
   border: solid;
   border-radius: 40px;
-  background: blueviolet;
+  background: #AA77FF;
   height: auto;
 }
 .emailsOperationButton {
@@ -490,7 +489,7 @@ export default {
   border: solid;
   border-color: brown;
   border-radius: 20px;
-  background: rgb(235, 74, 74);
+  background: #36afe6;
   height: 90%;
   font-size: 40px;
   text-align: center;
