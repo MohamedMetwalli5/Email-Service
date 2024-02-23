@@ -1,7 +1,7 @@
 ![Frontend](https://img.shields.io/badge/Frontend-Vue.js%20-green.svg)
-![Backend](https://img.shields.io/badge/Backend-SpringBoot%20-orange.svg)
-![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-violet.svg)
-![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-purple.svg)
+![Backend](https://img.shields.io/badge/Backend-SpringBoot%20-blue.svg)
+![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-orange.svg)
+![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-black.svg)
 
 # Email-Service
 
