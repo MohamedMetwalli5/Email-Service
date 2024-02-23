@@ -13,8 +13,8 @@ public class EmailsController {
 	public List<Email> RequestHandler(String param) {
 		if(param.equals("Inbox")) {
 			return Arrays.asList(
-					new Email("Mohamed", "assignment", "1", "7/4/2022"),
-					new Email("Ali", "club", "2", "9/6/2022")
+					new Email("mohamed", "ali","assignment", "1", "7/4/2022", "hello ali!"),
+					new Email("ali",  "ahmed", "club", "2", "9/6/2022", "hello ahmed!")
 					);
 		}
 		
