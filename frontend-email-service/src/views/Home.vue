@@ -1,6 +1,6 @@
 <template>
   <div id="container">
-    <h1 id="title" onclick="window.location.href='/emails';">Seamail</h1>
+    <h1 id="title" onclick="window.location.href='/';">Seamail</h1>
     <form id="login-form">
       <input
         type="email"
@@ -26,6 +26,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: "Home",
   props: {
@@ -39,7 +41,24 @@ export default {
   },
   methods: {
     SignIn() {
-    },
+      // An object with user credentials
+      const userData = {
+        email: this.email,
+        hashedPassword: btoa(this.password)
+      };
+
+      // Make a POST request to the server
+      axios.post('https://jsonplaceholder.typicode.com/posts', userData)
+        .then(response => {
+          // Handle successful response
+          console.log('successful Login', response.data);
+          window.location.href='/emails';
+        })
+        .catch(error => {
+          // Handle error
+          alert("Wrong user name or password!");
+        });
+    }
   },
 };
 </script>
