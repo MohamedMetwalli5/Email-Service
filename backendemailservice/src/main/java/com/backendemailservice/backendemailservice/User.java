@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
-public class UserEntity {
+public class User {
 
 	@Id
 	@Column(name="email", nullable = false, unique = true)
@@ -16,11 +16,11 @@ public class UserEntity {
 	@Column(name="password", nullable = false)
 	private String password;
 	
-	public UserEntity(String email, String password){
+	public User(String email, String password){
 		this.email = email;
 		this.password = password;
 	}
-	
+	 
 	public String getEmail() {
 		return email;
 	}

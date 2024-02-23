@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class EmailsController {
 
-	@RequestMapping("/Emails")
+	@RequestMapping("/emails")
 	public List<Email> RequestHandler(String param) {
 		if(param.equals("Inbox")) {
 			return Arrays.asList(
