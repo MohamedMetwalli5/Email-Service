@@ -10,14 +10,15 @@ import jakarta.persistence.Table;
 public class UserEntity {
 
 	@Id
-	@Column(name="email")
+	@Column(name="email", nullable = false, unique = true)
 	private String email;
 	
-	@Column(name="password")
+	@Column(name="password", nullable = false)
 	private String password;
 	
-	public UserEntity(){
-		
+	public UserEntity(String email, String password){
+		this.email = email;
+		this.password = password;
 	}
 	
 	public String getEmail() {
@@ -27,14 +28,5 @@ public class UserEntity {
 	public String getPassword() {
 		return password;
 	}
-	
-	public void setEmail(String email) {
-		this.email = email;
-	}
-	
-	public void setPassword(String password) {
-		this.password = password;
-	}
-	
 }
 
