@@ -2,7 +2,7 @@
   <div id="container">
 
     <div id="optionsColumn">
-      <div id="user-info" style="font-size: 25px">{{ userEmail }}</div>
+      <div id="user-info" style="font-size: 2.5vw">{{ userEmail }}</div>
       <button id="sendOption" @click="SendEmail()">
         Send Email ✏️
       </button>
@@ -66,6 +66,10 @@
       </div>
     </div>
 
+
+
+
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////// -->
 
     <div class="displayColumn">
       <div>
@@ -245,7 +249,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      userEmail: "",
+      userEmail: "hh",
       pageOption: "Inbox Mail ✉️", //the folder name
       sender: [].fill(null),
       subject: [].fill(null),
@@ -311,17 +315,16 @@ export default {
   display: flex;
   background-color: rgb(255, 238, 0);
   height: 100%;
-  min-height: 1100px;
-  width: 100%;
-  min-width: 100%;
-  background-position-x: fixed;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 .ButtonsGroup {
   background-image: linear-gradient(-45deg, rgb(59, 203, 228), magenta);
-  border-radius: 20px;
+  border-radius: 2vw;
   margin-top: 1px;
-  width: 100%;
-  height: 5%;
+  max-width: 100%;
+  /* height: 5%; */
 }
 .b {
   margin: auto;
@@ -335,14 +338,13 @@ export default {
 }
 #thePageTitle {
   text-align: center;
-  line-height: 70px;
-  font-size: 70px;
+  font-size: 6.5vw;
   color: rgb(36, 47, 196);
   margin-top: 0px;
   padding-left: 10px;
-  padding-bottom: 1px;
+  padding: 0.5vw;
   height: 100%;
-  min-width: 250px;
+  max-width: 90%;
   border: solid;
   border-radius: 20px;
   background-color: aqua;
@@ -368,12 +370,12 @@ export default {
 #sendOption {
   text-align: center;
   height: 100%;
-  margin-top: 150px;
-  border-radius: 20px;
+  margin-top: 15vw;
+  border-radius: 2vw;
   border: solid;
   color: green;
   background: white;
-  font-size: 50px;
+  font-size: 4vw;
   font-weight: bold;
   margin-bottom: 50px;
   margin-top: 20px;
@@ -385,15 +387,14 @@ export default {
 }
 
 .pageOption {
-  width: 210px;
-  height: 100%;
-  border-radius: 20px;
+  width: 21vw;
+  border-radius: 2vw;
   border: solid;
   color: green;
   background: white;
-  font-size: 42px;
+  font-size: 4vw;
   font-weight: bold;
-  margin-bottom: 50px;
+  margin-bottom: 4vw;
   cursor: pointer;
   animation: shake 0.8s;
 }
@@ -426,8 +427,7 @@ export default {
 
 #table-box {
   margin: auto;
-  width: 100%;
-  height: 65%;
+  width: 100%;  
   border-radius: 20px;
   border: solid;
   border-color: white;
@@ -473,25 +473,24 @@ export default {
 }
 #emailsOperationDiv {
   display: flex;
-  margin-top: auto;
+  margin: auto;
   color: rgb(226, 40, 211);
   border: solid;
   border-radius: 40px;
   background: #AA77FF;
-  height: auto;
+  max-height: 4vw;
 }
 .emailsOperationButton {
-  margin-right: 150px;
-  line-height: 40px;
+  margin-right: 15vw;
   float: left;
-  width: 110px;
   color: rgb(255, 255, 255);
   border: solid;
   border-color: brown;
-  border-radius: 20px;
+  border-radius: 2vw;
   background: #36afe6;
   height: 90%;
-  font-size: 40px;
+  padding: 1vw;
+  font-size: 2.5vw;
   text-align: center;
   cursor: pointer;
 }
@@ -509,12 +508,11 @@ export default {
 .menuElement {
   display: flex;
   float: left;
-  font-size: 20px;
-  padding-left: 5px;
+  font-size: 2vw;
   color: black;
   border: solid;
   margin-left: 0px;
-  border-radius: 20px;
+  border-radius: 2vw;
   cursor: pointer;
 }
 
@@ -523,15 +521,14 @@ export default {
 }
 
 .emailsOperationButton:hover .subMenu-1 {
-  text-align: left;
-  margin-top: 2px;
+  margin-top: 1vw;
   display: block;
   position: absolute;
-  border-radius: 20px;
+  border-radius: 2vw;
   border: solid;
+  padding: 0.2vw;
   border-color: brown;
   background: rgb(241, 103, 103);
-  height: auto;
   float: left;
 }
 
@@ -555,16 +552,16 @@ export default {
   width: 220px;
 }
 .emailsOperationButton:hover .subMenu-2 {
-  text-align: left;
+  width: auto;
+  margin-top: 1vw;
   display: block;
   position: absolute;
-  float: left;
+  border-radius: 2vw;
   border: solid;
-  border-radius: 20px;
+  padding: 0.2vw;
   border-color: brown;
   background: rgb(241, 103, 103);
-  width: auto;
-  margin-top: 4px;
+  float: left;
 }
 
 #checkBoxClass{

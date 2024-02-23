@@ -56,7 +56,7 @@ export default {
   min-width: 30vw;
   border-bottom: 10px solid #ffffff;
   border-radius: 50px;
-  padding-bottom: 15px;
+  padding-bottom: 4vw;
   display: inline-block;
   font-size: 8vw;
   color: rgb(252, 52, 52);
