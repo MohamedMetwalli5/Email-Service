@@ -81,7 +81,7 @@
             <div class="subMenu-2">
               <ul>
                 <div class="subMenuOption">
-                  <button class="menuElement" style="width: 30%;" @click="Filter()">Subject</button>
+                  <button class="menuElement" @click="Filter()">Subject</button>
                   <input type="text" id="filterSubjectText" />
                 </div>
                 
@@ -97,16 +97,16 @@
             Sort
             <div class="subMenu-1">
               <ul>
-                <button class="menuElement" @click="sortText = 'Priority'">
+                <button class="menuElement" @click=" sortText='Priority'">
                   Priority
                 </button>
-                <button class="menuElement" @click="sortText = 'Date'">
+                <button class="menuElement" @click=" sortText='Date'">
                   Date
                 </button>
-                <button class="menuElement" @click="sortText = 'Sender'">
+                <button class="menuElement" @click=" sortText='Sender'">
                   Sender
                 </button>
-                <button class="menuElement" @click="sortText = 'Subject'">
+                <button class="menuElement" @click=" sortText='Subject'">
                   Subject
                 </button>
               </ul>
@@ -156,7 +156,7 @@
           <td @click="Sort('Sender')">Sender</td>
           <td @click="Sort('Subject')">Subject</td>
           <td @click="Sort('Priority')">Priority</td>
-          <td @click="Sort('Date')" style="border-top-right-radius: 20px;">Date</td>
+          <td @click="Sort('Date')" style="border-top-right-radius: 2vw;">Date</td>
         </tr>
         <tr class="row">
           <td class="rOption">
@@ -316,7 +316,7 @@ export default {
   background-color: rgb(255, 238, 0);
   height: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  /* overflow-x: hidden; */
   overflow-y: hidden;
 }
 .ButtonsGroup {
@@ -330,42 +330,42 @@ export default {
   margin: auto;
   margin-top: 5px;
   margin-bottom: 5px;
-  font-size: 20px;
+  font-size: 2vw;
   font-style: oblique;
   width: 10%;
   height: 80%;
-  border-radius: 20px;
+  border-radius: 2vw;
 }
 #thePageTitle {
   text-align: center;
   font-size: 6.5vw;
-  color: rgb(36, 47, 196);
+  color: #211C6A;
   margin-top: 0px;
   padding-left: 10px;
   padding: 0.5vw;
   height: 100%;
   max-width: 90%;
   border: solid;
-  border-radius: 20px;
-  background-color: aqua;
+  border-radius: 2vw;
+  background-color: #9BCF53;
 }
 #optionsColumn {
-  background: linear-gradient(-45deg, rgb(30, 238, 78), rgb(255, 238, 0));
+  background: #7BD3EA;
   float: left;
-  width: 350px;
   padding: 10px;
   height: 100%;
   border: solid;
-  border-radius: 15px;
-  border-color: #55f49a;
-  margin-top: 10px;
+  border-radius: 0vw 2vw 2vw 0vw;
+  border-color: #7BD3EA;
+  margin: 0vw;
+  margin-right: 1vw;
 }
 .displayColumn {
   float: left;
-  margin-left: 2%;
-  width: 80%;
-  padding: 10px;
-  height: 1000px;
+  margin-left: 2vw;
+  width: 90%;
+  padding: 1vw;
+  height: 100%;
 }
 #sendOption {
   text-align: center;
@@ -378,7 +378,7 @@ export default {
   font-size: 4vw;
   font-weight: bold;
   margin-bottom: 50px;
-  margin-top: 20px;
+  margin-top: 2vw;
   cursor: pointer;
 }
 
@@ -428,19 +428,18 @@ export default {
 #table-box {
   margin: auto;
   width: 100%;  
-  border-radius: 20px;
+  border-radius: 2vw;
   border: solid;
   border-color: white;
 }
 
 #titleRow {
-  border-top-right-radius: 20px;
-  height: 15px;
-  font-size: 40px;
+  border-top-right-radius: 2vw;
+  font-size: 4vw;
   font-weight: bolder;
   color: #ffffff;
   text-align: center;
-  background-color: #95BDFF;
+  background-color: #416D19;
   margin: auto;
   border-bottom: solid;
 }
@@ -451,7 +450,7 @@ export default {
   color: black;
   background-color: rgb(227, 230, 230);
   font-size: 25px;
-  height: 20px;
+  height: 2vw;
 }
 .row:hover {
   background: rgb(108, 240, 211);
@@ -462,24 +461,21 @@ export default {
   border-bottom: rgb(0, 0, 0);
 }
 #pageNumberOptionsDiv {
-  line-height: 5px;
-  padding-bottom: 5px;
-  margin-top: 1.8%;
-  border-radius: 25px;
+  line-height: 1vw;
+  padding: 0.5vw;
+  margin-top: 1vw;
+  border-radius: 2vw;
   margin-left: 45%;
   width: 100px;
   color: rgb(29, 201, 6);
   border: solid;
 }
+
 #emailsOperationDiv {
   display: flex;
   margin: auto;
-  color: rgb(226, 40, 211);
-  border: solid;
-  border-radius: 40px;
-  background: #AA77FF;
-  max-height: 4vw;
 }
+
 .emailsOperationButton {
   margin-right: 15vw;
   float: left;
@@ -488,20 +484,20 @@ export default {
   border-color: brown;
   border-radius: 2vw;
   background: #36afe6;
-  height: 90%;
-  padding: 1vw;
-  font-size: 2.5vw;
+  padding: 0.9vw;
+  font-size: 2vw;
   text-align: center;
   cursor: pointer;
 }
 .emailsOperationButton:hover {
   background: rgb(50, 230, 74);
 }
-.subMenu-1 {
+.subMenu-1, .subMenu-2 {
   display: none;
-  border-bottom: solid;
+  border: solid;
+  float: left;
   border-color: brown;
-  border-radius: 20px;
+  border-radius: 2vw;
   background: rgb(235, 74, 74);
 }
 
@@ -509,7 +505,6 @@ export default {
   display: flex;
   float: left;
   font-size: 2vw;
-  color: black;
   border: solid;
   margin-left: 0px;
   border-radius: 2vw;
@@ -534,23 +529,16 @@ export default {
 
 #filterSubjectText {
   background: whitesmoke;
-  border-radius: 20px;
-  margin-right: 12px;
+  border-radius: 2vw;
+  margin-right: 10vw;
 }
 
 #filterSenderText {
   background: whitesmoke;
-  border-radius: 20px;
+  border-radius: 2vw;
 }
-.subMenu-2 {
-  display: none;
-  float: left;
-  border: solid;
-  border-radius: 20px;
-  border-color: brown;
-  background: rgb(241, 103, 103);
-  width: 220px;
-}
+
+
 .emailsOperationButton:hover .subMenu-2 {
   width: auto;
   margin-top: 1vw;
@@ -565,18 +553,12 @@ export default {
 }
 
 #checkBoxClass{
-  border-top-left-radius: 20px;
+  border-top-left-radius: 2vw;
 }
 
 .subMenuOption{
   display: flex;
   float: left;
-  margin-bottom: 10px;
 }
-
-/* .pageOptionDiv{
-  width: 100%;
-  height: 200px;
-} */
 
 </style>
