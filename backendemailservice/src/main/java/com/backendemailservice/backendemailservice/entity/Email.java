@@ -1,4 +1,4 @@
-package com.backendemailservice.backendemailservice;
+package com.backendemailservice.backendemailservice.entity;
 
 public class Email {
 

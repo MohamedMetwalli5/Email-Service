@@ -1,4 +1,4 @@
-package com.backendemailservice.backendemailservice;
+package com.backendemailservice.backendemailservice.service;
 
 import java.util.Arrays;
 import java.util.List;
@@ -6,8 +6,10 @@ import java.util.List;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backendemailservice.backendemailservice.entity.Email;
+
 @RestController
-public class EmailsController {
+public class EmailService {
 
 	@RequestMapping("/emails")
 	public List<Email> RequestHandler(String param) {

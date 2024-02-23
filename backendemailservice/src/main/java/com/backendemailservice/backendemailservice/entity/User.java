@@ -1,4 +1,4 @@
-package com.backendemailservice.backendemailservice;
+package com.backendemailservice.backendemailservice.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
