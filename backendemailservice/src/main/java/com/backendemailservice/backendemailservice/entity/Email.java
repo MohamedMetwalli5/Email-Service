@@ -42,5 +42,8 @@ public class Email {
 		this.date = date;
 	}
 	
+	public Email() {
+		
+	}	
 	
 }

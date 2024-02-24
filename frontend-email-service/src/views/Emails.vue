@@ -10,7 +10,6 @@
         <button id="inboxBtn" class="pageOption"  
         @click="
               (pageOption = 'Inbox Mail📫'),
-              (pageNumber = 1),
               (folderName = 'Draft')
         "
         >
@@ -23,7 +22,6 @@
           @click="
             // SetButtonColorTrash(),
             (pageOption = 'Trash Box🗑️'),
-              (pageNumber = 1),
               ChangePage(),
               (document.getElementById('pageNumberOneOption').value = true),
               (document.getElementById('pageNumberOneOption').checked = true),
@@ -41,7 +39,6 @@
           @click="
             (pageOption = 'Drafts 📋'),
               ChangePage(),
-              (pageNumber = 1),
               (folderName = 'Draft')
           "
         >
@@ -54,7 +51,6 @@
           @click="
             (pageOption = 'Sent 📧'),
               ChangePage(),
-              (pageNumber = 1),
               (folderName = 'Sent')
           "
         >
@@ -69,7 +65,7 @@
 
 
 
-    <!-- ////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
 
     <div class="displayColumn">
       <div>
@@ -113,39 +109,6 @@
             </div>
           </li>
         </ul>
-        <div id="pageNumberOptionsDiv">
-          <h2>&nbsp; 1 2 3 4</h2>
-          <input
-            type="radio"
-            id="pageNumberOneOption"
-            name="radioButtonPageNumberOption"
-            value="false"
-            checked="false"
-            @click="(pageNumber = 1), ChangePage()"
-          />
-
-          <input
-            type="radio"
-            id="pageNumberTwoOption"
-            name="radioButtonPageNumberOption"
-            value="false"
-            @click="(pageNumber = 2), ChangePage()"
-          />
-          <input
-            type="radio"
-            id="pageNumbeThreerOption"
-            name="radioButtonPageNumberOption"
-            value="false"
-            @click="(pageNumber = 3), ChangePage()"
-          />
-          <input
-            type="radio"
-            id="pageNumberFourOption"
-            name="radioButtonPageNumberOption"
-            value="false"
-            @click="(pageNumber = 4), ChangePage()"
-          />
-        </div>
         <br />
       </div>
 
@@ -259,7 +222,6 @@ export default {
       senderFilterText: "null",
       subjectFilterText: "null",
       sortText: "null",
-      pageNumber: 1,
       folderName: "inbox",
       namePointer: 0,
     };
@@ -460,16 +422,7 @@ export default {
   border-top: solid;
   border-bottom: rgb(0, 0, 0);
 }
-#pageNumberOptionsDiv {
-  line-height: 1vw;
-  padding: 0.5vw;
-  margin-top: 1vw;
-  border-radius: 2vw;
-  margin-left: 45%;
-  width: 100px;
-  color: rgb(29, 201, 6);
-  border: solid;
-}
+
 
 #emailsOperationDiv {
   display: flex;

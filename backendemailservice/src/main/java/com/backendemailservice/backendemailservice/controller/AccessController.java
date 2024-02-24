@@ -1,43 +1,37 @@
 package com.backendemailservice.backendemailservice.controller;
 
-import org.apache.catalina.connector.Response;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
-import com.backendemailservice.backendemailservice.entity.User;
-import com.backendemailservice.backendemailservice.service.UserService;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.backendemailservice.backendemailservice.entity.User;
+import com.backendemailservice.backendemailservice.service.UserService;
 
 @RestController
 public class AccessController {
-	
-	private final UserService userService;
-	
-	@Autowired
+
+    private final UserService userService;
+
+    @Autowired
     public AccessController(UserService userService) {
         this.userService = userService;
     }
-	
-	@PostMapping("/signin") 
-	public String signin(User user) {
-		// logic to use an implemented user service to check on the DB for the existence of a user with both email and password
-		if (userService.findUser(user.getEmail(), user.getPassword()).isPresent()) {
+
+    @PostMapping("/signin")
+    public ResponseEntity<String> signin(@RequestBody User user) {
+        // Logic to use the implemented user service to check the database for the existence of a user with both email and password
+        Optional<User> foundUser = userService.findUser(user.getEmail(), user.getPassword());
+        if (foundUser.isPresent()) {
             // User exists in the database
-			System.out.println("pppppppppppppppppppppppppppppppppppppppppp");
-            return "user found";
+            return ResponseEntity.ok().body("User found: " + user.getEmail());
         } else {
             // User does not exist
-    		System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
-            return "user not found";
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
-	}
-	
-	
-//	@PostMapping("/signup") 
-//	public User signup(User user) {
-//		// logic to use an implemented user service to check on the DB for the existence of a user with this email
-//		return UserService.createUser(user);
-//	}
-	
+    }
 }
