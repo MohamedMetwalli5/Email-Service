@@ -2,7 +2,7 @@
   <div id="container">
 
     <div id="optionsColumn">
-      <div id="user-info" style="font-size: 2.5vw">{{ userEmail }}</div>
+      <div id="user-info" style="font-size: 1.5vw; font-weight: bold;">{{ userEmail }}</div>
       <button id="sendOption" @click="SendEmail()">
         Send Email ✏️
       </button>
@@ -10,12 +10,13 @@
         <button id="inboxBtn" class="pageOption"  
         @click="
               (pageOption = 'Inbox Mail📫'),
-              (folderName = 'Draft')
+              (folderName = 'inbox')
         "
         >
           Inbox 📫
         </button>
       </div>
+
       <div pageOptionDiv>
         <button
           id="trashBtn"
@@ -33,18 +34,7 @@
           Trash 🗑️
         </button>
       </div>
-      <div pageOptionDiv>
-        <button
-          class="pageOption"
-          @click="
-            (pageOption = 'Drafts 📋'),
-              ChangePage(),
-              (folderName = 'Draft')
-          "
-        >
-          Drafts 📋
-        </button>
-      </div>
+=
       <div pageOptionDiv>
         <button
           class="pageOption"
@@ -121,79 +111,17 @@
           <td @click="Sort('Priority')">Priority</td>
           <td @click="Sort('Date')" style="border-top-right-radius: 2vw;">Date</td>
         </tr>
-        <tr class="row">
+        <tr class="row" v-for="(email, index) in emails" :key="email.id">
           <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 1"
-            />
+            <input type="radio" name="EmailsOption" value="false" @click="namePointer = index + 1"/>
           </td>
-          <td class="rOption">
-            {{ sender[0] }}
-          </td>
-          <td class="rOption">{{ subject[0] }}</td>
-          <td class="rOption">{{ priority[0] }}</td>
-          <td class="rOption">{{ date[0] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 2"
-            />
-          </td>
-          <td class="rOption">{{ sender[1] }}</td>
-          <td class="rOption">{{ subject[1] }}</td>
-          <td class="rOption">{{ priority[1] }}</td>
-          <td class="rOption">{{ date[1] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 3"
-            />
-          </td>
-          <td class="rOption">{{ sender[2] }}</td>
-          <td class="rOption">{{ subject[2] }}</td>
-          <td class="rOption">{{ priority[2] }}</td>
-          <td class="rOption">{{ date[2] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 4"
-            />
-          </td>
-          <td class="rOption">{{ sender[3] }}</td>
-          <td class="rOption">{{ subject[3] }}</td>
-          <td class="rOption">{{ priority[3] }}</td>
-          <td class="rOption">{{ date[3] }}</td>
-        </tr>
-        <tr class="row">
-          <td class="rOption">
-            <input
-              type="radio"
-              name="EmailsOption"
-              value="false"
-              @click="namePointer = 5"
-            />
-          </td>
-          <td class="rOption">{{ sender[4] }}</td>
-          <td class="rOption">{{ subject[4] }}</td>
-          <td class="rOption">{{ priority[4] }}</td>
-          <td class="rOption">{{ date[4] }}</td>
+          <td class="rOption">{{ email.sender }}</td>
+          <td class="rOption">{{ email.subject }}</td>
+          <td class="rOption">{{ email.priority }}</td>
+          <td class="rOption">{{ email.date }}</td>
         </tr>
       </table>
+
 
     </div>
     <EmailForm id="EmailForm" ref= "EmailForm" style="display: var(--visibility, none);"/>
@@ -204,6 +132,7 @@
 <script>
 import EmailForm from '../components/EmailForm';
 const axios = require("axios").default;
+
 export default {
   name: "Emails",
   components:{
@@ -212,7 +141,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      userEmail: "hh",
+      userEmail: "user@seamail.com",
       pageOption: "Inbox Mail ✉️", //the folder name
       sender: [].fill(null),
       subject: [].fill(null),
@@ -224,6 +153,22 @@ export default {
       sortText: "null",
       folderName: "inbox",
       namePointer: 0,
+      emails: [
+        {
+          id: 1,
+          sender: 'sender1@example.com',
+          subject: 'Subject 1',
+          priority: '1',
+          date: '2020-11-24'
+        },
+        {
+          id: 2,
+          sender: 'sender2@example.com',
+          subject: 'Subject 2',
+          priority: '2',
+          date: '2021-12-23'
+        },
+      ],
     };
   },
   methods: {
@@ -390,7 +335,7 @@ export default {
 #table-box {
   margin: auto;
   width: 100%;  
-  border-radius: 2vw;
+  border-radius: 2vw 2vw 0vw 0vw;
   border: solid;
   border-color: white;
 }
@@ -407,12 +352,12 @@ export default {
 }
 .row {
   border: solid;
-  border-radius: 30px;
   border-bottom: black;
   color: black;
   background-color: rgb(227, 230, 230);
-  font-size: 25px;
+  font-size: 1.5vw;
   height: 2vw;
+  text-align: center;
 }
 .row:hover {
   background: rgb(108, 240, 211);

@@ -12,9 +12,12 @@ import com.backendemailservice.backendemailservice.entity.Email;
 @Repository
 public interface EmailRepository extends JpaRepository<Email, Integer>{
 
-	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail")
+	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No'")
     List<Email> loadInbox(String receiverEmail);
 	
-	@Query("SELECT e FROM Email e WHERE e.sender = :senderEmail")
+	@Query("SELECT e FROM Email e WHERE e.sender = :senderEmail AND e.trash = 'No'")
     List<Email> loadOutbox(String senderEmail);
+
+	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'Yes'")
+	List<Email> loadTrashbox(String receiverEmail);
 }

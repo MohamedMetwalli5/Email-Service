@@ -25,4 +25,8 @@ public class EmailService {
 	public List<Email> loadOutbox(User user){
 		return repository.loadOutbox(user.getEmail());
 	}
+
+	public List<Email> loadTrashbox(User user) {
+		return repository.loadTrashbox(user.getEmail());
+	}
 }

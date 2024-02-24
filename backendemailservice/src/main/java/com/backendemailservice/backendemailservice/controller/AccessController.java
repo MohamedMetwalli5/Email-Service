@@ -4,6 +4,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +21,8 @@ public class AccessController {
     public AccessController(UserService userService) {
         this.userService = userService;
     }
-
+    
+    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/signin")
     public ResponseEntity<String> signin(@RequestBody User user) {
         // Logic to use the implemented user service to check the database for the existence of a user with both email and password
@@ -34,6 +36,7 @@ public class AccessController {
         }
     }
     
+    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody User user) {
         Optional<User> foundUser = userService.findUser(user.getEmail(), user.getPassword());

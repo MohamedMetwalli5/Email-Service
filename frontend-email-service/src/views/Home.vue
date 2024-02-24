@@ -44,7 +44,7 @@ export default {
       // An object with user credentials
       const userData = {
         email: this.email,
-        hashedPassword: btoa(this.password)
+        password: btoa(this.password)
       };
 
       // Make a POST request to the server

@@ -32,14 +32,18 @@ public class Email {
 	@Column(name="date", nullable = false)
 	private String date;
 	
+	@Column(name="trash", nullable = false)
+	private String trash;
 	
-	public Email(String sender, String receiver, String subject, String body, String priority, String date) {
+	
+	public Email(String sender, String receiver, String subject, String body, String priority, String date, String trash) {
 		this.sender = sender;
 		this.receiver = receiver;
 		this.subject = subject;
 		this.body = body;
 		this.priority = priority;
 		this.date = date;
+		this.trash = trash;
 	}
 	
 	public Integer getEmailID() {
@@ -68,6 +72,10 @@ public class Email {
 
 	public String getDate() {
 		return date;
+	}
+	
+	public String getTrash() {
+		return trash;
 	}
 	
 

@@ -31,12 +31,13 @@
     </form>
     <h2>
       Already have an account?
-      <a style="cursor: pointer; color: blue;" onclick="window.location.href='/';">Sign in</a>
+      <a style="cursor: pointer; color: blue;" onclick="window.location.href='/signin';">Sign in</a>
     </h2>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
 
 export default {
   name: "Signup",
@@ -51,7 +52,24 @@ export default {
   },
   methods: {
     SignUp() {
-    },
+      // An object with user credentials
+      const userData = {
+        email: this.email,
+        password: btoa(this.password)
+      };
+
+      // Make a POST request to the server
+      axios.post('http://localhost:8081/signup', userData)
+        .then(response => {
+          // Handle successful response
+          console.log(response.data);
+          window.location.href='/emails';
+        })
+        .catch(error => {
+          // Handle error
+          alert("This email already exists!");
+        });
+    }
   },
 };
 </script>
