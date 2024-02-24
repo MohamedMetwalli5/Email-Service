@@ -3,23 +3,26 @@ package com.backendemailservice.backendemailservice.service;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.backendemailservice.backendemailservice.entity.Email;
+import com.backendemailservice.backendemailservice.entity.User;
+import com.backendemailservice.backendemailservice.repository.EmailRepository;
+import com.backendemailservice.backendemailservice.repository.UserRepository;
 
 @RestController
 public class EmailService {
 
-	@RequestMapping("/emails")
-	public List<Email> RequestHandler(String param) {
-		if(param.equals("Inbox")) {
-			return Arrays.asList(
-					new Email("mohamed", "ali","assignment", "1", "7/4/2022", "hello ali!"),
-					new Email("ali",  "ahmed", "club", "2", "9/6/2022", "hello ahmed!")
-			);
-		}
-		
-		return null;
+	@Autowired
+	private EmailRepository repository;
+	
+	public List<Email> loadInbox(User user){
+		return repository.loadInbox(user.getEmail());
+	}
+	
+	public List<Email> loadOutbox(User user){
+		return repository.loadOutbox(user.getEmail());
 	}
 }

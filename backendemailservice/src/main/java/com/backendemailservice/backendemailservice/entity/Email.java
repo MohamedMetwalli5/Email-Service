@@ -42,6 +42,35 @@ public class Email {
 		this.date = date;
 	}
 	
+	public Integer getEmailID() {
+		return emailID;
+	}
+
+	public String getSender() {
+		return sender;
+	}
+
+	public String getReceiver() {
+		return receiver;
+	}
+
+	public String getSubject() {
+		return subject;
+	}
+
+	public String getBody() {
+		return body;
+	}
+
+	public String getPriority() {
+		return priority;
+	}
+
+	public String getDate() {
+		return date;
+	}
+	
+
 	public Email() {
 		
 	}	
