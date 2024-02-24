@@ -48,10 +48,10 @@ export default {
       };
 
       // Make a POST request to the server
-      axios.post('https://jsonplaceholder.typicode.com/posts', userData)
+      axios.post('http://localhost:8081/signin', userData)
         .then(response => {
           // Handle successful response
-          console.log('successful Login', response.data);
+          console.log(response.data);
           window.location.href='/emails';
         })
         .catch(error => {

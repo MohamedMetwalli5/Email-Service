@@ -34,4 +34,17 @@ public class AccessController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
     }
+    
+    @PostMapping("/signup")
+    public ResponseEntity<String> signup(@RequestBody User user) {
+        Optional<User> foundUser = userService.findUser(user.getEmail(), user.getPassword());
+        if (!foundUser.isPresent()) {
+            // User doesn't exist in the database
+        	userService.createUser(user);
+            return ResponseEntity.ok().body("User created");
+        } else {
+            // User exists
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User already exists");
+        }
+    }
 }
