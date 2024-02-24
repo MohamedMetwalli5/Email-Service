@@ -20,6 +20,7 @@ public class UserService {
 	}
 
 	public Optional<User> findUser(String email, String password) {
-        return repository.checkEmailAndPassword(email, password);
+		System.out.println(repository.findUserByEmailAndPassword(email, password));
+        return repository.findUserByEmailAndPassword(email, password);
     }
 }
