@@ -12,7 +12,7 @@ public class Email {
 	@Id
 	@Column(name="emailID", nullable = false, unique = true)
 	@GeneratedValue
-	private String emailID;
+	private Integer emailID;
 	
 	@Column(name="sender", nullable = false)
 	private String sender;
