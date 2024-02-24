@@ -7,43 +7,20 @@
         Send Email ✏️
       </button>
       <div pageOptionDiv>
-        <button id="inboxBtn" class="pageOption"  
-        @click="
-              (pageOption = 'Inbox Mail📫'),
-              (folderName = 'inbox')
-        "
-        >
+        <button id="inboxBtn" class="pageOption" @click="(pageOption = 'Inbox Mail📫')">
           Inbox 📫
         </button>
       </div>
 
       <div pageOptionDiv>
-        <button
-          id="trashBtn"
-          @click="
-            // SetButtonColorTrash(),
-            (pageOption = 'Trash Box🗑️'),
-              ChangePage(),
-              (document.getElementById('pageNumberOneOption').value = true),
-              (document.getElementById('pageNumberOneOption').checked = true),
-              console.log('pageNumber'),
-              (folderName = 'Trash')
-          "
-          class="pageOption"
-        >
+        <button id="trashBtn" class="pageOption" @click="(pageOption = 'Trash Box🗑️')">
           Trash 🗑️
         </button>
       </div>
 =
       <div pageOptionDiv>
         <button
-          class="pageOption"
-          @click="
-            (pageOption = 'Sent 📧'),
-              ChangePage(),
-              (folderName = 'Sent')
-          "
-        >
+          class="pageOption" @click="(pageOption = 'Sent 📧')">
           Sent 📧
         </button>
       </div>
@@ -54,8 +31,9 @@
 
 
 
+<!-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
 
-    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
 
     <div class="displayColumn">
       <div>
@@ -151,7 +129,6 @@ export default {
       senderFilterText: "null",
       subjectFilterText: "null",
       sortText: "null",
-      folderName: "inbox",
       namePointer: 0,
       emails: [
         {
@@ -185,25 +162,55 @@ export default {
     // This functions sign the user out
     LoadEmails(LoadingMailsOption) {
       if(LoadingMailsOption === "Inbox"){
-         axios
-            .get("http://localhost:8081/Emails", {
-              params: {
-                LoadingMailsOption: "Inbox",
-              },
-            })
-            .then((response) => {
-              console.log(response);
-            })
-            .catch((e) => {
-              console.log(e);
-            });
+        // An object with user credentials
+        const userData = {
+          email: this.email,
+        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/inbox', userData)
+          .then(response => {
+            // Handle successful response
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
 
       }else if(LoadingMailsOption === "Trash"){
-
-      }else if(LoadingMailsOption === "Drafts"){
+        // An object with user credentials
+        const userData = {
+          email: this.email,
+        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/trashbox', userData)
+          .then(response => {
+            // Handle successful response
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
 
       }else if(LoadingMailsOption === "Sent"){
-
+        // An object with user credentials
+        const userData = {
+          email: this.email,
+        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/outbox', userData)
+          .then(response => {
+            // Handle successful response
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
       }
     },
     // This functions sign the user out
@@ -226,23 +233,7 @@ export default {
   /* overflow-x: hidden; */
   overflow-y: hidden;
 }
-.ButtonsGroup {
-  background-image: linear-gradient(-45deg, rgb(59, 203, 228), magenta);
-  border-radius: 2vw;
-  margin-top: 1px;
-  max-width: 100%;
-  /* height: 5%; */
-}
-.b {
-  margin: auto;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  font-size: 2vw;
-  font-style: oblique;
-  width: 10%;
-  height: 80%;
-  border-radius: 2vw;
-}
+
 #thePageTitle {
   text-align: center;
   font-size: 6.5vw;
