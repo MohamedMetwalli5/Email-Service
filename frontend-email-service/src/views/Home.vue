@@ -1,6 +1,6 @@
 <template>
   <div id="container">
-    <h1 id="title" onclick="window.location.href='/';">Seamail</h1>
+    <h1 id="title" onclick="window.location.href='/signin';">Seamail</h1>
     <form id="login-form">
       <input
         type="email"
