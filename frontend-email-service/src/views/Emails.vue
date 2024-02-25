@@ -84,10 +84,10 @@
       <table id="table-box">
         <tr id="titleRow">
           <td id="checkBoxClass">&nbsp;</td>
-          <td @click="Sort('Sender')">Sender</td>
-          <td @click="Sort('Subject')">Subject</td>
-          <td @click="Sort('Priority')">Priority</td>
-          <td @click="Sort('Date')" style="border-top-right-radius: 2vw;">Date</td>
+          <td>Sender</td>
+          <td>Subject</td>
+          <td>Priority</td>
+          <td>Date</td>
         </tr>
         <tr class="row" v-for="(email, index) in emails" :key="email.id">
           <td class="rOption">
@@ -138,11 +138,22 @@ export default {
       
     },
     deleteEmail(index){
-      // console.log('Message deleted:', index);
+      const userData = this.emails[index];
+
+      // Make a POST request to the server
+      axios.post('http://localhost:8081/deleteemail', userData)
+        .then(response => {
+          // Handle successful response
+          console.log(response.data);
+        })
+        .catch(error => {
+          // Handle error
+          console.log("Error!");
+        }
+      );
       this.emails.splice(index, 1);
     },
     readEmail(index){
-      // console.log('Message read:', index);
       alert("The Message: \n" + this.emails[index].body)
     },
     // This functions sign the user out

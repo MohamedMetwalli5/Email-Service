@@ -34,4 +34,8 @@ public class EmailService {
 		repository.save(email);
 	}
 
+	public void deleteEmail(Email email) {
+		repository.deleteById(email.getEmailID());
+	}
+
 }

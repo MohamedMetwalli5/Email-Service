@@ -62,4 +62,11 @@ public class EmailsController {
         }
     }
     
+    @CrossOrigin(origins = "http://localhost:8080")
+    @PostMapping("/deleteemail")
+    public ResponseEntity<String> deleteEmail(@RequestBody Email email) {
+    	emailService.deleteEmail(email);
+        return ResponseEntity.ok().body("Email is deleted!");    
+    }
+    
 }
