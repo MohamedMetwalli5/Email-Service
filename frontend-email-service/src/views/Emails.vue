@@ -99,10 +99,10 @@
           <td class="rOption">{{ email.date }}</td>
         </tr>
       </table>
-
-
     </div>
-    <EmailForm id="EmailForm" ref= "EmailForm" style="display: var(--visibility, none);"/>
+    
+    <EmailForm id="EmailForm" ref="EmailForm" :style="{ display: ShowEmailForm ? 'none' : 'block' }"/>
+  
   </div>
 
 </template>
@@ -129,6 +129,7 @@ export default {
       senderFilterText: "null",
       subjectFilterText: "null",
       sortText: "null",
+      ShowEmailForm:"true",
       namePointer: 0,
       emails: [
         {
@@ -150,9 +151,7 @@ export default {
   },
   methods: {
     SendEmail () {
-      TheEmailForm = this.$refs.EmailForm;
-      TheEmailForm.style.display = "block";
-      
+      this.ShowEmailForm = !this.ShowEmailForm; 
       console.log("gggggggggggggggggggggggggggggggggggg");
     },
     // This function checks the status of the user whether he is logged in or note by printing his status
