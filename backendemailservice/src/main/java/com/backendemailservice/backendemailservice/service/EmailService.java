@@ -29,4 +29,9 @@ public class EmailService {
 	public List<Email> loadTrashbox(User user) {
 		return repository.loadTrashbox(user.getEmail());
 	}
+
+	public void createEmail(Email email) {
+		repository.save(email);
+	}
+
 }

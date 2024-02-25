@@ -22,4 +22,8 @@ public class UserService {
     public Optional<User> findUser(String email, String password) {
         return repository.findUser(email, password);
     }
+    
+    public Optional<User> foundReceiver(String email) {
+    	return repository.foundReceiver(email);
+    }
 }
