@@ -135,6 +135,7 @@ export default {
 
     deleteEmail(pageOption, index){
       if(pageOption == "Inbox Mail📫"){
+        // TODO
         const userData = this.emails[index];
         console.log(userData);
         // Make a POST request to the server
