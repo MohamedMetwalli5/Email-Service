@@ -40,7 +40,7 @@ public class EmailService {
 	}
 
 	public void moveToTrashBox(Email email) {
-		repository.moveToTrashBox(email);
+		repository.moveToTrashBox(email.getEmailID());
 	}
 
 //	public List<Email> sortEmails(SortingWrapper sortingWrapper) {

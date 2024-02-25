@@ -135,21 +135,20 @@ export default {
 
     deleteEmail(pageOption, index){
       if(pageOption == "Inbox Mail📫"){
-        // TODO
-        // const userData = this.emails;
-        // console.log(userData);
-        // // Make a POST request to the server
-        // axios.post('http://localhost:8081/moveemailtotrash', userData)
-        //   .then(response => {
-        //     // Handle successful response
-        //     console.log(response.data);
-        //   })
-        //   .catch(error => {
-        //     // Handle error
-        //     console.log("Error!");
-        //   }
-        // );
-        // this.emails.splice(index, 1);
+        const userData = this.emails[index];
+        console.log(userData);
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/moveemailtotrashbox', userData)
+          .then(response => {
+            // Handle successful response
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
+        this.emails.splice(index, 1);
 
       }else{
         const userData = this.emails[index];

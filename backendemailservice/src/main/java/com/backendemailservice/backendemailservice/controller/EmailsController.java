@@ -60,7 +60,7 @@ public class EmailsController {
         }
     }
     
-    @PostMapping("/movetotrashbox")
+    @PostMapping("/moveemailtotrashbox")
     public ResponseEntity<String> moveToTrashBox(@RequestBody Email email) {
     	emailService.moveToTrashBox(email);
     	return ResponseEntity.ok().body("Moved email to trashbox!"); 
