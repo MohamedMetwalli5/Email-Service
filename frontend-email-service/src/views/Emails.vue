@@ -13,14 +13,14 @@
       </div>
 
       <div pageOptionDiv>
-        <button id="trashBtn" class="pageOption" @click="(pageOption = 'Trash Box🗑️'), (this.LoadEmails('trash'))">
+        <button id="trashBtn" class="pageOption" @click="(pageOption = 'Trash Box🗑️'), (LoadEmails('Trash'))">
           Trash 🗑️
         </button>
       </div>
-=
+
       <div pageOptionDiv>
         <button
-          class="pageOption" @click="(pageOption = 'Sent 📧'), (this.LoadEmails('sent'))">
+          class="pageOption" @click="(pageOption = 'Sent 📧'), (LoadEmails('Sent'))">
           Sent 📧
         </button>
       </div>
@@ -91,7 +91,8 @@
         </tr>
         <tr class="row" v-for="(email, index) in emails" :key="email.id">
           <td class="rOption">
-            <input type="radio" name="EmailsOption" value="false" @click="namePointer = index + 1"/>
+            <input type="button" name="EmailsOption" style="border-radius: 1vw; color: red; cursor: pointer; font-weight: bold;" value="X" @click="(deleteEmail(index))"/>
+            <input type="button" name="EmailsOption" style="border-radius: 0.5vw; color: rgb(25, 0, 255); cursor: pointer; font-weight: bold;" value="Read" @click="(readEmail(index))"/>
           </td>
           <td class="rOption">{{ email.sender }}</td>
           <td class="rOption">{{ email.subject }}</td>
@@ -124,8 +125,7 @@ export default {
       senderFilterText: "null",
       subjectFilterText: "null",
       sortText: "null",
-      ShowEmailForm:"true",
-      namePointer: 0,
+      ShowEmailForm: "true",
       emails: [],
     };
   },
@@ -136,6 +136,14 @@ export default {
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
       
+    },
+    deleteEmail(index){
+      // console.log('Message deleted:', index);
+      this.emails.splice(index, 1);
+    },
+    readEmail(index){
+      // console.log('Message read:', index);
+      alert("The Message: \n" + this.emails[index].body)
     },
     // This functions sign the user out
     LoadEmails(LoadingMailsOption) {
@@ -153,6 +161,7 @@ export default {
             response.data.forEach(email => {
               this.emails.push(email);
             });
+            console.log("Loading inbox emails!");
             console.log(response.data);
           })
           .catch(error => {
@@ -162,7 +171,6 @@ export default {
         );
 
       }else if(LoadingMailsOption === "Trash"){
-        console.log("ttttttttttttttttttttttttttt");
         // An object with user credentials
         const userData = {
           email: this.email,
@@ -176,6 +184,7 @@ export default {
             response.data.forEach(email => {
               this.emails.push(email);
             });
+            console.log("Loading trash emails!");
             console.log(response.data);
           })
           .catch(error => {
@@ -197,7 +206,8 @@ export default {
             this.emails = [];
             response.data.forEach(email => {
               this.emails.push(email);
-            });
+            });        
+            console.log("Loading sent emails!");
             console.log(response.data);
           })
           .catch(error => {
