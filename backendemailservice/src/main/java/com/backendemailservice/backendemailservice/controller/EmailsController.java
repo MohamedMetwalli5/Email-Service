@@ -43,7 +43,6 @@ public class EmailsController {
     
     @PostMapping("/trashbox")
     public List<Email> loadTrashbox(@RequestBody User user) {
-		System.out.println(user.getEmail());
     	List<Email> trashboxEmails = emailService.loadTrashbox(user);
         return trashboxEmails;
     }
@@ -59,6 +58,12 @@ public class EmailsController {
             // if receiver doesn't exist
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email wasn't sent!");
         }
+    }
+    
+    @PostMapping("/movetotrashbox")
+    public ResponseEntity<String> moveToTrashBox(@RequestBody Email email) {
+    	emailService.moveToTrashBox(email);
+    	return ResponseEntity.ok().body("Moved email to trashbox!"); 
     }
     
     @PostMapping("/deleteemail")

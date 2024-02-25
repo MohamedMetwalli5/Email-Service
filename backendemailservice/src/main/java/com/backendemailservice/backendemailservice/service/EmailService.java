@@ -39,6 +39,10 @@ public class EmailService {
 		repository.deleteById(email.getEmailID());
 	}
 
+	public void moveToTrashBox(Email email) {
+		repository.moveToTrashBox(email);
+	}
+
 //	public List<Email> sortEmails(SortingWrapper sortingWrapper) {
 //		return repository.sortEmails(sortingWrapper.getUser().getEmail(), sortingWrapper.getSortingOption());
 //	}

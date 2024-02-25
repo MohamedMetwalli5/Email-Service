@@ -85,7 +85,7 @@
         </tr>
         <tr class="row" v-for="(email, index) in emails" :key="email.id">
           <td class="rOption">
-            <input type="button" name="EmailsOption" style="border-radius: 1vw; color: red; cursor: pointer; font-weight: bold;" value="X" @click="(deleteEmail(index))"/>
+            <input type="button" name="EmailsOption" style="border-radius: 1vw; color: red; cursor: pointer; font-weight: bold;" :style="{display: allowDeletion ? 'inline-block' : 'none'}" value="X" @click="(deleteEmail(pageOption, index))"/>
             <input type="button" name="EmailsOption" style="border-radius: 0.5vw; color: rgb(25, 0, 255); cursor: pointer; font-weight: bold;" value="Read" @click="(readEmail(index))"/>
           </td>
           <td class="rOption">{{ email.sender }}</td>
@@ -115,14 +115,15 @@ export default {
     return {
       ShowEmailForm: false,
       userEmail: "example2@seamail.com",
-      pageOption: "Inbox Mail ✉️",
+      pageOption: "Inbox Mail📫",
       ShowEmailForm: "true",
+      allowDeletion: "true",
       emails: [],
     };
   },
   methods: {
     SendEmail () {
-      this.ShowEmailForm = !this.ShowEmailForm; 
+      this.ShowEmailForm = !this.ShowEmailForm;
     },
     
     
@@ -132,21 +133,39 @@ export default {
     },
 
 
-    deleteEmail(index){
-      const userData = this.emails[index];
+    deleteEmail(pageOption, index){
+      if(pageOption == "Inbox Mail📫"){
+        // TODO
+        // const userData = this.emails;
+        // console.log(userData);
+        // // Make a POST request to the server
+        // axios.post('http://localhost:8081/moveemailtotrash', userData)
+        //   .then(response => {
+        //     // Handle successful response
+        //     console.log(response.data);
+        //   })
+        //   .catch(error => {
+        //     // Handle error
+        //     console.log("Error!");
+        //   }
+        // );
+        // this.emails.splice(index, 1);
 
-      // Make a POST request to the server
-      axios.post('http://localhost:8081/deleteemail', userData)
-        .then(response => {
-          // Handle successful response
-          console.log(response.data);
-        })
-        .catch(error => {
-          // Handle error
-          console.log("Error!");
-        }
-      );
-      this.emails.splice(index, 1);
+      }else{
+        const userData = this.emails[index];
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/deleteemail', userData)
+          .then(response => {
+            // Handle successful response
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
+        this.emails.splice(index, 1);
+      }
     },
     
     
@@ -167,6 +186,7 @@ export default {
 
     LoadEmails(LoadingMailsOption) {
       if(LoadingMailsOption == "Inbox"){
+        this.allowDeletion = true;
         // An object with user credentials
         const userData = {
           email: this.userEmail,
@@ -191,6 +211,7 @@ export default {
         );
 
       }else if(LoadingMailsOption == "Trash"){
+        this.allowDeletion = true;
         // An object with user credentials
         const userData = {
           email: this.userEmail,
@@ -214,6 +235,7 @@ export default {
         );
         
       }else if(LoadingMailsOption == "Sent"){
+        this.allowDeletion = false;
         // An object with user credentials
         const userData = {
           email: this.userEmail,
@@ -249,6 +271,7 @@ export default {
   beforeMount() {
     this.CheckAuthStatus();
     this.LoadEmails("Inbox");
+    this.allowDeletion = true;
   },
 };
 </script>
