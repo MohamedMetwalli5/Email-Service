@@ -67,12 +67,6 @@
                 <button class="menuElement" @click="SortEmails('Date')">
                   Date
                 </button>
-                <button class="menuElement" @click="SortEmails('Sender')">
-                  Sender
-                </button>
-                <button class="menuElement" @click="SortEmails('Subject')">
-                  Subject
-                </button>
               </ul>
             </div>
           </li>
@@ -87,7 +81,7 @@
           <td>Sender</td>
           <td>Subject</td>
           <td>Priority</td>
-          <td>Date</td>
+          <td style="border-top-right-radius: 2vw;">Date</td>
         </tr>
         <tr class="row" v-for="(email, index) in emails" :key="email.id">
           <td class="rOption">

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.backendemailservice.backendemailservice.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.service.EmailService;
@@ -67,6 +69,13 @@ public class EmailsController {
     public ResponseEntity<String> deleteEmail(@RequestBody Email email) {
     	emailService.deleteEmail(email);
         return ResponseEntity.ok().body("Email is deleted!");    
+    }
+    
+    @CrossOrigin(origins = "http://localhost:8080")
+    @PostMapping("/sortemails")
+    public List<Email> sortEmails(@RequestBody SortingWrapper sortingWrapper) {
+    	List<Email> sortedEmails = emailService.sortEmails(sortingWrapper);
+        return sortedEmails;  
     }
     
 }

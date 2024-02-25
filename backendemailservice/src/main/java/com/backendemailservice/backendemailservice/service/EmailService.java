@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backendemailservice.backendemailservice.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
@@ -36,6 +37,10 @@ public class EmailService {
 
 	public void deleteEmail(Email email) {
 		repository.deleteById(email.getEmailID());
+	}
+
+	public List<Email> sortEmails(SortingWrapper sortingWrapper) {
+		return repository.sortEmails(sortingWrapper.getUser().getEmail(), sortingWrapper.getSortingOption());
 	}
 
 }
