@@ -101,7 +101,7 @@
       </table>
     </div>
     
-    <EmailForm id="EmailForm" ref="EmailForm" :style="{ display: ShowEmailForm ? 'none' : 'block' }"/>
+    <EmailForm id="EmailForm" ref="EmailForm" :style="{ display: ShowEmailForm ? 'none' : 'block' }" :message="userEmail"/>
   
   </div>
 
@@ -119,7 +119,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      userEmail: "example1@gmail.com",
+      userEmail: "example1@seamail.com",
       pageOption: "Inbox Mail ✉️",
       senderFilterText: "null",
       subjectFilterText: "null",

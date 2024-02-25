@@ -17,7 +17,7 @@
       <label for="Message">Message</label>
       <textarea id="Message" v-model="body" placeholder="Write something.."></textarea>
 
-      <button id="Submit" @click="send">Submit</button>
+      <button id="Submit" @click="Send">Submit</button>
     </div>
   </div>
 </template>
@@ -27,12 +27,10 @@ import axios from 'axios';
 
 export default {
   name: "EmailForm",
-  props: {
-    msg: String,
-  },
+  props: ['message'],
   data() {
     return {
-      sender: "example1@seamail.com",
+      sender: this.message,
       receiver: "",
       subject: "",
       body: "",
@@ -53,8 +51,18 @@ export default {
         trash: this.trash,
       };
 
-      console.log(userData);
-      // Perform your form submission logic here
+      // Make a POST request to the server
+      axios.post('http://localhost:8081/sendemail', userData)
+        .then(response => {
+          // Handle successful response
+          console.log(response.data);
+          window.location.reload();
+        })
+        .catch(error => {
+          // Handle error
+          alert("Couldn't send the email!");
+        }
+      );
     },
     getCurrentDate() {
       return new Date().toISOString().slice(0, 10);
