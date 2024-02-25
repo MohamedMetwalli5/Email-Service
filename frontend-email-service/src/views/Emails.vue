@@ -13,14 +13,14 @@
       </div>
 
       <div pageOptionDiv>
-        <button id="trashBtn" class="pageOption" @click="(pageOption = 'Trash Box🗑️')">
+        <button id="trashBtn" class="pageOption" @click="(pageOption = 'Trash Box🗑️'), (this.LoadEmails('trash'))">
           Trash 🗑️
         </button>
       </div>
 =
       <div pageOptionDiv>
         <button
-          class="pageOption" @click="(pageOption = 'Sent 📧')">
+          class="pageOption" @click="(pageOption = 'Sent 📧'), (this.LoadEmails('sent'))">
           Sent 📧
         </button>
       </div>
@@ -119,40 +119,19 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      userEmail: "user@seamail.com",
-      pageOption: "Inbox Mail ✉️", //the folder name
-      sender: [].fill(null),
-      subject: [].fill(null),
-      priority: [].fill(null),
-      date: [].fill(null),
-      checkMark: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      userEmail: "example1@gmail.com",
+      pageOption: "Inbox Mail ✉️",
       senderFilterText: "null",
       subjectFilterText: "null",
       sortText: "null",
       ShowEmailForm:"true",
       namePointer: 0,
-      emails: [
-        {
-          id: 1,
-          sender: 'sender1@example.com',
-          subject: 'Subject 1',
-          priority: '1',
-          date: '2020-11-24'
-        },
-        {
-          id: 2,
-          sender: 'sender2@example.com',
-          subject: 'Subject 2',
-          priority: '2',
-          date: '2021-12-23'
-        },
-      ],
+      emails: [],
     };
   },
   methods: {
     SendEmail () {
       this.ShowEmailForm = !this.ShowEmailForm; 
-      console.log("gggggggggggggggggggggggggggggggggggg");
     },
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
@@ -163,12 +142,17 @@ export default {
       if(LoadingMailsOption === "Inbox"){
         // An object with user credentials
         const userData = {
-          email: this.email,
+          email: this.userEmail,
+          password:"1",
         };
+
         // Make a POST request to the server
         axios.post('http://localhost:8081/inbox', userData)
           .then(response => {
             // Handle successful response
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
             console.log(response.data);
           })
           .catch(error => {
@@ -178,14 +162,20 @@ export default {
         );
 
       }else if(LoadingMailsOption === "Trash"){
+        console.log("ttttttttttttttttttttttttttt");
         // An object with user credentials
         const userData = {
           email: this.email,
+          password: "1"
         };
         // Make a POST request to the server
         axios.post('http://localhost:8081/trashbox', userData)
           .then(response => {
             // Handle successful response
+            this.emails = [];
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
             console.log(response.data);
           })
           .catch(error => {
@@ -198,11 +188,16 @@ export default {
         // An object with user credentials
         const userData = {
           email: this.email,
+          password: "1",
         };
         // Make a POST request to the server
         axios.post('http://localhost:8081/outbox', userData)
           .then(response => {
             // Handle successful response
+            this.emails = [];
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
             console.log(response.data);
           })
           .catch(error => {
