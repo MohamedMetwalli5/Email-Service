@@ -17,7 +17,7 @@ import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.service.EmailService;
 import com.backendemailservice.backendemailservice.service.UserService;
 
-
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class EmailsController {
     private final EmailService emailService;
@@ -29,28 +29,25 @@ public class EmailsController {
         this.userService = userService;
     }
     
-    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/inbox")
     public List<Email> loadInbox(@RequestBody User user) {
     	List<Email> inboxEmails = emailService.loadInbox(user);
         return inboxEmails;
     }
     
-    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/outbox")
     public List<Email> loadOutbox(@RequestBody User user) {
     	List<Email> outboxEmails = emailService.loadOutbox(user);
         return outboxEmails;
     }
     
-    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/trashbox")
     public List<Email> loadTrashbox(@RequestBody User user) {
+		System.out.println(user.getEmail());
     	List<Email> trashboxEmails = emailService.loadTrashbox(user);
         return trashboxEmails;
     }
     
-    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/sendemail")
     public ResponseEntity<String> sendEmail(@RequestBody Email email) {
     	Optional<User> foundReceiver = userService.foundReceiver(email.getReceiver());
@@ -64,18 +61,16 @@ public class EmailsController {
         }
     }
     
-    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/deleteemail")
     public ResponseEntity<String> deleteEmail(@RequestBody Email email) {
     	emailService.deleteEmail(email);
         return ResponseEntity.ok().body("Email is deleted!");    
     }
     
-    @CrossOrigin(origins = "http://localhost:8080")
-    @PostMapping("/sortemails")
-    public List<Email> sortEmails(@RequestBody SortingWrapper sortingWrapper) {
-    	List<Email> sortedEmails = emailService.sortEmails(sortingWrapper);
-        return sortedEmails;  
-    }
+//    @PostMapping("/sortemails")
+//    public List<Email> sortEmails(@RequestBody SortingWrapper sortingWrapper) {
+//    	List<Email> sortedEmails = emailService.sortEmails(sortingWrapper);
+//        return sortedEmails;  
+//    }
     
 }

@@ -20,8 +20,8 @@ public interface EmailRepository extends JpaRepository<Email, Integer>{
 	List<Email> loadTrashbox(String receiverEmail);
 
 ////////////////// TODO
-	@Query("'SELECT e FROM Email e WHERE e.sender = :senderEmail AND e.trash = 'No' ORDER BY e.priority ASC'")
-	List<Email> sortEmails(String email, String sortingOption);
+//	@Query("'SELECT e FROM Email e WHERE e.sender = :senderEmail AND e.trash = 'No' ORDER BY e.sortingOption ASC'")
+//	List<Email> sortEmails(String email, String sortingOption);
 
 }
 

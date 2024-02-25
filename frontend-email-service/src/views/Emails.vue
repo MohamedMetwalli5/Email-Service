@@ -7,7 +7,7 @@
         Send Email ✏️
       </button>
       <div pageOptionDiv>
-        <button id="inboxBtn" class="pageOption" @click="(pageOption = 'Inbox Mail📫')">
+        <button id="inboxBtn" class="pageOption" @click="(pageOption = 'Inbox Mail📫'), (LoadEmails('Inbox'))">
           Inbox 📫
         </button>
       </div>
@@ -114,7 +114,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      userEmail: "example1@seamail.com",
+      userEmail: "example2@seamail.com",
       pageOption: "Inbox Mail ✉️",
       ShowEmailForm: "true",
       emails: [],
@@ -166,17 +166,18 @@ export default {
 
 
     LoadEmails(LoadingMailsOption) {
-      if(LoadingMailsOption === "Inbox"){
+      if(LoadingMailsOption == "Inbox"){
         // An object with user credentials
         const userData = {
           email: this.userEmail,
-          password:"1",
+          password:"",
         };
 
         // Make a POST request to the server
         axios.post('http://localhost:8081/inbox', userData)
           .then(response => {
             // Handle successful response
+            this.emails = [];
             response.data.forEach(email => {
               this.emails.push(email);
             });
@@ -189,11 +190,11 @@ export default {
           }
         );
 
-      }else if(LoadingMailsOption === "Trash"){
+      }else if(LoadingMailsOption == "Trash"){
         // An object with user credentials
         const userData = {
-          email: this.email,
-          password: "1"
+          email: this.userEmail,
+          password: ""
         };
         // Make a POST request to the server
         axios.post('http://localhost:8081/trashbox', userData)
@@ -211,12 +212,12 @@ export default {
             console.log("Error!");
           }
         );
-
-      }else if(LoadingMailsOption === "Sent"){
+        
+      }else if(LoadingMailsOption == "Sent"){
         // An object with user credentials
         const userData = {
-          email: this.email,
-          password: "1",
+          email: this.userEmail,
+          password: "",
         };
         // Make a POST request to the server
         axios.post('http://localhost:8081/outbox', userData)
@@ -226,6 +227,7 @@ export default {
             response.data.forEach(email => {
               this.emails.push(email);
             });        
+
             console.log("Loading sent emails!");
             console.log(response.data);
           })
