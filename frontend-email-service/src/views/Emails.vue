@@ -45,12 +45,12 @@
             <div class="subMenu-2">
               <ul>
                 <div class="subMenuOption">
-                  <button class="menuElement" @click="Filter()">Subject</button>
+                  <button class="menuElement" @click="FilterEmails('Subject')">Subject</button>
                   <input type="text" id="filterSubjectText" />
                 </div>
                 
                 <div class="subMenuOption">
-                  <button class="menuElement" @click="Filter()">Sender</button>
+                  <button class="menuElement" @click="FilterEmails('Sender')">Sender</button>
                   <input type="text" id="filterSenderText" />
                 </div>
               </ul>
@@ -61,16 +61,16 @@
             Sort
             <div class="subMenu-1">
               <ul>
-                <button class="menuElement" @click=" sortText='Priority'">
+                <button class="menuElement" @click="SortEmails('Priority')">
                   Priority
                 </button>
-                <button class="menuElement" @click=" sortText='Date'">
+                <button class="menuElement" @click="SortEmails('Date')">
                   Date
                 </button>
-                <button class="menuElement" @click=" sortText='Sender'">
+                <button class="menuElement" @click="SortEmails('Sender')">
                   Sender
                 </button>
-                <button class="menuElement" @click=" sortText='Subject'">
+                <button class="menuElement" @click="SortEmails('Subject')">
                   Subject
                 </button>
               </ul>
@@ -83,7 +83,7 @@
 
       <table id="table-box">
         <tr id="titleRow">
-          <td id="checkBoxClass">&nbsp;</td>
+          <td style="border-top-left-radius: 2vw;">&nbsp;</td>
           <td>Sender</td>
           <td>Subject</td>
           <td>Priority</td>
@@ -122,9 +122,6 @@ export default {
       ShowEmailForm: false,
       userEmail: "example1@seamail.com",
       pageOption: "Inbox Mail ✉️",
-      senderFilterText: "null",
-      subjectFilterText: "null",
-      sortText: "null",
       ShowEmailForm: "true",
       emails: [],
     };
@@ -133,10 +130,14 @@ export default {
     SendEmail () {
       this.ShowEmailForm = !this.ShowEmailForm; 
     },
+    
+    
     // This function checks the status of the user whether he is logged in or note by printing his status
     CheckAuthStatus() {
       
     },
+
+
     deleteEmail(index){
       const userData = this.emails[index];
 
@@ -153,10 +154,23 @@ export default {
       );
       this.emails.splice(index, 1);
     },
+    
+    
     readEmail(index){
       alert("The Message: \n" + this.emails[index].body)
     },
-    // This functions sign the user out
+    
+    
+    SortEmails () {
+      
+    },
+    
+    
+    FilterEmails () {
+      
+    },
+
+
     LoadEmails(LoadingMailsOption) {
       if(LoadingMailsOption === "Inbox"){
         // An object with user credentials
@@ -228,10 +242,14 @@ export default {
         );
       }
     },
+
+
     // This functions sign the user out
     LogOut() {
+
     },
   },
+  
   beforeMount() {
     this.CheckAuthStatus();
     this.LoadEmails("Inbox");
@@ -456,9 +474,6 @@ export default {
   float: left;
 }
 
-#checkBoxClass{
-  border-top-left-radius: 2vw;
-}
 
 .subMenuOption{
   display: flex;
