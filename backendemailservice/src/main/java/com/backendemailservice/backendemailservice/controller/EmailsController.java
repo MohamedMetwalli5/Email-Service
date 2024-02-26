@@ -72,10 +72,10 @@ public class EmailsController {
         return ResponseEntity.ok().body("Email is deleted!");    
     }
     
-//    @PostMapping("/sortemails")
-//    public List<Email> sortEmails(@RequestBody SortingWrapper sortingWrapper) {
-//    	List<Email> sortedEmails = emailService.sortEmails(sortingWrapper);
-//        return sortedEmails;  
-//    }
+    @PostMapping("/sortemails")
+    public List<Email> sortEmails(@RequestBody SortingWrapper sortingWrapper) {
+    	List<Email> sortedEmails = emailService.sortEmails(sortingWrapper);
+        return sortedEmails;  
+    }
     
 }

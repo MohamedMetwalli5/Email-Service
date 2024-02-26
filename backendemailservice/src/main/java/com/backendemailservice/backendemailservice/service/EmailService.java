@@ -45,8 +45,8 @@ public class EmailService {
 		repository.moveToTrashBox(email.getEmailID());
 	}
 
-//	public List<Email> sortEmails(SortingWrapper sortingWrapper) {
-//		return repository.sortEmails(sortingWrapper.getUser().getEmail(), sortingWrapper.getSortingOption());
-//	}
+	public List<Email> sortEmails(SortingWrapper sortingWrapper) {
+		return repository.sortEmails(sortingWrapper.getUser().getEmail());
+	}
 
 }

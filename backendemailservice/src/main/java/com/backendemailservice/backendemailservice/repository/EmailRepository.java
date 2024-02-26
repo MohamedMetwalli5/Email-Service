@@ -23,9 +23,9 @@ public interface EmailRepository extends JpaRepository<Email, Integer>{
 	@Modifying
 	@Query("UPDATE Email e SET e.trash = 'Yes' WHERE e.emailID = :emailID")
 	void moveToTrashBox(Integer emailID);
-//
-//	@Query("'SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.priority ASC'")
-//	List<Email> sortEmails(String receiverEmail, String sortingOption);
+
+	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.priority ASC")
+	List<Email> sortEmails(String receiverEmail);
 
 }
 
