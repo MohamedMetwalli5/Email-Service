@@ -20,14 +20,12 @@ public interface EmailRepository extends JpaRepository<Email, Integer>{
 	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'Yes'")
 	List<Email> loadTrashbox(String receiverEmail);
 
-	// TODO
 	@Modifying
 	@Query("UPDATE Email e SET e.trash = 'Yes' WHERE e.emailID = :emailID")
 	void moveToTrashBox(Integer emailID);
-
-////////////////// TODO
-//	@Query("'SELECT e FROM Email e WHERE e.sender = :senderEmail AND e.trash = 'No' ORDER BY e.sortingOption ASC'")
-//	List<Email> sortEmails(String email, String sortingOption);
+//
+//	@Query("'SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.priority ASC'")
+//	List<Email> sortEmails(String receiverEmail, String sortingOption);
 
 }
 
