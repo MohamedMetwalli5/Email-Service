@@ -370,7 +370,9 @@ export default {
 
     // This functions sign the user out
     LogOut() {
-
+      this.userEmail = "";
+      //TO OD
+      window.location.href='/signin';
     },
   },
   
