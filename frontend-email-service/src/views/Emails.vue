@@ -78,7 +78,8 @@
       <table id="table-box">
         <tr id="titleRow">
           <td style="border-top-left-radius: 2vw;">&nbsp;</td>
-          <td>Sender</td>
+          <td>From</td>
+          <td>To</td>
           <td>Subject</td>
           <td>Priority</td>
           <td style="border-top-right-radius: 2vw;">Date</td>
@@ -89,6 +90,7 @@
             <input type="button" name="EmailsOption" style="border-radius: 0.5vw; color: rgb(25, 0, 255); cursor: pointer; font-weight: bold;" value="Read" @click="(readEmail(index))"/>
           </td>
           <td class="rOption">{{ email.sender }}</td>
+          <td class="rOption">{{ email.receiver }}</td>
           <td class="rOption">{{ email.subject }}</td>
           <td class="rOption">{{ email.priority }}</td>
           <td class="rOption">{{ email.date }}</td>
@@ -493,7 +495,7 @@ export default {
 
 #titleRow {
   border-top-right-radius: 2vw;
-  font-size: 4vw;
+  font-size: 3vw;
   font-weight: bolder;
   color: #ffffff;
   text-align: center;
