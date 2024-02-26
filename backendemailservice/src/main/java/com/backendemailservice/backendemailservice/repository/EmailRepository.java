@@ -25,7 +25,15 @@ public interface EmailRepository extends JpaRepository<Email, Integer>{
 	void moveToTrashBox(Integer emailID);
 
 	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.priority ASC")
-	List<Email> sortEmails(String receiverEmail);
+    List<Email> sortEmailsByPriority(String receiverEmail);
 
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.date ASC")
+    List<Email> sortEmailsByDate(String receiverEmail);
+
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.subject = :subjectEmailOption")
+    List<Email> filterEmailsBySubject(String receiverEmail, String subjectEmailOption);
+
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.sender = :senderEmailOption")
+    List<Email> filterEmailsBySender(String receiverEmail, String senderEmailOption);
 }
 

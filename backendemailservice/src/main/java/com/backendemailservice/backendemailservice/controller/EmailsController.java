@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backendemailservice.backendemailservice.FilteringWrapper;
 import com.backendemailservice.backendemailservice.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
@@ -76,6 +77,12 @@ public class EmailsController {
     public List<Email> sortEmails(@RequestBody SortingWrapper sortingWrapper) {
     	List<Email> sortedEmails = emailService.sortEmails(sortingWrapper);
         return sortedEmails;  
+    }
+    
+    @PostMapping("/filteremails")
+    public List<Email> filterEmails(@RequestBody FilteringWrapper filteringWrapper) {
+    	List<Email> filteredEmails = emailService.filterEmails(filteringWrapper);
+        return filteredEmails;  
     }
     
 }

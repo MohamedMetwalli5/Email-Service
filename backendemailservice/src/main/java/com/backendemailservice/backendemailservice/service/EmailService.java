@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backendemailservice.backendemailservice.FilteringWrapper;
 import com.backendemailservice.backendemailservice.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
@@ -46,7 +47,19 @@ public class EmailService {
 	}
 
 	public List<Email> sortEmails(SortingWrapper sortingWrapper) {
-		return repository.sortEmails(sortingWrapper.getUser().getEmail());
+		if(sortingWrapper.getSortingOption().equals("priority")) {
+			return repository.sortEmailsByPriority(sortingWrapper.getUser().getEmail());	
+		}else {
+			return repository.sortEmailsByDate(sortingWrapper.getUser().getEmail());			
+		}
+	}
+
+	public List<Email> filterEmails(FilteringWrapper filteringWrapper) {
+		if(filteringWrapper.getFilteringOption().equals("subject")) {
+			return repository.filterEmailsBySubject(filteringWrapper.getUser().getEmail(), filteringWrapper.getfilteringValue());
+		}else {
+			return repository.filterEmailsBySender(filteringWrapper.getUser().getEmail(), filteringWrapper.getfilteringValue());			
+		}
 	}
 
 }

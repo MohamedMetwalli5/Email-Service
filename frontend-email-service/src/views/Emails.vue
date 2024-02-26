@@ -114,7 +114,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      userEmail: "example2@seamail.com",
+      userEmail: "example1@seamail.com",
       pageOption: "Inbox Mail📫",
       ShowEmailForm: "true",
       allowDeletion: "true",
@@ -174,13 +174,119 @@ export default {
     },
     
     
-    SortEmails () {
-      
+    SortEmails (sortingOption) {
+      if(sortingOption == "Priority"){
+        // An object with user credentials
+        const userData = {
+                          user: {
+                            email: this.userEmail,
+                            password: ""
+                          },
+                          sortingOption: "priority"
+                        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/sortemails', userData)
+          .then(response => {
+            // Handle successful response
+            this.emails = [];
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
+            console.log("Sorted emails by priority!");
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
+
+      }else if(sortingOption == "Date"){
+        // An object with user credentials
+        const userData = {
+                          user: {
+                            email: this.userEmail,
+                            password: ""
+                          },
+                          sortingOption: "date"
+                        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/sortemails', userData)
+          .then(response => {
+            // Handle successful response
+            this.emails = [];
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
+            console.log("Sorted emails by date!");
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
+        
+      }
     },
     
     
-    FilterEmails () {
-      
+    FilterEmails(filteringOption) {
+      if(filteringOption == "Subject"){
+        // An object with user credentials
+        const userData = {
+                          user: {
+                            email: this.userEmail,
+                            password: ""
+                          },
+                          filteringOption: "subject",
+                          filteringValue: document.getElementById("filterSubjectText").value
+                        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/filteremails', userData)
+          .then(response => {
+            // Handle successful response
+            this.emails = [];
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
+            console.log("filtered emails by subject!");
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
+
+      }else if(filteringOption == "Sender"){
+        // An object with user credentials
+        const userData = {
+                          user: {
+                            email: this.userEmail,
+                            password: ""
+                          },
+                          filteringOption: "sender",
+                          filteringValue: document.getElementById("filterSenderText").value
+                        };
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/filteremails', userData)
+          .then(response => {
+            // Handle successful response
+            this.emails = [];
+            response.data.forEach(email => {
+              this.emails.push(email);
+            });
+            console.log("filtered emails by sender!");
+            console.log(response.data);
+          })
+          .catch(error => {
+            // Handle error
+            console.log("Error!");
+          }
+        );
+        
+      }
     },
 
 
