@@ -6,4 +6,5 @@
 # Email-Service
 
 ## Screenshots
-![image](https://user-images.githubusercontent.com/58489322/173130630-fc86a18c-36eb-427c-bdd4-121c2c2ee569.png)
+![image](https://github.com/MohamedMetwalli5/Email-Service/assets/58489322/75057089-344a-4112-bf68-2e91e8652d8a)
+
