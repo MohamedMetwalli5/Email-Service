@@ -10,6 +10,7 @@
         v-model="email"
         required
         class="text-box"
+        id="UserName"
       />
       <input
         type="password"
@@ -19,6 +20,7 @@
         v-model="password"
         required
         class="text-box"
+        id="Password"
       />
       <input
         type="password"
@@ -26,6 +28,7 @@
         value=""
         required
         class="text-box"
+        id="RepeatedPassword"
       />
       <input type="button" value="Sign up" id="submit" @click="SignUp()" />
     </form>
@@ -52,23 +55,32 @@ export default {
   },
   methods: {
     SignUp() {
-      // An object with user credentials
-      const userData = {
-        email: this.email,
-        password: btoa(this.password)
-      };
+      // The form filling logic
+      if(!document.getElementById("UserName").value.endsWith("@seamail.com")){
+        alert("User name must end with '@seamail.com'");
+      }else if(document.getElementById("Password").value != document.getElementById("RepeatedPassword").value){
+        alert("Please, repeat the password correctly!");
+      }else if(document.getElementById("Password").value.length < 8){
+        alert("Password length must be at least 8!");
+      }else{
+        // An object with user credentials
+        const userData = {
+          email: this.email,
+          password: btoa(this.password)
+        };
 
-      // Make a POST request to the server
-      axios.post('http://localhost:8081/signup', userData)
-        .then(response => {
-          // Handle successful response
-          console.log(response.data);
-          window.location.href='/emails';
-        })
-        .catch(error => {
-          // Handle error
-          alert("This email already exists!");
-        });
+        // Make a POST request to the server
+        axios.post('http://localhost:8081/signup', userData)
+          .then(response => {
+            // Handle successful response
+            console.log(response.data);
+            window.location.href='/emails';
+          })
+          .catch(error => {
+            // Handle error
+            alert("This email already exists!");
+          });
+      }
     }
   },
 };
