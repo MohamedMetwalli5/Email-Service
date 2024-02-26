@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-yellow.svg)
 
 # Email Service
-An email service facilitates the sending, receiving, and management of electronic messages among users. Users can send emails, manage their inbox, organize messages with folders, filter according to specific parameters, and utilize security features like message encryption.
+An email service facilitates the sending, receiving, and management of electronic messages among users. Users can send emails, manage their inboxes, organize messages with folders, filter according to specific parameters, and utilize security features like message encryption.
 
 ## Screenshots
 ![image](https://github.com/MohamedMetwalli5/Email-Service/assets/58489322/75057089-344a-4112-bf68-2e91e8652d8a)
