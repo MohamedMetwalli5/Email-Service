@@ -38,7 +38,7 @@
     <div class="displayColumn">
       <div>
         <h1 id="thePageTitle">{{ pageOption }}</h1>
-        <ul id="emailsOperationDiv">
+        <ul id="emailsOperationDiv" v-if="allowSortingAndFiltering">
           <li class="emailsOperationButton">
             Filter
             
@@ -78,8 +78,8 @@
       <table id="table-box">
         <tr id="titleRow">
           <td style="border-top-left-radius: 2vw;">&nbsp;</td>
-          <td>From</td>
-          <td>To</td>
+          <td v-if="showSender">From</td>
+          <td v-if="showReceiver">To</td>
           <td>Subject</td>
           <td>Priority</td>
           <td style="border-top-right-radius: 2vw;">Date</td>
@@ -89,8 +89,8 @@
             <input type="button" name="EmailsOption" style="border-radius: 1vw; color: red; cursor: pointer; font-weight: bold;" :style="{display: allowDeletion ? 'inline-block' : 'none'}" value="X" @click="(deleteEmail(pageOption, index))"/>
             <input type="button" name="EmailsOption" style="border-radius: 0.5vw; color: rgb(25, 0, 255); cursor: pointer; font-weight: bold;" value="Read" @click="(readEmail(index))"/>
           </td>
-          <td class="rOption">{{ email.sender }}</td>
-          <td class="rOption">{{ email.receiver }}</td>
+          <td v-if="showSender" class="rOption">{{ email.sender }}</td>
+          <td v-if="showReceiver" class="rOption">{{ email.receiver }}</td>
           <td class="rOption">{{ email.subject }}</td>
           <td class="rOption">{{ email.priority }}</td>
           <td class="rOption">{{ email.date }}</td>
@@ -120,6 +120,9 @@ export default {
       pageOption: "Inbox Mail📫",
       ShowEmailForm: "true",
       allowDeletion: "true",
+      showSender: "true",
+      showReceiver: "true",
+      allowSortingAndFiltering: "true",
       emails: [],
     };
   },
@@ -295,6 +298,9 @@ export default {
     LoadEmails(LoadingMailsOption) {
       if(LoadingMailsOption == "Inbox"){
         this.allowDeletion = true;
+        this.showSender = true;
+        this.showReceiver = false;
+        this.allowSortingAndFiltering = true;
         // An object with user credentials
         const userData = {
           email: this.userEmail,
@@ -320,6 +326,9 @@ export default {
 
       }else if(LoadingMailsOption == "Trash"){
         this.allowDeletion = true;
+        this.showSender = true;
+        this.showReceiver = false;
+        this.allowSortingAndFiltering = false;
         // An object with user credentials
         const userData = {
           email: this.userEmail,
@@ -344,6 +353,9 @@ export default {
         
       }else if(LoadingMailsOption == "Sent"){
         this.allowDeletion = false;
+        this.showSender = false;
+        this.showReceiver = true;
+        this.allowSortingAndFiltering = false;
         // An object with user credentials
         const userData = {
           email: this.userEmail,
