@@ -7,4 +7,4 @@
 An email service facilitates the sending, receiving, and management of electronic messages among users. Users can send emails, manage their inboxes, organize messages with folders, filter according to specific parameters, and utilize security features like message encryption.
 
 # Screenshot
-![image](https://github.com/MohamedMetwalli5/Email-Service/assets/58489322/0a7786ed-14ef-4e11-bea0-9680861e6071)
+![image](https://github.com/MohamedMetwalli5/Email-Service/assets/58489322/6548562d-7edc-41fa-8e22-2d980e4af8e1)
