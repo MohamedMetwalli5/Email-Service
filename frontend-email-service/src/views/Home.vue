@@ -27,6 +27,7 @@
 
 <script>
 import axios from 'axios';
+import {SharedUserEmail} from "../SharedStorage.js"
 
 export default {
   name: "Home",
@@ -56,6 +57,7 @@ export default {
         .then(response => {
           // Handle successful response
           console.log(response.data);
+          SharedUserEmail.setUserEmail(this.email);
           window.location.href='/emails';
         })
         .catch(error => {

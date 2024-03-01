@@ -107,6 +107,7 @@
 <script>
 import EmailForm from '../components/EmailForm';
 const axios = require("axios").default;
+import { SharedUserEmail } from '@/SharedStorage';
 
 export default {
   name: "Emails",
@@ -116,6 +117,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
+      // userEmail: SharedUserEmail.TheUserEmail,
       userEmail: "example1@seamail.com",
       pageOption: "Inbox Mail📫",
       ShowEmailForm: "true",
