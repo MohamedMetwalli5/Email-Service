@@ -131,13 +131,6 @@ export default {
       this.ShowEmailForm = !this.ShowEmailForm;
       alert(cachedValue);
     },
-    
-    
-    // This function checks the status of the user whether he is logged in or note by printing his status
-    CheckAuthStatus() {
-      
-    },
-
 
     deleteEmail(pageOption, index){
       if(pageOption == "Inbox Mail📫"){
@@ -394,7 +387,9 @@ export default {
   
   beforeMount() {
     this.userEmail = localStorage.getItem('cachedUserEmail');
-    this.CheckAuthStatus();
+    if(this.userEmail == null){
+      window.location.href='/signin';
+    }
     this.LoadEmails("Inbox");
     this.allowDeletion = true;
   },
