@@ -41,10 +41,14 @@ export default {
   },
   methods: {
     SignIn() {
+      const sha256 = require('js-sha256');
+      const dataToHash = this.password; // Data to hash
+      const hashedData = sha256(dataToHash); // Generate the hash using SHA-256
+      
       // An object with user credentials
       const userData = {
         email: this.email,
-        password: btoa(this.password)
+        password: hashedData
       };
 
       // Make a POST request to the server
