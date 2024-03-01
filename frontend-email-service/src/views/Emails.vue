@@ -107,7 +107,6 @@
 <script>
 import EmailForm from '../components/EmailForm';
 const axios = require("axios").default;
-import { SharedUserEmail } from '@/SharedStorage';
 
 export default {
   name: "Emails",
@@ -117,8 +116,7 @@ export default {
   data: function () {
     return {
       ShowEmailForm: false,
-      // userEmail: SharedUserEmail.TheUserEmail,
-      userEmail: "example1@seamail.com",
+      userEmail: "",
       pageOption: "Inbox Mail📫",
       ShowEmailForm: "true",
       allowDeletion: "true",
@@ -131,6 +129,7 @@ export default {
   methods: {
     SendEmail () {
       this.ShowEmailForm = !this.ShowEmailForm;
+      alert(cachedValue);
     },
     
     
@@ -387,12 +386,14 @@ export default {
     // This functions sign the user out
     LogOut() {
       this.userEmail = "";
+      localStorage.removeItem('cachedUserEmail');
       //TO OD
       window.location.href='/signin';
     },
   },
   
   beforeMount() {
+    this.userEmail = localStorage.getItem('cachedUserEmail');
     this.CheckAuthStatus();
     this.LoadEmails("Inbox");
     this.allowDeletion = true;
@@ -461,12 +462,12 @@ export default {
 }
 
 .pageOption {
-  width: 21vw;
+  width: 20vw;
   border-radius: 2vw;
   border: solid;
   color: green;
   background: white;
-  font-size: 4vw;
+  font-size: 3vw;
   font-weight: bold;
   margin-bottom: 4vw;
   cursor: pointer;
