@@ -56,9 +56,9 @@ public class EmailService {
 
 	public List<Email> filterEmails(FilteringWrapper filteringWrapper) {
 		if(filteringWrapper.getFilteringOption().equals("subject")) {
-			return repository.filterEmailsBySubject(filteringWrapper.getUser().getEmail(), filteringWrapper.getfilteringValue());
+			return repository.filterEmailsBySubject(filteringWrapper.getUser().getEmail(), filteringWrapper.getFilteringValue());
 		}else {
-			return repository.filterEmailsBySender(filteringWrapper.getUser().getEmail(), filteringWrapper.getfilteringValue());			
+			return repository.filterEmailsBySender(filteringWrapper.getUser().getEmail(), filteringWrapper.getFilteringValue());			
 		}
 	}
 
