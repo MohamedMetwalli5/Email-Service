@@ -77,15 +77,17 @@ public class AccessControllerTest {
 
     @Test
     public void testSignUp_Success() throws Exception {
-        User user = new User("test8@example.com", "password");
-        String expectedToken = jwtUtil.generateToken(user.getEmail());
+        String email = "test10@example.com";
+        String password = "password";
+        User user = new User(email, password);
+        String expectedToken = jwtUtil.generateToken(email);
 
-        when(userService.findUser(eq("test8@example.com"), anyString())).thenReturn(Optional.empty());
-        when(jwtUtil.generateToken(user.getEmail())).thenReturn(expectedToken);
+        when(userService.findUser(eq(email), eq(password))).thenReturn(Optional.empty());
+        when(jwtUtil.generateToken(eq(email))).thenReturn(expectedToken);
         
         mockMvc.perform(post("/signup")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"test8@example.com\",\"password\":\"password\"}"))
+                .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
                 .andExpect(status().isCreated()) // Expecting 201 Created
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("User created successfully"))
