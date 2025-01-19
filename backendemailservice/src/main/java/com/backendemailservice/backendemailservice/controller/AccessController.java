@@ -18,6 +18,8 @@ import com.backendemailservice.backendemailservice.util.*;
 
 @RestController
 public class AccessController {
+	@Value("${cors.allowed.origin}")
+    private String allowedOrigin;
 	
     private final UserService userService;
     private final JwtUtil jwtUtil;
@@ -41,7 +43,7 @@ public class AccessController {
     }
 
     
-    @CrossOrigin(origins = "http://localhost:8080")
+//    @CrossOrigin(origins = "http://localhost:8080")
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody User user) {
         if (user.getEmail() == null || user.getEmail().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
