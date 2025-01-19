@@ -40,6 +40,7 @@ const SignUpPage = () => {
               type="email"
               id="email"
               name="email"
+              placeholder="example@seamail.com"
               value={formData.email}
               onChange={handleInputChange}
               className="w-full p-3 mt-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -52,6 +53,7 @@ const SignUpPage = () => {
               type="password"
               id="password"
               name="password"
+              placeholder="••••••••"
               value={formData.password}
               onChange={handleInputChange}
               className="w-full p-3 mt-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -64,6 +66,7 @@ const SignUpPage = () => {
               type="password"
               id="confirmPassword"
               name="confirmPassword"
+              placeholder="••••••••"
               value={formData.confirmPassword}
               onChange={handleInputChange}
               className="w-full p-3 mt-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
