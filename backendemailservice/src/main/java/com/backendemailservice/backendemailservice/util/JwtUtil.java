@@ -32,9 +32,13 @@ public class JwtUtil {
         return extractClaims(token).getSubject();
     }
 
-    // Validating the token by checking its email and expiry status
+    // Validating the token by checking its email and expiration status
     public boolean isTokenValid(String token, String email) {
-        return email.equals(extractEmail(token)) && !isTokenExpired(token);
+        try {
+            return email.equals(extractEmail(token)) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false; // If there is an exception (like invalid token), we return false
+        }
     }
 
     // Checking if the token has expired
