@@ -1,7 +1,7 @@
-![Frontend](https://img.shields.io/badge/Frontend-React.js%20-yellow.svg)
+![Frontend](https://img.shields.io/badge/Frontend-React.js%20-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-SpringBoot%20-green.svg)
-![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-red.svg)
-![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-purple.svg)
+![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-orange.svg)
+![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-yellow.svg)
 
 
 # Seamail: An Email Service
