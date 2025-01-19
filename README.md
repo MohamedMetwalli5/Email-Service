@@ -30,5 +30,5 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
   - `AccessControllerTest`: Tests for user authentication endpoints like sign-in and sign-up.
   - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.
 
-# Screenshot
+## Screenshot
 ![image](https://github.com/MohamedMetwalli5/Email-Service/assets/58489322/a913b19f-f627-45d3-8dfd-9a3de5d98cd5)
