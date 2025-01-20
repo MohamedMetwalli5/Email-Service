@@ -4,9 +4,13 @@ import { FaLocationArrow, FaPlus } from "react-icons/fa";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { PiSignOutBold } from "react-icons/pi";
 import SeamailWebsiteLogo from "../../public/SeamailWebsiteLogo.svg";
+import { useNavigate } from 'react-router-dom';
 
 
 const Sidebar = () => {
+
+  const navigate = useNavigate();
+
   return (
     <div className="flex h-screen bg-gradient-to-b from-gray-900 to-gray-800">
       <aside
@@ -14,7 +18,9 @@ const Sidebar = () => {
         className="w-64 bg-gray-900 border-r border-gray-700 shadow-lg flex flex-col h-screen"
       >
         <div className="flex flex-col h-full px-4 py-6 overflow-y-auto">
-          <a href="/home" className="flex items-center px-4 mb-6">
+          <a className="flex items-center px-4 mb-6 hover:cursor-pointer" 
+            onClick={() => navigate("/home")}
+          >
             <img
               src={SeamailWebsiteLogo}
               className="h-10 mr-3"

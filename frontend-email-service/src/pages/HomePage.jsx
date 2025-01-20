@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import MainContent from '../components/MainContent';
+import HomeMainContent from '../components/HomeMainContent';
 
 
 const HomePage = () => {
@@ -11,7 +11,7 @@ const HomePage = () => {
       <div className="flex flex-col flex-1">
         <Navbar />
         <div className="flex-1 mt-auto p-4">
-          <MainContent />
+          <HomeMainContent />
         </div>
       </div>
     </div>
