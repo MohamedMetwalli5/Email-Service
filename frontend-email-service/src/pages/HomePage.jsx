@@ -10,7 +10,7 @@ const HomePage = () => {
       <Sidebar />
       <div className="flex flex-col flex-1">
         <Navbar />
-        <div className="flex-1 mt-16 p-4">
+        <div className="flex-1 mt-auto p-4">
           <MainContent />
         </div>
       </div>
