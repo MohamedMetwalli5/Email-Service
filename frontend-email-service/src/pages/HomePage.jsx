@@ -1,9 +1,21 @@
-import React from 'react'
+import React from 'react';
+import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar';
+import MainContent from '../components/MainContent';
+
 
 const HomePage = () => {
   return (
-    <div>HomePage</div>
-  )
-}
+    <div className="flex h-screen bg-gray-700">
+      <Sidebar />
+      <div className="flex flex-col flex-1">
+        <Navbar />
+        <div className="flex-1 mt-16 p-4">
+          <MainContent />
+        </div>
+      </div>
+    </div>
+  );
+};
 
-export default HomePage
+export default HomePage;
