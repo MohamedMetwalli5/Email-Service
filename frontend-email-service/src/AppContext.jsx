@@ -19,6 +19,11 @@ const DataProvider = ({ children }) => {
         return localStorage.getItem('sharedEmailToFullyView') || {};
     });
 
+    // Retrieving the initial value for authToken from local storage or null
+    const [authToken, setAuthToken] = useState(() => {
+        return localStorage.getItem('authToken') || null;
+      });
+
     // Updating the local storage whenever the sharedUserEmail state changes
     useEffect(() => {
         localStorage.setItem('sharedUserEmail', sharedUserEmail);
@@ -34,8 +39,13 @@ const DataProvider = ({ children }) => {
         localStorage.setItem('sharedEmailToFullyView', sharedEmailToFullyView);
     }, [sharedEmailToFullyView]);
 
+    // Updating the local storage whenever the authToken state changes
+    useEffect(() => {
+        localStorage.setItem('authToken', authToken);
+      }, [authToken]);
+      
     return (
-        <AppContext.Provider value={{ sharedUserEmail, setSharedUserEmail, sharedMailBoxOption, setSharedMailBoxOption, sharedEmailToFullyView, setSharedEmailToFullyView }}>
+        <AppContext.Provider value={{ sharedUserEmail, setSharedUserEmail, sharedMailBoxOption, setSharedMailBoxOption, sharedEmailToFullyView, setSharedEmailToFullyView , authToken, setAuthToken}}>
             {children}
         </AppContext.Provider>
     );

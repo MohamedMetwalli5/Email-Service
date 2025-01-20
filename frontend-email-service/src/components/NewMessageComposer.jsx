@@ -1,6 +1,15 @@
 import React, { useState } from "react";
+import { useContext } from 'react';
+import { AppContext } from '../AppContext.jsx';
+import axios from "axios";
+
 
 const NewMessageComposer = ({ onClose }) => {
+
+  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+
+  const { authToken } = useContext(AppContext);
+
   const [formData, setFormData] = useState({
     receiver: "",
     subject: "",
@@ -17,9 +26,18 @@ const NewMessageComposer = ({ onClose }) => {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    console.log("Message Data: ", formData);
+    try {
+      const response = await axios.post(`${backendUrl}/sendemail`, formData, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      console.log(response.data);
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+    }
     onClose();
   };
 

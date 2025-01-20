@@ -9,6 +9,7 @@ const SignInPage = () => {
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
   
   const { setSharedUserEmail } = useContext(AppContext);
+  const { setAuthToken } = useContext(AppContext);
 
   const navigate = useNavigate();
 
@@ -29,11 +30,11 @@ const SignInPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(`${backendUrl}/signin`, formData);
-      const { token } = response.data;
+      const token = response.data.split(' ')[1];
 
-      localStorage.setItem("authToken", token);
+      setAuthToken(token);
       setSharedUserEmail(formData.email);
-      console.log("User added and token stored:", response.data);
+      console.log("User signed in and token stored:", token);
       
       navigate("/home");
     } catch (error) {
