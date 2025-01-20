@@ -49,7 +49,7 @@ const EmailFullView = () => {
         <FaRegTrashCan size={20} />
       </button>
 
-      <h2 className="text-xl font-semibold mb-4">{email.subject}</h2>
+      <h2 className="text-xl font-semibold mb-4 mr-4">{email.subject}</h2>
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <p className="text-sm font-medium">
@@ -67,8 +67,10 @@ const EmailFullView = () => {
           </p>
         </div>
 
-        <div className="mt-4 bg-gray-200 rounded p-2">
-          <p className="text-sm text-black mt-2">{email.body}</p>
+        <div className="border-t border-gray-700 my-2"></div>
+
+        <div className="mt-4 rounded p-2">
+          <p className="text-sm mt-2">{email.body}</p>
         </div>
       </div>
     </div>

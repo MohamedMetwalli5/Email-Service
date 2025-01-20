@@ -1,21 +1,26 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { LuInbox } from "react-icons/lu";
 import { FaLocationArrow, FaPlus } from "react-icons/fa";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { PiSignOutBold } from "react-icons/pi";
 import SeamailWebsiteLogo from "../../public/SeamailWebsiteLogo.svg";
 import { useNavigate } from 'react-router-dom';
+import NewMessageComposer from './NewMessageComposer';
 
 
 const Sidebar = () => {
 
+  const [isComposerOpen, setComposerOpen] = useState(false);
+  
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+    <div className="flex h-full bg-gradient-to-b from-gray-900 to-gray-800">
       <aside
         id="sidebar"
-        className="w-64 bg-gray-900 border-r border-gray-700 shadow-lg flex flex-col h-screen"
+        className={`${
+          isComposerOpen ? "w-80" : "w-64"
+        } bg-gray-900 border-r border-gray-700 shadow-lg flex flex-col h-screen`}
       >
         <div className="flex flex-col h-full px-4 py-6 overflow-y-auto">
           <a className="flex items-center px-4 mb-6 hover:cursor-pointer" 
@@ -31,11 +36,15 @@ const Sidebar = () => {
           <ul className="space-y-4 flex-grow">
             <li>
               <a
+                onClick={() => setComposerOpen(true)}
                 className="flex items-center p-3 text-gray-200 bg-yellow-500 rounded-lg hover:bg-yellow-600 hover:cursor-pointer transition-all duration-300"
               >
                 <FaPlus />
                 <span className="ml-3 font-medium text-white">New message</span>
               </a>
+              {isComposerOpen && (
+                <NewMessageComposer onClose={() => setComposerOpen(false)} />
+              )}
             </li>
             <li>
               <a

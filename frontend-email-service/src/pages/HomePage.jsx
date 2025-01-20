@@ -6,7 +6,7 @@ import HomeMainContent from '../components/HomeMainContent';
 
 const HomePage = () => {
   return (
-    <div className="flex h-screen bg-gray-700">
+    <div className="flex h-full w-full bg-gray-700">
       <Sidebar />
       <div className="flex flex-col flex-1">
         <Navbar />
