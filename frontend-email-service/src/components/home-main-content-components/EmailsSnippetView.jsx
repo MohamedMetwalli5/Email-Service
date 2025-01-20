@@ -1,7 +1,11 @@
 import React, { useState } from "react";
+import { useContext } from 'react';
+import { AppContext } from '../../AppContext.jsx';
 
 const EmailsSnippetView = () => {
-  const title = "Inbox";
+
+  const { sharedMailBoxOption } = useContext(AppContext);
+  const { setSharedEmailToFullyView } = useContext(AppContext);
 
   const [filterType, setFilterType] = useState("");
   const [filterText, setFilterText] = useState("");
@@ -13,6 +17,7 @@ const EmailsSnippetView = () => {
       sender: "test1@example.com",
       subject: "Meeting Reminder",
       priority: 1,
+      body: "body1",
       date: "2025-01-20",
     },
     {
@@ -20,6 +25,7 @@ const EmailsSnippetView = () => {
       sender: "test2@example.com",
       subject: "Special Event!",
       priority: 2,
+      body: "body2",
       date: "2025-01-19",
     },
     {
@@ -27,35 +33,8 @@ const EmailsSnippetView = () => {
       sender: "test3@example.com",
       subject: "Follow-Up",
       priority: 3,
+      body: "body3",
       date: "2025-01-18",
-    },
-    {
-      id: 4,
-      sender: "test4@example.com",
-      subject: "Important Notice",
-      priority: 1,
-      date: "2025-01-17",
-    },
-    {
-      id: 5,
-      sender: "test5@example.com",
-      subject: "Event Reminder",
-      priority: 2,
-      date: "2025-01-16",
-    },
-    {
-      id: 6,
-      sender: "test6@example.com",
-      subject: "Feedback Request",
-      priority: 3,
-      date: "2025-01-15",
-    },
-    {
-      id: 7,
-      sender: "test7@example.com",
-      subject: "New Feature Announcement",
-      priority: 1,
-      date: "2025-01-14",
     },
   ];
 
@@ -84,7 +63,7 @@ const EmailsSnippetView = () => {
 
   return (
     <div className="flex flex-col bg-gray-900 w-fit p-4 rounded-lg h-full text-gray-100">
-      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+      <h2 className="text-2xl font-semibold mb-4">{sharedMailBoxOption}</h2>
 
       <div className="flex space-x-4 mb-4 text-center">
         <div className="flex flex-col">
@@ -129,7 +108,7 @@ const EmailsSnippetView = () => {
 
       <div className="flex justify-center">
         <button
-          className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
+          className="bg-green-500 text-white py-2 px-4 rounded mb-4"
           onClick={handleSendOptions}
         >
           Send
@@ -142,6 +121,7 @@ const EmailsSnippetView = () => {
             <li
               key={email.id}
               className="flex flex-col p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors hover:cursor-pointer"
+              onClick={() => setSharedEmailToFullyView(email)}
             >
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium text-gray-200">

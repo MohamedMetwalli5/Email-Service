@@ -1,18 +1,15 @@
 import React, { useState } from "react";
 import { FaRegTrashCan } from "react-icons/fa6";
-
+import { useContext } from 'react';
+import { AppContext } from '../../AppContext.jsx';
 
 const EmailFullView = () => {
+  
+  const { sharedEmailToFullyView } = useContext(AppContext);
+  
   const [isDeleted, setIsDeleted] = useState(false);
-
-  const email = {
-    id: 1,
-    sender: "test1@example.com",
-    subject: "Meeting Reminder",
-    priority: 1,
-    date: "2025-01-20",
-    body: "This is a reminder for the upcoming meeting scheduled for 2025-01-18 at 11:00 AM."
-  };
+  
+  const email = sharedEmailToFullyView
 
   const getPriorityColor = (priority) => {
     switch (priority) {

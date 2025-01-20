@@ -6,9 +6,13 @@ import { PiSignOutBold } from "react-icons/pi";
 import SeamailWebsiteLogo from "../../public/SeamailWebsiteLogo.svg";
 import { useNavigate } from 'react-router-dom';
 import NewMessageComposer from './NewMessageComposer';
+import { useContext } from 'react';
+import { AppContext } from '../AppContext.jsx';
 
 
 const Sidebar = () => {
+
+  const { setSharedMailBoxOption } = useContext(AppContext);
 
   const [isComposerOpen, setComposerOpen] = useState(false);
   
@@ -49,6 +53,7 @@ const Sidebar = () => {
             <li>
               <a
                 className="flex items-center p-3 text-gray-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-all duration-300"
+                onClick={() => setSharedMailBoxOption("Inbox")}
               >
                 <LuInbox />
                 <span className="ml-3 font-medium text-white">Inbox</span>
@@ -57,6 +62,7 @@ const Sidebar = () => {
             <li>
               <a
                 className="flex items-center p-3 text-gray-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-all duration-300"
+                onClick={() => setSharedMailBoxOption("Outbox")}
               >
                 <FaLocationArrow />
                 <span className="ml-3 font-medium text-white">Sent</span>
@@ -65,6 +71,7 @@ const Sidebar = () => {
             <li>
               <a
                 className="flex items-center p-3 text-gray-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-all duration-300"
+                onClick={() => setSharedMailBoxOption("Trashbox")}
               >
                 <FaRegTrashCan />
                 <span className="ml-3 font-medium text-white">Trash</span>
@@ -74,9 +81,14 @@ const Sidebar = () => {
           <li className="mt-auto">
             <a
               className="flex items-center p-3 text-gray-200 bg-red-500 rounded-lg hover:bg-red-600 hover:cursor-pointer transition-all duration-300"
+              onClick={() => {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('sharedUserEmail');
+                navigate('/');
+              }}
             >
               <PiSignOutBold />
-              <span className="ml-3 font-medium text-white">Sign out</span>
+              <span className="ml-3 font-medium text-white"> Sign out</span>
             </a>
           </li>
         </div>

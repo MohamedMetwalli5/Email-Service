@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useContext } from 'react';
+import { AppContext } from '../AppContext.jsx';
 
 const SignInPage = () => {
+
+  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+  
+  const { setSharedUserEmail } = useContext(AppContext);
+
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -14,9 +25,21 @@ const SignInPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    alert("Signed in successfully!");
+    try {
+      const response = await axios.post(`${backendUrl}/signin`, formData);
+      const { token } = response.data;
+
+      localStorage.setItem("authToken", token);
+      setSharedUserEmail(formData.email);
+      console.log("User added and token stored:", response.data);
+      
+      navigate("/home");
+    } catch (error) {
+      console.error("Error adding user:", error.response?.data || error.message);
+      alert("An error occurred during sign-in. Please try again.");
+    }
   };
 
   return (

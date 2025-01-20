@@ -6,16 +6,20 @@ import SignUpPage from './pages/SignUpPage';
 import SignInPage from './pages/SignInPage';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
+import {DataProvider} from '../src/AppContext.jsx';
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Router>
-      <Routes>
-        <Route path="/" element={<SignUpPage />} />
-        <Route path="/signin" element={<SignInPage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Routes>
+      <DataProvider>
+        <Routes>
+          <Route path="/" element={<SignUpPage />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Routes>
+      </DataProvider>
     </Router>
   </StrictMode>
 );

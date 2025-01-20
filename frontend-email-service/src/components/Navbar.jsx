@@ -1,11 +1,18 @@
 import React from 'react';
 import PersonalPhoto from '../assets/PersonalPhoto.png';
 import { useNavigate } from 'react-router-dom';
+import { useContext } from "react";
+import { AppContext } from '../AppContext.jsx';
 
 
 const Navbar = () => {
 
-  const userEmail = "mohamedmetwalli5@seamail.com"
+  const { sharedUserEmail } = useContext(AppContext);
+  const userEmail = sharedUserEmail
+
+  if(!sharedUserEmail){
+    alert("Please, sign in.");
+  }
 
   const navigate = useNavigate();
 

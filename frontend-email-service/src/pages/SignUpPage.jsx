@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { AppContext } from '../AppContext.jsx';
+import { useContext } from 'react';
 
 const SignUpPage = () => {
+
+  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+
+  const { setSharedUserEmail } = useContext(AppContext);
+
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,15 +28,30 @@ const SignUpPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+    if (formData.password.length < 8) {
+      alert("Password must be at least 8 characters long!");
+      return;
+    }else if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
       return;
     }
     signUp();
   };
 
-  const signUp =() => {
-    alert("signed up!");
+  const signUp = async() => {
+    try {
+      const response = await axios.post(`${backendUrl}/signup`, formData);
+      const { token } = response.data;
+
+      localStorage.setItem("authToken", token);
+      setSharedUserEmail(formData.email);
+      console.log("User added and token stored:", response.data);
+      
+      navigate("/home");
+    } catch (error) {
+      console.error("Error adding user:", error.response?.data || error.message);
+      alert("An error occurred during sign-up. Please try again.");
+    }
   }
 
   return (
