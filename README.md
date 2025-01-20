@@ -1,4 +1,4 @@
-![SeamailWebsiteLogo](https://github.com/user-attachments/assets/7435ff5e-ede3-42b0-9c8a-52c6a0496620)![Frontend](https://img.shields.io/badge/Frontend-React.js%20-blue.svg)
+![Frontend](https://img.shields.io/badge/Frontend-React.js%20-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-SpringBoot%20-green.svg)
 ![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-orange.svg)
 ![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-yellow.svg)
