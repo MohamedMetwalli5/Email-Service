@@ -54,10 +54,10 @@ VITE_BACKEND_API_URL=http://localhost:8081
 5. The frontend will start on http://localhost:8080
 
 
-## Testing
+# Testing
 Seamail includes comprehensive unit tests to ensure reliability and functionality. These tests are built using JUnit and Mockito.
 
-### Test Structure
+## Test Structure
 - **Service Tests**: Tests for the business logic in the service layer.
   - `UserServiceTest`: Validates user creation, finding users, and checking non-existent users.
   - `EmailServiceTest`: Verifies email creation, loading inbox/outbox/trashbox, filtering, sorting, and moving emails to trash.
@@ -67,7 +67,6 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
   - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.
 
 
-## Logo Idea
+# Logo Idea
 The Seamail logo combines an envelope with dynamic wave patterns, symbolizing seamless communication. It reflects the efficient, modern, and user-friendly email service.
-
 ![Seamail - Website Logo](https://github.com/user-attachments/assets/c791622c-62a6-4ac0-95da-13996c60020f)
