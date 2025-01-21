@@ -24,7 +24,15 @@ Seamail is an email service designed to enhance user interactions with their ema
 
 # Setup Instructions
 If you want to replicate the project on your local environment, follow these steps:
+
 ## Backend Setup
+1. Navigate to the Backend Directory 
+```cd backendemailservice```
+2. Clean and Install dependencies
+```mvn clean install```
+3. Navigate to the `target` folder using ```cd target```
+4. Run the JAR file ```java -jar backendemailservice-0.0.1-SNAPSHOT.jar```
+5. The backend will start on ```http://localhost:8080```
 
 ## Frontend Setup
 1. Navigate to the Frontend Directory
