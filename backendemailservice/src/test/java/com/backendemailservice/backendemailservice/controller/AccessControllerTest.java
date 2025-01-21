@@ -49,9 +49,9 @@ public class AccessControllerTest {
 
     @Test
     public void testSignIn_Success() throws Exception {
-        User user = new User("example9@seamail.com", "nebtit11");
+        User user = new User("example90@seamail.com", "nebtit11");
 
-        when(userService.findUser("example9@seamail.com", "nebtit11")).thenReturn(Optional.of(user));
+        when(userService.findUser("example90@seamail.com", "nebtit11")).thenReturn(Optional.of(user));
         
         // Dynamically generating the token to reflect how it's created in the actual implementation
         String expectedToken = jwtUtil.generateToken(user.getEmail());
@@ -59,7 +59,7 @@ public class AccessControllerTest {
 
         mockMvc.perform(post("/signin")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"example9@seamail.com\",\"password\":\"nebtit11\"}"))
+                .content("{\"email\":\"example90@seamail.com\",\"password\":\"nebtit11\"}"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Bearer " + expectedToken));
     }

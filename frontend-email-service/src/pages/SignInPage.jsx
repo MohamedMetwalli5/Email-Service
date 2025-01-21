@@ -35,7 +35,6 @@ const SignInPage = () => {
   const handleSubmit = async(e) => {
     e.preventDefault();
     formData.password = handleHashPassword(formData.password);
-    console.log(formData.password);
     try {
       const response = await axios.post(`${backendUrl}/signin`, formData);
       const token = response.data.split(' ')[1];

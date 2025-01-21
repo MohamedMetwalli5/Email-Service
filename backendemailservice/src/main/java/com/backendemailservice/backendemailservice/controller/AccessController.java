@@ -55,6 +55,11 @@ public class AccessController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "User already exists"));
         }
+        
+        if (!user.getEmail().endsWith("@seamail.com")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Emails must end with @seamail.com"));
+        }
 
         userService.createUser(user);
 

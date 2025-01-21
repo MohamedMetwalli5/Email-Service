@@ -4,6 +4,7 @@ import axios from 'axios';
 import { AppContext } from '../AppContext.jsx';
 import { useContext } from 'react';
 import hash from 'hash.js';
+import LeftCharactersSticker from "../assets/LeftCharactersSticker.png";
 
 
 const SignUpPage = () => {
@@ -41,6 +42,9 @@ const SignUpPage = () => {
     }else if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
+    }else if (!formData.email.endsWith("@seamail.com")) {
+      alert("Emails must end with @seamail.com");
+      return;
     }
     formData.password = handleHashPassword(formData.password);
     signUp();
@@ -64,6 +68,11 @@ const SignUpPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center p-4">
+      <img
+        src={LeftCharactersSticker}
+        alt=""
+        className="w-0 h-0 md:w-80 md:h-80"
+      />
       <div className="w-full max-w-lg bg-white rounded-lg shadow-lg p-8 space-y-6">
         <h2 className="text-4xl font-bold text-center text-blue-700">Seamail</h2>
         <p className="text-center text-gray-600">Join Seamail and start exploring!</p>

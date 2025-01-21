@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { AppContext } from '../AppContext.jsx';
 import { useTranslation } from 'react-i18next';
+import hash from 'hash.js';
 
 
 const SettingsMainContent = () => {
@@ -18,6 +19,10 @@ const SettingsMainContent = () => {
 
   const navigate = useNavigate();
 
+  const handleHashPassword = (password) => {
+    return hash.sha256().update(password).digest('hex');
+  };
+
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match!');
@@ -26,10 +31,10 @@ const SettingsMainContent = () => {
       setError('Password must be at least 8 characters long!');
       return;
     }
-    
+    const hashedPassword = handleHashPassword(newPassword);
     try {
       const response = await axios.put(`${backendUrl}/changepassword`, 
-        { newPassword, email: sharedUserEmail }, 
+        { newPassword: hashedPassword, email: sharedUserEmail }, 
         {
           headers: {
             Authorization: `Bearer ${authToken}`,

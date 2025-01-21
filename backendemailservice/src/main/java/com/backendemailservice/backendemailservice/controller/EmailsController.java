@@ -214,8 +214,6 @@ public class EmailsController {
     	String email = payload.get("email");
         String newPassword = payload.get("newPassword");
 
-    	System.out.println(email);
-    	System.out.println(newPassword);
         if (email == null || email.isEmpty() || newPassword == null || newPassword.isEmpty()) {
             return ResponseEntity.badRequest().body("Email and new password are required.");
         }
