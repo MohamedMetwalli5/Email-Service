@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useContext } from 'react';
 import { AppContext } from '../../AppContext.jsx';
 import axios from "axios";
+import { useTranslation } from 'react-i18next';
 
 
 const EmailsSnippetView = () => {
+
+  const { t } = useTranslation();
 
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
 
@@ -130,12 +133,22 @@ const EmailsSnippetView = () => {
 
   return (
     <div className="flex flex-col bg-gray-900 w-fit p-4 rounded-lg h-full text-gray-100">
-      <h2 className="text-2xl font-semibold mb-4">{sharedMailBoxOption}</h2>
+      <h2 className="text-2xl font-semibold mb-4">
+        {sharedMailBoxOption === "Inbox" ? (
+          <span>{t('INBOX')}</span>
+        ) : sharedMailBoxOption === "Outbox" ? (
+          <span>{t('SENT')}</span>
+        ) : sharedMailBoxOption === "Trashbox" ? (
+          <span>{t('TRASH')}</span>
+        ) : (
+          <span>({sharedMailBoxOption})</span>
+        )}
+      </h2>
 
       <div className="flex space-x-4 mb-4 text-center">
         <div className="flex flex-col">
           <label htmlFor="filter" className="text-sm text-gray-400 mb-1">
-            Filter By
+            {t('FILTER_BY')}
           </label>
           <div className="flex space-x-2">
             <select
@@ -143,14 +156,14 @@ const EmailsSnippetView = () => {
               className="bg-gray-800 text-gray-100 p-2 rounded cursor-pointer"
               onChange={(e) => setFilterType(e.target.value)}
             >
-              <option value="">None</option>
-              <option value="subject">Subject</option>
-              <option value="sender">Sender</option>
+              <option value="">{t('NONE')}</option>
+              <option value="subject">{t('SUBJECT')}</option>
+              <option value="sender">{t('SENDER')}</option>
             </select>
             <input
               type="text"
               className="bg-gray-800 text-gray-100 p-2 rounded"
-              placeholder="Search..."
+              placeholder={t('SEARCH')}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
             />
@@ -159,16 +172,16 @@ const EmailsSnippetView = () => {
 
         <div className="flex flex-col">
           <label htmlFor="sort" className="text-sm text-gray-400 mb-1">
-            Sort By
+            {t('SORT_BY')}
           </label>
           <select
             id="sort"
             className="bg-gray-800 text-gray-100 p-2 rounded cursor-pointer"
             onChange={(e) => setSortType(e.target.value)}
           >
-            <option value="">None</option>
-            <option value="priority">Priority</option>
-            <option value="date">Date</option>
+            <option value="">{t('NONE')}</option>
+            <option value="priority">{t('PRIORITY')}</option>
+            <option value="date">{t('DATE')}</option>
           </select>
         </div>
       </div>
@@ -178,7 +191,7 @@ const EmailsSnippetView = () => {
           className="bg-green-500 text-white py-2 px-4 rounded mb-4"
           onClick={handleSendOptions}
         >
-          Send
+          {t('SEND')}
         </button>
       </div>
 
@@ -194,7 +207,7 @@ const EmailsSnippetView = () => {
                 <p className="text-sm font-medium text-gray-200">
                   {(sharedMailBoxOption === "Inbox" || sharedMailBoxOption === "Trashbox") ? (
                     <>
-                      <span className="text-blue-400">Sender:</span> {email.sender}
+                      <span className="text-blue-400">{t('SENDER')}:</span> {email.sender}
                     </>
                   ) : (
                     <>
@@ -203,19 +216,19 @@ const EmailsSnippetView = () => {
                   )}
                 </p>
                 <p className="text-sm font-medium text-gray-200">
-                  <span className="text-blue-400">Date:</span> {email.date}
+                  <span className="text-blue-400">{t('DATE')}:</span> {email.date}
                 </p>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <p className="text-sm font-medium text-gray-200">
-                  <span className="text-blue-400">Priority:{' '}</span>
+                  <span className="text-blue-400">{t('PRIORITY')}:{' '}</span>
                   <span className={getPriorityColor(email.priority)}>
                     {email.priority}
                   </span>
                 </p>
               </div>
               <p className="text-sm mt-2 text-gray-200">
-                <span className="text-blue-400">Subject:</span> {email.subject}
+                <span className="text-blue-400">{t('SUBJECT')}:</span> {email.subject}
               </p>
             </li>
           ))}

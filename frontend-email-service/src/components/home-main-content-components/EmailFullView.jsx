@@ -3,9 +3,12 @@ import { FaRegTrashCan } from "react-icons/fa6";
 import axios from "axios";
 import { useContext } from 'react';
 import { AppContext } from '../../AppContext.jsx';
+import { useTranslation } from 'react-i18next';
 
 
 const EmailFullView = () => {
+  
+  const { t } = useTranslation();
 
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
   
@@ -101,14 +104,14 @@ const EmailFullView = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-sm font-medium">
-                <span className="text-blue-400">Sender:</span> {email.sender}
+                <span className="text-blue-400">{t('SENDER')}:</span> {email.sender}
               </p>
               <span className="text-sm text-gray-400 ml-2">{email.date}</span>
             </div>
 
             <div className="flex justify-between items-center mt-2">
               <p className="text-sm font-medium">
-                <span className="text-blue-400">Priority:{' '}</span>
+                <span className="text-blue-400">{t('PRIORITY')}:{' '}</span>
                 <span className={getPriorityColor(email.priority)}>
                   {email.priority}
                 </span>

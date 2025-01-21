@@ -2,12 +2,16 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { AppContext } from '../AppContext.jsx';
+import { useTranslation } from 'react-i18next';
 
 
 const SettingsMainContent = () => {
+  
+  const { t } = useTranslation();
+
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
   
-  const { authToken, sharedUserEmail, setUserLanguage } = useContext(AppContext);
+  const { authToken, sharedUserEmail, setSharedUserLanguage } = useContext(AppContext);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -68,7 +72,7 @@ const SettingsMainContent = () => {
         }
       );
       console.log(response.data);
-      setUserLanguage(language);
+      setSharedUserLanguage(language);
     } catch (error) {
       console.error(error.response?.data || error.message);
     }
@@ -77,20 +81,20 @@ const SettingsMainContent = () => {
   return (
     <div className="flex gap-1 bg-gray-800 rounded-lg shadow-md h-full w-full">
       <div className="flex flex-col w-full bg-gray-900 p-4 rounded-lg">
-        <h1 className="text-2xl font-semibold text-blue-400 mb-4">Settings</h1>
+        <h1 className="text-2xl font-semibold text-blue-400 mb-4">{t('SETTINGS')}</h1>
         
         <div className="mb-6">
-          <h2 className="text-lg text-gray-200 mb-2">Change Password</h2>
+          <h2 className="text-lg text-gray-200 mb-2">{t('CHANGE_PASSWORD')}</h2>
           <input
             type="password"
-            placeholder="New Password"
+            placeholder={t('NEW_PASSWORD')}
             className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />
           <input
             type="password"
-            placeholder="Confirm New Password"
+            placeholder={t('CONFIRM_NEW_PASSWORD')}
             className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -99,14 +103,14 @@ const SettingsMainContent = () => {
           <button
             onClick={handlePasswordChange}
             disabled={newPassword !== confirmPassword || error}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
+            className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
           >
-            Change Password
+            {t('CHANGE_PASSWORD')}
           </button>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg text-gray-200 mb-2">Language</h2>
+          <h2 className="text-lg text-gray-200 mb-2">{t('LANGUAGE')}</h2>
           <select
             value={selectedLanguage}
             onChange={(e) => handleLanguageChange(e.target.value)}
@@ -118,15 +122,13 @@ const SettingsMainContent = () => {
           </select>
         </div>
 
-        <div>
-          <h2 className="text-lg text-gray-200 mb-2">Delete Account</h2>
-          <button
-            onClick={handleDeleteAccount}
-            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all duration-300"
-          >
-            Delete Account
-          </button>
-        </div>
+        <button
+          onClick={handleDeleteAccount}
+          className="my-auto mx-auto flex justify-center items-center p-3 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all duration-300"
+        >
+          {t('DELETE_ACCOUNT')}
+        </button>
+
       </div>
     </div>
   );

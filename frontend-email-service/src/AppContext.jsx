@@ -24,9 +24,9 @@ const DataProvider = ({ children }) => {
         return localStorage.getItem('authToken') || null;
       });
 
-    // Retrieving the initial value for userLanguage from local storage or null
-    const [userLanguage, setUserLanguage] = useState(() => {
-        return localStorage.getItem('userLanguage') || "English";
+    // Retrieving the initial value for sharedUserLanguage from local storage or null
+    const [sharedUserLanguage, setSharedUserLanguage] = useState(() => {
+        return localStorage.getItem('sharedUserLanguage') || "English";
       });
 
     // Updating the local storage whenever the sharedUserEmail state changes
@@ -49,13 +49,13 @@ const DataProvider = ({ children }) => {
         localStorage.setItem('authToken', authToken);
       }, [authToken]);
 
-    // Updating the local storage whenever the userLanguage state changes
+    // Updating the local storage whenever the sharedUserLanguage state changes
     useEffect(() => {
-    localStorage.setItem('userLanguage', userLanguage);
-    }, [userLanguage]);
+    localStorage.setItem('sharedUserLanguage', sharedUserLanguage);
+    }, [sharedUserLanguage]);
       
     return (
-        <AppContext.Provider value={{ sharedUserEmail, setSharedUserEmail, sharedMailBoxOption, setSharedMailBoxOption, sharedEmailToFullyView, setSharedEmailToFullyView , authToken, setAuthToken, userLanguage, setUserLanguage}}>
+        <AppContext.Provider value={{ sharedUserEmail, setSharedUserEmail, sharedMailBoxOption, setSharedMailBoxOption, sharedEmailToFullyView, setSharedEmailToFullyView , authToken, setAuthToken, sharedUserLanguage, setSharedUserLanguage}}>
             {children}
         </AppContext.Provider>
     );

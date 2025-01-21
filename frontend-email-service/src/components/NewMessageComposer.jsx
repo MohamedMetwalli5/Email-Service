@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
 import axios from "axios";
+import { useTranslation } from 'react-i18next';
 
 
 const NewMessageComposer = ({ onClose }) => {
+
+  const { t } = useTranslation();
 
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
 
@@ -50,7 +53,7 @@ const NewMessageComposer = ({ onClose }) => {
       <div className="bg-gray-900 text-gray-100 p-6 rounded-lg shadow-lg w-96">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium">Receiver</label>
+            <label className="block text-sm font-medium">{t('RECEIVER')}</label>
             <input
               type="email"
               name="receiver"
@@ -63,7 +66,7 @@ const NewMessageComposer = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Subject</label>
+            <label className="block text-sm font-medium">{t('SUBJECT')}</label>
             <input
               type="text"
               name="subject"
@@ -76,7 +79,7 @@ const NewMessageComposer = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Body</label>
+            <label className="block text-sm font-medium">{t('BODY')}</label>
             <textarea
               name="body"
               value={formData.body}
@@ -89,21 +92,21 @@ const NewMessageComposer = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Priority</label>
+            <label className="block text-sm font-medium">{t('PRIORITY')}</label>
             <select
               name="priority"
               value={formData.priority}
               onChange={handleChange}
               className="w-full p-2 bg-gray-800 rounded border border-gray-700 focus:outline-none cursor-pointer"
             >
-              <option value="1">1 - High</option>
-              <option value="2">2 - Medium</option>
-              <option value="3">3 - Low</option>
+              <option value="1">1 - {t('HIGH')}</option>
+              <option value="2">2 - {t('MEDIUM')}</option>
+              <option value="3">3 - {t('LOW')}</option>
             </select>
           </div>
 
           <div className="text-gray-500 rounded border p-1 border-gray-700">
-            <label className="block text-sm font-bold">Date</label>
+            <label className="block text-sm font-bold">{t('DATE')}</label>
             <label className="block text-sm font-medium">{formData.date}</label>
           </div>
 
@@ -113,13 +116,13 @@ const NewMessageComposer = ({ onClose }) => {
               onClick={onClose}
               className="bg-red-500 px-4 py-2 rounded hover:bg-red-600"
             >
-              Cancel
+              {t('CANCEL')}
             </button>
             <button
               type="submit"
               className="bg-green-500 px-4 py-2 rounded hover:bg-green-600"
             >
-              Send
+              {t('SEND')}
             </button>
           </div>
         </form>

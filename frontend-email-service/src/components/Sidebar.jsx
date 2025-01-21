@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import { LuInbox } from "react-icons/lu";
 import { FaLocationArrow, FaPlus } from "react-icons/fa";
 import { FaRegTrashCan } from "react-icons/fa6";
@@ -8,15 +8,23 @@ import { useNavigate } from 'react-router-dom';
 import NewMessageComposer from './NewMessageComposer';
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
+import { useTranslation } from 'react-i18next';
 
 
 const Sidebar = () => {
 
+  const { t, i18n } = useTranslation();
+  
   const { setSharedMailBoxOption } = useContext(AppContext);
+  const { sharedUserLanguage } = useContext(AppContext);
 
   const [isComposerOpen, setComposerOpen] = useState(false);
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    i18n.changeLanguage(sharedUserLanguage);
+  }, [sharedUserLanguage, i18n]);
 
   return (
     <div className="flex h-full bg-gradient-to-b from-gray-900 to-gray-800 text-sm md:text-lg">
@@ -44,7 +52,7 @@ const Sidebar = () => {
                 className="flex items-center p-3 text-gray-200 bg-yellow-500 rounded-lg hover:bg-yellow-600 hover:cursor-pointer transition-all duration-300"
               >
                 <FaPlus />
-                <span className="ml-3 font-medium text-white">New message</span>
+                <span className="ml-3 font-medium text-white">{t('NEW_MESSAGE')}</span>
               </a>
               {isComposerOpen && (
                 <NewMessageComposer onClose={() => setComposerOpen(false)} />
@@ -56,7 +64,7 @@ const Sidebar = () => {
                 onClick={() => setSharedMailBoxOption("Inbox")}
               >
                 <LuInbox />
-                <span className="ml-3 font-medium text-white">Inbox</span>
+                <span className="ml-3 font-medium text-white">{t('INBOX')}</span>
               </a>
             </li>
             <li>
@@ -65,7 +73,7 @@ const Sidebar = () => {
                 onClick={() => setSharedMailBoxOption("Outbox")}
               >
                 <FaLocationArrow />
-                <span className="ml-3 font-medium text-white">Sent</span>
+                <span className="ml-3 font-medium text-white">{t('SENT')}</span>
               </a>
             </li>
             <li>
@@ -74,7 +82,7 @@ const Sidebar = () => {
                 onClick={() => setSharedMailBoxOption("Trashbox")}
               >
                 <FaRegTrashCan />
-                <span className="ml-3 font-medium text-white">Trash</span>
+                <span className="ml-3 font-medium text-white">{t('TRASH')}</span>
               </a>
             </li>
           </ul>
@@ -88,7 +96,7 @@ const Sidebar = () => {
               }}
             >
               <PiSignOutBold />
-              <span className="ml-3 font-medium text-white"> Sign out</span>
+              <span className="ml-3 font-medium text-white">{t('SIGN_OUT')}</span>
             </a>
           </li>
         </div>

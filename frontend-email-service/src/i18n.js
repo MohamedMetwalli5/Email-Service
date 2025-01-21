@@ -1,0 +1,111 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+const resources = {
+  English: {
+    translation: {
+      INBOX: 'Inbox',
+      SENT: 'Sent',
+      TRASH: 'Trash',
+      SIGN_OUT: 'Sign out',
+      FILTER_BY: 'Filter By',
+      SEARCH: 'Search...',
+      SORT_BY: 'Sort By',
+      NONE: 'None',
+      SEND: 'Send',
+      SENDER: 'Sender',
+      DATE: 'Date',
+      PRIORITY: 'Priority',
+      SUBJECT: 'Subject',
+      SETTINGS: 'Settings',
+      CHANGE_PASSWORD: 'Change Password',
+      NEW_PASSWORD: 'New Password',
+      CONFIRM_NEW_PASSWORD: 'Confirm New Password',
+      LANGUAGE: 'Language',
+      DELETE_ACCOUNT: 'Delete Account',
+      NEW_MESSAGE: 'New Message',
+      SIGNIN: 'Signin',
+      BODY: 'Body',               
+      HIGH: 'High',               
+      LOW: 'Low',                 
+      MEDIUM: 'Medium',           
+      CANCEL: 'Cancel',           
+      RECEIVER: 'Receiver',       
+    },
+  },
+
+  French: {
+    translation: {
+      INBOX: 'Boîte de réception',
+      SENT: 'Envoyé',
+      TRASH: 'Corbeille',
+      SIGN_OUT: 'Se déconnecter',
+      FILTER_BY: 'Filtrer par',
+      SEARCH: 'Rechercher...',
+      SORT_BY: 'Trier par',
+      NONE: 'Aucun',
+      SEND: 'Envoyer',
+      SENDER: 'Expéditeur',
+      DATE: 'Date',
+      PRIORITY: 'Priorité',
+      SUBJECT: 'Sujet',
+      SETTINGS: 'Paramètres',
+      CHANGE_PASSWORD: 'Changer le mot de passe',
+      NEW_PASSWORD: 'Nouveau mot de passe',
+      CONFIRM_NEW_PASSWORD: 'Confirmer le nouveau mot de passe',
+      LANGUAGE: 'Langue',
+      DELETE_ACCOUNT: 'Supprimer le compte',
+      NEW_MESSAGE: 'Nouveau message',
+      SIGNIN: 'Se connecter',
+      BODY: 'Corps',              
+      HIGH: 'Élevé',              
+      LOW: 'Bas',                 
+      MEDIUM: 'Moyen',           
+      CANCEL: 'Annuler',          
+      RECEIVER: 'Destinataire',   
+    },
+  },
+
+  German: {
+    translation: {
+      INBOX: 'Posteingang',
+      SENT: 'Gesendet',
+      TRASH: 'Papierkorb',
+      SIGN_OUT: 'Abmelden',
+      FILTER_BY: 'Filtern nach',
+      SEARCH: 'Suchen...',
+      SORT_BY: 'Sortieren nach',
+      NONE: 'Keine',
+      SEND: 'Senden',
+      SENDER: 'Absender',
+      DATE: 'Datum',
+      PRIORITY: 'Priorität',
+      SUBJECT: 'Betreff',
+      SETTINGS: 'Einstellungen',
+      CHANGE_PASSWORD: 'Passwort ändern',
+      NEW_PASSWORD: 'Neues Passwort',
+      CONFIRM_NEW_PASSWORD: 'Neues Passwort bestätigen',
+      LANGUAGE: 'Sprache',
+      DELETE_ACCOUNT: 'Konto löschen',
+      NEW_MESSAGE: 'Neue Nachricht',
+      SIGNIN: 'Anmelden',
+      BODY: 'Inhalt',             
+      HIGH: 'Hoch',               
+      LOW: 'Niedrig',             
+      MEDIUM: 'Mittel',           
+      CANCEL: 'Abbrechen',        
+      RECEIVER: 'Empfänger',      
+    },
+  },
+};
+
+i18n.use(initReactI18next).init({
+  resources,
+  lng: 'English', // The Default language
+  fallbackLng: 'English', // The Fallback language
+  interpolation: {
+    escapeValue: false,
+  },
+});
+
+export default i18n;
