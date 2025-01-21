@@ -28,11 +28,16 @@ If you want to replicate the project on your local environment, follow these ste
 ## Backend Setup
 1. Navigate to the Backend Directory 
 ```cd backendemailservice```
-2. Clean and Install dependencies
+2. Navigate using `cd src\main\resources`, and Configure the `application.properties` file:
+   - Set up the MySQL connection details (URL, username, password).
+   - Configure JPA settings for database interaction and Hibernate.
+   - Set a secret key for JWT-based authentication.
+3. Navigate using `cd src\test\resources`, and Configure the `application-test.properties` file.
+4. Clean and Install dependencies
 ```mvn clean install```
-3. Navigate to the `target` folder using ```cd target```
-4. Run the JAR file ```java -jar backendemailservice-0.0.1-SNAPSHOT.jar```
-5. The backend will start on ```http://localhost:8080```
+5. Navigate to the `target` folder using ```cd target```
+6. Run the JAR file ```java -jar backendemailservice-0.0.1-SNAPSHOT.jar```
+7. The backend will start on ```http://localhost:8080```
 
 ## Frontend Setup
 1. Navigate to the Frontend Directory
