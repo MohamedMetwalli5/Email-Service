@@ -24,6 +24,8 @@ Seamail is an email service designed to enhance user interactions with their ema
 
 # Setup Instructions
 If you want to replicate the project on your local environment, follow these steps:
+## Database Setup
+Run the `tables.sql` script in the "SQL Scripts" folder to set up your database tables.
 
 ## Backend Setup
 1. Navigate to the Backend Directory 
