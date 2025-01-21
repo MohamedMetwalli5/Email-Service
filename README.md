@@ -37,7 +37,7 @@ If you want to replicate the project on your local environment, follow these ste
 ```mvn clean install```
 5. Navigate to the `target` folder using ```cd target```
 6. Run the JAR file ```java -jar backendemailservice-0.0.1-SNAPSHOT.jar```
-7. The backend will start on ```http://localhost:8080```
+7. The backend will start on ```http://localhost:8081```
 
 ## Frontend Setup
 1. Navigate to the Frontend Directory
