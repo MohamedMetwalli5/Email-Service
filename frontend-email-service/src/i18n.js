@@ -30,7 +30,10 @@ const resources = {
       LOW: 'Low',                 
       MEDIUM: 'Medium',           
       CANCEL: 'Cancel',           
-      RECEIVER: 'Receiver',       
+      RECEIVER: 'Receiver',     
+      ENTER_RECIPIENT_EMAIL: "Enter recipient's email", 
+      ENTER_SUBJECT: 'Enter subject',                     
+      ENTER_MESSAGE_BODY: 'Enter message body',  
     },
   },
 
@@ -63,6 +66,9 @@ const resources = {
       MEDIUM: 'Moyen',           
       CANCEL: 'Annuler',          
       RECEIVER: 'Destinataire',   
+      ENTER_RECIPIENT_EMAIL: "Entrez l'email du destinataire", 
+      ENTER_SUBJECT: 'Entrez le sujet',                        
+      ENTER_MESSAGE_BODY: 'Entrez le corps du message', 
     },
   },
 
@@ -95,6 +101,9 @@ const resources = {
       MEDIUM: 'Mittel',           
       CANCEL: 'Abbrechen',        
       RECEIVER: 'Empfänger',      
+      ENTER_RECIPIENT_EMAIL: 'Geben Sie die E-Mail des Empfängers ein', 
+      ENTER_SUBJECT: 'Betreff eingeben',                             
+      ENTER_MESSAGE_BODY: 'Nachrichtentext eingeben',  
     },
   },
 };

@@ -59,7 +59,7 @@ const NewMessageComposer = ({ onClose }) => {
               name="receiver"
               value={formData.receiver}
               onChange={handleChange}
-              placeholder="Enter recipient's email"
+              placeholder={t('ENTER_RECIPIENT_EMAIL')}
               className="w-full p-2 bg-gray-800 rounded border border-gray-700 focus:outline-none"
               required
             />
@@ -72,7 +72,7 @@ const NewMessageComposer = ({ onClose }) => {
               name="subject"
               value={formData.subject}
               onChange={handleChange}
-              placeholder="Enter subject"
+              placeholder={t('ENTER_SUBJECT')}
               className="w-full p-2 bg-gray-800 rounded border border-gray-700 focus:outline-none"
               required
             />
@@ -84,7 +84,7 @@ const NewMessageComposer = ({ onClose }) => {
               name="body"
               value={formData.body}
               onChange={handleChange}
-              placeholder="Enter message body"
+              placeholder={t('ENTER_MESSAGE_BODY')}
               className="w-full p-2 bg-gray-800 rounded border border-gray-700 focus:outline-none"
               rows="4"
               required
