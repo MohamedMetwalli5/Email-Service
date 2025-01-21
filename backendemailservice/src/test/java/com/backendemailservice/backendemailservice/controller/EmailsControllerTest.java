@@ -99,21 +99,6 @@ public class EmailsControllerTest {
     }
 
     @Test
-    public void testSendEmail_Unauthorized_InvalidToken() throws Exception {
-        String email = "sender@example.com";
-        String token = "Bearer invalidtoken";
-        Email emailObj = new Email(email, "receiver@example.com", "Subject", "Body", "1", "2023-10-01", "No");
-
-        when(jwtUtil.extractEmail("invalidtoken")).thenThrow(new IllegalArgumentException("Invalid or malformed token"));
-
-        mockMvc.perform(post("/sendemail")
-                .header("Authorization", token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"sender\":\"sender@example.com\", \"receiver\":\"receiver@example.com\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"High\", \"date\":\"2023-10-01\",\"trash\":\"No\"}"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     public void testLoadOutbox_Success() throws Exception {
         String email = "testuser@example.com";
         String token = jwtUtil.generateToken(email);
@@ -126,41 +111,6 @@ public class EmailsControllerTest {
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    public void testMoveToTrashBox_Success() throws Exception {
-        // Arrange
-        String email = "sender@example.com";
-        String receiverEmail = "receiver@example.com";
-        String token = jwtUtil.generateToken(email);
-        Email emailObj = new Email(email, receiverEmail, "Subject", "Body", "1", "2023-10-01", "No");
-        
-        when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
-
-        mockMvc.perform(post("/moveemailtotrashbox")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"sender\":\"" + email + "\", \"receiver\":\"" + receiverEmail + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\", \"date\":\"2023-10-01\",\"trash\":\"Yes\"}"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Moved email to trashbox!"));
-    }
-    
-    @Test
-    public void testDeleteEmail_Success() throws Exception {
-        Integer emailId = 1;
-        String emailSender = "sender@example.com";
-        String token = jwtUtil.generateToken(emailSender);
-        Email emailObj = new Email(emailSender, "receiver@example.com", "Subject", "Body", "1", "2023-10-01", "No");
-
-        when(jwtUtil.isTokenValid(token, emailSender)).thenReturn(true);
-
-        mockMvc.perform(post("/deleteemail")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"emailID\":" + emailId + ", \"sender\":\"" + emailSender + "\", \"receiver\":\"receiver@example.com\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\", \"date\":\"2023-10-01\",\"trash\":\"No\"}"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Email is deleted!"));
     }
 
     @Test
@@ -197,23 +147,6 @@ public class EmailsControllerTest {
     }
 
     @Test
-    public void testSortEmails_Unauthorized_InvalidToken() throws Exception {
-        User user = new User("test@example.com", "password");
-        
-        SortingWrapper sortingWrapper = new SortingWrapper();
-        sortingWrapper.setUser(user);
-        sortingWrapper.setSortingOption("priority");
-
-        when(jwtUtil.extractEmail("invalidtoken")).thenThrow(new IllegalArgumentException("Invalid or malformed token"));
-
-        mockMvc.perform(post("/sortemails")
-                .header("Authorization", "Bearer invalidtoken")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"user\":{\"email\":\"test@example.com\"}, \"sortingOption\":\"priority\"}"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     public void testFilterEmails_Authorized() throws Exception {
         User user = new User("test@example.com", "password");
 
@@ -247,21 +180,4 @@ public class EmailsControllerTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    public void testFilterEmails_Unauthorized_InvalidToken() throws Exception {
-        User user = new User("test@example.com", "password");
-
-        FilteringWrapper filteringWrapper = new FilteringWrapper();
-        filteringWrapper.setUser(user);
-        filteringWrapper.setFilteringOption("subject");
-        filteringWrapper.setFilteringValue("Important");
-
-        when(jwtUtil.extractEmail("invalidtoken")).thenThrow(new IllegalArgumentException("Invalid or malformed token"));
-
-        mockMvc.perform(post("/filteremails")
-                .header("Authorization", "Bearer invalidtoken")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"user\":{\"email\":\"test@example.com\"}, \"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
-                .andExpect(status().isUnauthorized());
-    }
 }

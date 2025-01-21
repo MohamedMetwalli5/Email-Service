@@ -1,1 +1,0 @@
-# Seamail: The Frontend Part

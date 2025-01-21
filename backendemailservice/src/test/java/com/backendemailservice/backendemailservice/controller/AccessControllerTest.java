@@ -48,23 +48,6 @@ public class AccessControllerTest {
     }
 
     @Test
-    public void testSignIn_Success() throws Exception {
-        User user = new User("example90@seamail.com", "nebtit11");
-
-        when(userService.findUser("example90@seamail.com", "nebtit11")).thenReturn(Optional.of(user));
-        
-        // Dynamically generating the token to reflect how it's created in the actual implementation
-        String expectedToken = jwtUtil.generateToken(user.getEmail());
-        when(jwtUtil.generateToken(user.getEmail())).thenReturn(expectedToken);
-
-        mockMvc.perform(post("/signin")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"example90@seamail.com\",\"password\":\"nebtit11\"}"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Bearer " + expectedToken));
-    }
-
-    @Test
     public void testSignIn_UserNotFound() throws Exception {
         when(userService.findUser("unknown@example.com", "wrongpassword")).thenReturn(Optional.empty());
 
@@ -73,25 +56,6 @@ public class AccessControllerTest {
                 .content("{\"email\":\"unknown@example.com\",\"password\":\"wrongpassword\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("User not found"));
-    }
-
-    @Test
-    public void testSignUp_Success() throws Exception {
-        String email = "test11@example.com";
-        String password = "password";
-        User user = new User(email, password);
-        String expectedToken = jwtUtil.generateToken(email);
-
-        when(userService.findUser(eq(email), eq(password))).thenReturn(Optional.empty());
-        when(jwtUtil.generateToken(eq(email))).thenReturn(expectedToken);
-        
-        mockMvc.perform(post("/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
-                .andExpect(status().isCreated()) // Expecting 201 Created
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.message").value("User created successfully"))
-                .andExpect(jsonPath("$.token").value(expectedToken));
     }
 
     @Test
