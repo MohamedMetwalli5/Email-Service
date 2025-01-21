@@ -61,7 +61,7 @@ const Sidebar = () => {
             <li>
               <a
                 className="flex items-center p-3 text-gray-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-all duration-300"
-                onClick={() => setSharedMailBoxOption("Inbox")}
+                onClick={() => {setSharedMailBoxOption("Inbox"); navigate("/home");}}
               >
                 <LuInbox />
                 <span className="ml-3 font-medium text-white">{t('INBOX')}</span>
@@ -70,7 +70,7 @@ const Sidebar = () => {
             <li>
               <a
                 className="flex items-center p-3 text-gray-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-all duration-300"
-                onClick={() => setSharedMailBoxOption("Outbox")}
+                onClick={() => {setSharedMailBoxOption("Outbox"); navigate("/home");}}
               >
                 <FaLocationArrow />
                 <span className="ml-3 font-medium text-white">{t('SENT')}</span>
@@ -79,7 +79,7 @@ const Sidebar = () => {
             <li>
               <a
                 className="flex items-center p-3 text-gray-200 bg-blue-600 rounded-lg hover:bg-blue-700 hover:cursor-pointer transition-all duration-300"
-                onClick={() => setSharedMailBoxOption("Trashbox")}
+                onClick={() => {setSharedMailBoxOption("Trashbox"); navigate("/home");}}
               >
                 <FaRegTrashCan />
                 <span className="ml-3 font-medium text-white">{t('TRASH')}</span>
@@ -92,6 +92,10 @@ const Sidebar = () => {
               onClick={() => {
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('sharedUserEmail');
+                localStorage.removeItem('sharedMailBoxOption');
+                localStorage.removeItem('sharedEmailToFullyView');
+                localStorage.removeItem('sharedUserLanguage');
+
                 navigate('/signin');
               }}
             >

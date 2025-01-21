@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
+import hash from 'hash.js';
+
 
 const SignInPage = () => {
 
@@ -26,8 +28,14 @@ const SignInPage = () => {
     }));
   };
 
+  const handleHashPassword = (password) => {
+    return hash.sha256().update(password).digest('hex');
+  };
+
   const handleSubmit = async(e) => {
     e.preventDefault();
+    formData.password = handleHashPassword(formData.password);
+    console.log(formData.password);
     try {
       const response = await axios.post(`${backendUrl}/signin`, formData);
       const token = response.data.split(' ')[1];

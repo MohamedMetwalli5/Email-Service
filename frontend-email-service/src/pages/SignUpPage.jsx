@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AppContext } from '../AppContext.jsx';
 import { useContext } from 'react';
+import hash from 'hash.js';
+
 
 const SignUpPage = () => {
 
@@ -27,6 +29,10 @@ const SignUpPage = () => {
     }));
   };
 
+  const handleHashPassword = (password) => {
+    return hash.sha256().update(password).digest('hex');
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.password.length < 8) {
@@ -36,6 +42,7 @@ const SignUpPage = () => {
       alert("Passwords do not match!");
       return;
     }
+    formData.password = handleHashPassword(formData.password);
     signUp();
   };
 

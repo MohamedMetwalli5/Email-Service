@@ -11,11 +11,10 @@ const SettingsMainContent = () => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
   
-  const { authToken, sharedUserEmail, setSharedUserLanguage } = useContext(AppContext);
+  const { authToken, sharedUserEmail, setSharedUserLanguage, sharedUserLanguage } = useContext(AppContext);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('');
 
   const navigate = useNavigate();
 
@@ -61,7 +60,6 @@ const SettingsMainContent = () => {
   };
 
   const handleLanguageChange = async (language) => {
-    setSelectedLanguage(language);
     try {
       const response = await axios.put(`${backendUrl}/updatelanguage`, 
         { language, email: sharedUserEmail }, 
@@ -79,7 +77,7 @@ const SettingsMainContent = () => {
   };
 
   return (
-    <div className="flex gap-1 bg-gray-800 rounded-lg shadow-md h-full w-full">
+    <div className="flex gap-1 bg-gray-800 rounded-lg shadow-md h-full w-full text-sm md:text-lg">
       <div className="flex flex-col w-full bg-gray-900 p-4 rounded-lg">
         <h1 className="text-2xl font-semibold text-blue-400 mb-4">{t('SETTINGS')}</h1>
         
@@ -112,7 +110,7 @@ const SettingsMainContent = () => {
         <div className="mb-6">
           <h2 className="text-lg text-gray-200 mb-2">{t('LANGUAGE')}</h2>
           <select
-            value={selectedLanguage}
+            value={sharedUserLanguage}
             onChange={(e) => handleLanguageChange(e.target.value)}
             className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white cursor-pointer"
           >
