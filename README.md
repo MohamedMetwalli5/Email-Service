@@ -10,16 +10,36 @@
 # Seamail: An Email Service
 Seamail is an email service designed to enhance user interactions with their email system. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface.
 
-## Features
-- User Registration and Sign-in
-- JWT Authentication for secure access
-- Manage Emails:
-  - Load inbox, outbox, and trashbox
-  - Send emails
-  - Move emails to trash
-  - Delete emails
-  - Sort emails by priority or date
-  - Filter emails by subject or sender
+
+# Features
+- **User Registration & Sign-in:** Secure registration and login process for users.
+- **JWT Authentication:** Ensures secure access to the platform with token-based authentication.
+- **Multi-language Support:** Enhances accessibility by offering the platform in multiple languages.
+- **Email Management:** View and manage inbox, outbox, and trashbox for efficient email organization.
+- **Email Actions:** Send, move to trash, and delete emails with ease.
+- **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender.
+- **Account Deletion:** Allows users to permanently delete their accounts if desired.
+- **Password Management:** Option to securely change user passwords to maintain account security.
+
+
+# Setup Instructions
+If you want to replicate the project on your local environment, follow these steps:
+## Backend Setup
+
+## Frontend Setup
+1. Navigate to the Frontend Directory
+``` cd frontend-email-service ```
+2. Install Dependencies
+``` npm install ```
+3. Configure Environment Variables
+Create a ```.env``` file in the frontend directory with the following content:
+```
+VITE_BACKEND_API_URL=http://localhost:8081
+```
+4. Start the Frontend
+``` npm run dev ```
+5. The frontend will start on http://localhost:8080
+
 
 ## Testing
 Seamail includes comprehensive unit tests to ensure reliability and functionality. These tests are built using JUnit and Mockito.
@@ -32,6 +52,7 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
 - **Controller Tests**: Tests for the API layers.
   - `AccessControllerTest`: Tests for user authentication endpoints like sign-in and sign-up.
   - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.
+
 
 ## Logo Idea
 The Seamail logo combines an envelope with dynamic wave patterns, symbolizing seamless communication. It reflects the efficient, modern, and user-friendly email service.
