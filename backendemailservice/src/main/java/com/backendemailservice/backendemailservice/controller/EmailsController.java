@@ -106,6 +106,7 @@ public class EmailsController {
         String token = authorizationHeader.substring(7);
 
         if (!jwtUtil.isTokenValid(token, email.getSender())) {
+        	System.out.println("Token validation failed for user: " + email.getSender());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -126,7 +127,8 @@ public class EmailsController {
 
         String token = authorizationHeader.substring(7);
 
-        if (!jwtUtil.isTokenValid(token, email.getSender())) {
+        if (!jwtUtil.isTokenValid(token, email.getReceiver())) {
+        	System.out.println("Token validation failed for user: " + email.getReceiver());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -142,7 +144,8 @@ public class EmailsController {
 
         String token = authorizationHeader.substring(7);
 
-        if (!jwtUtil.isTokenValid(token, email.getSender())) {
+        if (!jwtUtil.isTokenValid(token, email.getReceiver())) {
+        	System.out.println("Token validation failed for user: " + email.getReceiver());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

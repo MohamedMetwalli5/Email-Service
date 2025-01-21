@@ -9,12 +9,15 @@ const NewMessageComposer = ({ onClose }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
 
   const { authToken } = useContext(AppContext);
+  const { sharedUserEmail } = useContext(AppContext);
 
   const [formData, setFormData] = useState({
+    sender:sharedUserEmail,
     receiver: "",
     subject: "",
     body: "",
     priority: "1",
+    trash:"No",
     date: new Date().toISOString().slice(0, 10), // Today's date in the YYYY-MM-DD format
   });
 
@@ -27,6 +30,7 @@ const NewMessageComposer = ({ onClose }) => {
   };
 
   const handleSubmit = async(e) => {
+    // console.log(formData);
     e.preventDefault();
     try {
       const response = await axios.post(`${backendUrl}/sendemail`, formData, {

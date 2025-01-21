@@ -122,7 +122,15 @@ const EmailsSnippetView = () => {
             >
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium text-gray-200">
-                  <span className="text-blue-400">Sender:</span> {email.receiver}
+                  {(sharedMailBoxOption === "Inbox" || sharedMailBoxOption === "Trashbox") ? (
+                    <>
+                      <span className="text-blue-400">Sender:</span> {email.sender}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-blue-400">Receiver:</span> {email.receiver}
+                    </>
+                  )}
                 </p>
                 <p className="text-sm font-medium text-gray-200">
                   <span className="text-blue-400">Date:</span> {email.date}
