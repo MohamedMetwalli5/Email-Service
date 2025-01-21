@@ -69,4 +69,5 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
 
 # Logo Idea
 The Seamail logo combines an envelope with dynamic wave patterns, symbolizing seamless communication. It reflects the efficient, modern, and user-friendly email service.
+
 ![Seamail - Website Logo](https://github.com/user-attachments/assets/c791622c-62a6-4ac0-95da-13996c60020f)
