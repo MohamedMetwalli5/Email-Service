@@ -26,4 +26,21 @@ public class UserService {
     public Optional<User> foundReceiver(String email) {
     	return repository.foundReceiver(email);
     }
+
+	public void deleteUserAccount(String userEmail) {
+		repository.deleteById(userEmail);
+	}
+
+	public boolean changeUserPassword(String userEmail, String newPassword) {
+        Optional<User> optionalUser = repository.findByEmail(userEmail);
+        
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setPassword(newPassword);
+            repository.save(user);
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

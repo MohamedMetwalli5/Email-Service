@@ -4,6 +4,7 @@ import axios from "axios";
 import { useContext } from 'react';
 import { AppContext } from '../../AppContext.jsx';
 
+
 const EmailFullView = () => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;

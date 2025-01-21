@@ -1,25 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from "axios";
+import { AppContext } from '../AppContext.jsx';
 
 
 const SettingsMainContent = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+  
+  const { authToken, sharedUserEmail } = useContext(AppContext);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-
+  
   const navigate = useNavigate();
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match!');
-    } else {
-      console.log('Password changed');
+      return;
+    }else if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long!');
+      return;
+    }
+    
+    try {
+      const response = await axios.put(`${backendUrl}/changepassword`, 
+        { newPassword, email: sharedUserEmail }, 
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      console.log(response.data);
+      alert('Password is changed successfully!');
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+      setError('Failed to change password.');
     }
   };
 
-  const handleDeleteAccount = () => {
-    console.log('Account deleted');
-    navigate("/");
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await axios.post(`${backendUrl}/deleteaccount`, { email: sharedUserEmail }, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      console.log(response.data);
+      navigate("/");
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+    }
   };
 
   return (
@@ -46,6 +78,7 @@ const SettingsMainContent = () => {
           {error && <p className="text-red-500 mb-4">{error}</p>}
           <button
             onClick={handlePasswordChange}
+            disabled={newPassword !== confirmPassword || error}
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
           >
             Change Password

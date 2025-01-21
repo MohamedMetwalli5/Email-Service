@@ -19,7 +19,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-full bg-gradient-to-b from-gray-900 to-gray-800">
+    <div className="flex h-full bg-gradient-to-b from-gray-900 to-gray-800 text-sm md:text-lg">
       <aside
         id="sidebar"
         className={`${
