@@ -19,11 +19,11 @@ const EmailFullView = () => {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 1:
+      case "1":
         return "text-red-400";
-      case 2:
+      case "2":
         return "text-yellow-400";
-      case 3:
+      case "3":
         return "text-green-400";
       default:
         return "text-gray-400";

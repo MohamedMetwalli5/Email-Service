@@ -172,7 +172,7 @@ public class EmailsController {
 
     @PostMapping("/filteremails")
     public ResponseEntity<List<Email>> filterEmails(@RequestBody FilteringWrapper filteringWrapper, @RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+    	if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

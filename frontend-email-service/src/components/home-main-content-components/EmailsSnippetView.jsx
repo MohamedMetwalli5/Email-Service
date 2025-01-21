@@ -10,6 +10,7 @@ const EmailsSnippetView = () => {
 
   const { sharedMailBoxOption } = useContext(AppContext);
   const { authToken } = useContext(AppContext);
+  const { sharedUserEmail } = useContext(AppContext);
   const { setSharedEmailToFullyView } = useContext(AppContext);
 
   const [filterType, setFilterType] = useState("");
@@ -30,14 +31,83 @@ const EmailsSnippetView = () => {
     }
   };
 
-  const handleSendOptions = () => {
-    const options = {
-      filterType,
-      filterText,
-      sortType,
-    };
+  const sortEmails = async(requestBody) => {
+    try {
+        const response = await axios.post(`${backendUrl}/sortemails`, requestBody, {
+            headers: {
+                Authorization: `Bearer ${authToken}`,
+            },
+        });
+        console.log(response.data);
+        setEmails(response.data);
+    } catch (error) {
+        console.error("Error sorting emails:", error.response?.data || error.message);
+    }
+  };
 
-    console.log("Sending options to backend:", options);
+  const filterEmails = async(requestBody) => {
+    try {
+      const response = await axios.post(`${backendUrl}/filteremails`, requestBody, {
+          headers: {
+              Authorization: `Bearer ${authToken}`,
+          },
+      });
+      console.log(response.data);
+      setEmails(response.data);
+    } catch (error) {
+        console.error("Error filtering emails:", error.response?.data || error.message);
+    }
+  };
+
+  const filterAndSortEmails = async (requestBody, sortType) => {
+    var tempFilteredEmails = [];
+    try {
+      const response = await axios.post(`${backendUrl}/filteremails`, requestBody, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      tempFilteredEmails = response.data;
+  
+      // Sorting the emails based on the sortType
+      if (sortType === "priority") {
+        tempFilteredEmails.sort((a, b) => parseInt(a.priority) - parseInt(b.priority));
+      } else if (sortType === "date") {
+        tempFilteredEmails.sort((a, b) => new Date(a.date) - new Date(b.date));
+      }
+
+      console.log(tempFilteredEmails);
+      setEmails(tempFilteredEmails);
+    } catch (error) {
+      console.error("Error filtering emails:", error.response?.data || error.message);
+    }
+  };
+
+  const handleSendOptions = async () => {
+    const user = { email: sharedUserEmail };
+    let requestBody = null;
+
+    if ((filterType === "subject" || filterType === "sender") && filterText.length > 0 && sortType.length === 0) {
+      requestBody = {
+          user: user,  
+          filteringOption: filterType,
+          filteringValue: filterText 
+      };
+      filterEmails(requestBody);
+    } else if (sortType.length > 0 && filterType.length === 0) {
+        requestBody = {
+            user: user,
+            sortingOption: sortType 
+        };
+        sortEmails(requestBody);
+    }else if (sortType.length > 0 && (filterType === "subject" || filterType === "sender") && filterText.length > 0) { // Both cases
+      requestBody = {
+            user: user,  
+            filteringOption: filterType,
+            filteringValue: filterText 
+      };
+      filterAndSortEmails(requestBody, sortType);
+    }
   };
 
   const getEmails = async(sharedMailBoxOption) => {
