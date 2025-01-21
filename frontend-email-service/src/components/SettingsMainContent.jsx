@@ -7,18 +7,19 @@ import { AppContext } from '../AppContext.jsx';
 const SettingsMainContent = () => {
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
   
-  const { authToken, sharedUserEmail } = useContext(AppContext);
+  const { authToken, sharedUserEmail, setUserLanguage } = useContext(AppContext);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+
   const navigate = useNavigate();
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match!');
       return;
-    }else if (newPassword.length < 8) {
+    } else if (newPassword.length < 8) {
       setError('Password must be at least 8 characters long!');
       return;
     }
@@ -34,6 +35,7 @@ const SettingsMainContent = () => {
       );
       console.log(response.data);
       alert('Password is changed successfully!');
+      window.location.reload();
     } catch (error) {
       console.error(error.response?.data || error.message);
       setError('Failed to change password.');
@@ -49,6 +51,24 @@ const SettingsMainContent = () => {
       });
       console.log(response.data);
       navigate("/");
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+    }
+  };
+
+  const handleLanguageChange = async (language) => {
+    setSelectedLanguage(language);
+    try {
+      const response = await axios.put(`${backendUrl}/updatelanguage`, 
+        { language, email: sharedUserEmail }, 
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      console.log(response.data);
+      setUserLanguage(language);
     } catch (error) {
       console.error(error.response?.data || error.message);
     }
@@ -83,6 +103,19 @@ const SettingsMainContent = () => {
           >
             Change Password
           </button>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-lg text-gray-200 mb-2">Language</h2>
+          <select
+            value={selectedLanguage}
+            onChange={(e) => handleLanguageChange(e.target.value)}
+            className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white cursor-pointer"
+          >
+            <option value="English">English</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+          </select>
         </div>
 
         <div>

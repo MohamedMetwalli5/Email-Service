@@ -211,13 +211,15 @@ public class EmailsController {
     @PutMapping("/changepassword")
     public ResponseEntity<String> changeUserPassword(@RequestBody Map<String, String> payload, 
                                                      @RequestHeader("Authorization") String authorizationHeader) {
-        String email = payload.get("email");
+    	String email = payload.get("email");
         String newPassword = payload.get("newPassword");
 
+    	System.out.println(email);
+    	System.out.println(newPassword);
         if (email == null || email.isEmpty() || newPassword == null || newPassword.isEmpty()) {
             return ResponseEntity.badRequest().body("Email and new password are required.");
         }
-
+    	
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -238,6 +240,23 @@ public class EmailsController {
         } catch (Exception e) {
             System.err.println("Error changing password for user: " + email);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to change password. Please try again later.");
+        }
+    }
+    
+    @PutMapping("/updatelanguage")
+    public ResponseEntity<String> updateLanguage(@RequestBody Map<String, String> request, @RequestHeader("Authorization") String token) {
+        String language = request.get("language");
+        String email = request.get("email");
+        
+        try {
+            boolean success = userService.updateLanguage(email, language);
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+            }
+            return ResponseEntity.ok("Language updated successfully!");
+        } catch (Exception e) {
+            System.err.println("Error updating language for user: " + email);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update language. Please try again later.");
         }
     }
     

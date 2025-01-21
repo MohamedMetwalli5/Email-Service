@@ -27,5 +27,6 @@ CREATE TABLE IF NOT EXISTS emails (
 CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(40) NOT NULL,
     password VARCHAR(70) NOT NULL,
+    language VARCHAR(20),
     PRIMARY KEY (email)
 );

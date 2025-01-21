@@ -84,7 +84,7 @@ const Sidebar = () => {
               onClick={() => {
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('sharedUserEmail');
-                navigate('/');
+                navigate('/signin');
               }}
             >
               <PiSignOutBold />

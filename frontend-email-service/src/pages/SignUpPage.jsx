@@ -42,7 +42,7 @@ const SignUpPage = () => {
   const signUp = async() => {
     try {
       const response = await axios.post(`${backendUrl}/signup`, formData);
-      const token = response.data.split(' ')[1];
+      const token = response.data.token;
 
       setAuthToken(token);
       setSharedUserEmail(formData.email);

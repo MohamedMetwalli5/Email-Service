@@ -43,4 +43,16 @@ public class UserService {
             return false;
         }
     }
+
+	public boolean updateLanguage(String email, String language) {
+	    Optional<User> optionalUser = repository.findByEmail(email);
+	    
+	    if (optionalUser.isPresent()) {
+	        User user = optionalUser.get();
+	        user.setLanguage(language);
+	        repository.save(user);
+	        return true;
+	    }
+	    return false;
+	}
 }
