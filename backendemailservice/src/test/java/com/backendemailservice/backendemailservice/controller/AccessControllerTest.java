@@ -60,13 +60,13 @@ public class AccessControllerTest {
 
     @Test
     public void testSignUp_UserAlreadyExists() throws Exception {
-        User existingUser = new User("existing@example.com", "password");
+        User existingUser = new User("existing@seamail.com", "password");
 
-        when(userService.findUser("existing@example.com", "password")).thenReturn(Optional.of(existingUser));
+        when(userService.findUser("existing@seamail.com", "password")).thenReturn(Optional.of(existingUser));
 
         mockMvc.perform(post("/signup")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"existing@example.com\",\"password\":\"password\"}"))
+                .content("{\"email\":\"existing@seamail.com\",\"password\":\"password\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("User already exists"));
     }

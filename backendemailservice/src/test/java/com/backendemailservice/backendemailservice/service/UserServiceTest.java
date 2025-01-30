@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.UserRepository;
@@ -26,7 +27,10 @@ public class UserServiceTest {
 
     @Autowired
     private UserRepository userRepository;
-
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
     @BeforeEach
     public void setUp() {
         userRepository.deleteAll(); // Clearing the repository before each test
@@ -44,13 +48,13 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testFindUser() {
-        User user = new User("mohamed@example.com", "password");
+    public void testFindAndValidateUser() {
+        User user = new User("mohamed@seamail.com", passwordEncoder.encode("password"));
         userRepository.save(user);
 
-        Optional<User> foundUser = userService.findUser("mohamed@example.com", "password");
+        Optional<User> foundUser = userService.findAndValidateUser("mohamed@seamail.com", "password");
         assertThat(foundUser).isPresent();
-        assertThat(foundUser.get().getEmail()).isEqualTo("mohamed@example.com");
+        assertThat(foundUser.get().getEmail()).isEqualTo("mohamed@seamail.com");
     }
 
     @Test
