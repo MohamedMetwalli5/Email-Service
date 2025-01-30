@@ -68,6 +68,8 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
   - `AccessControllerTest`: Tests for user authentication endpoints like sign-in and sign-up.
   - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.
 
+# Screenshot
+![image](https://github.com/user-attachments/assets/55aa11a3-e7f1-4eb8-92cf-c3c7083b3525)
 
 # Logo Idea
 The Seamail logo combines an envelope with dynamic wave patterns, symbolizing seamless communication. It reflects the efficient, modern, and user-friendly email service.
