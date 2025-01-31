@@ -32,7 +32,7 @@ Run the `Tables.sql` script in the "SQL Scripts" folder to set up your database 
 1. Navigate to the Backend Directory 
 ```cd backendemailservice```
 
-2. Navigate using `cd src\main\resources`, Create and configure the `application.properties` file. Fill the file with the following properties that suit your setup:
+2. Navigate to `cd src\main`, create a `resources` folder, and create and configure the `application.properties` file inside it. Fill the file with the following properties that suit your setup:
 ```
 # Database Configuration
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
@@ -63,7 +63,7 @@ discord.api.url=https://discord.com/api
 # Add other specific configurations here as necessary
 ```
 
-3. Navigate using `cd src\test\resources`, Create and configure the `application-test.properties` file. Fill the file with the following properties that suit your setup:
+3. Navigate to `cd src\test`, create a `resources` folder, and create and configure the `application-test.properties` file inside it. Fill the file with the following properties that suit your setup:
 ```
 # Connecting to H2 Database
 spring.datasource.driver-class-name=org.h2.Driver
