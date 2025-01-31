@@ -10,10 +10,6 @@ const Navbar = () => {
   const { sharedUserEmail } = useContext(AppContext);
   const userEmail = sharedUserEmail
 
-  if(!sharedUserEmail){
-    alert("Please, sign in.");
-  }
-
   const navigate = useNavigate();
 
   return (

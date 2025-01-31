@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
 import hash from 'hash.js';
+import SignInWithDiscord from '../components/SigninWithDiscord.jsx';
+
 
 
 const SignInPage = () => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+  const discordClientID = import.meta.env.VITE_CLIENT_ID;
   
   const { setSharedUserEmail } = useContext(AppContext);
   const { setAuthToken } = useContext(AppContext);
@@ -50,6 +53,7 @@ const SignInPage = () => {
     }
   };
 
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white rounded-lg shadow-lg p-8 space-y-6">
@@ -82,7 +86,7 @@ const SignInPage = () => {
               required
             />
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex-col justify-between items-center">
             <button
               type="submit"
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 rounded-md transition-all duration-300"
@@ -91,6 +95,9 @@ const SignInPage = () => {
             </button>
           </div>
         </form>
+
+        <SignInWithDiscord />
+
         <p className="text-center text-sm text-gray-500">
           Don't have an account?{' '}
           <a href="/" className="text-blue-500 hover:text-blue-700">

@@ -2,9 +2,17 @@ import React from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import SettingsMainContent from '../components/SettingsMainContent';
+import { useContext } from "react";
+import { AppContext } from '../AppContext.jsx';
 
 
 const SettingsPage = () => {
+  
+  const { authToken, sharedUserEmail } = useContext(AppContext);
+
+  if (!authToken || !sharedUserEmail) {
+    return <></>;
+  }
 
   return (
     <div className="flex h-screen bg-gray-700">

@@ -13,6 +13,7 @@ Seamail is an email service designed to enhance user interactions with their ema
 
 # Features
 - **User Registration & Sign-in:** Secure registration and login process for users.
+- **OAuth2 Authentication:** Allow users to optionally sign in effortlessly with their Discord account.
 - **JWT Authentication:** Ensures secure access to the platform with token-based authentication.
 - **Multi-language Support:** Enhances accessibility by offering the platform in multiple languages.
 - **Email Management:** View and manage inbox, outbox, and trashbox for efficient email organization.
@@ -30,11 +31,59 @@ Run the `Tables.sql` script in the "SQL Scripts" folder to set up your database 
 ## Backend Setup
 1. Navigate to the Backend Directory 
 ```cd backendemailservice```
-2. Navigate using `cd src\main\resources`, and Configure the `application.properties` file like:
-   - Setting up the MySQL connection details (URL, username, password).
-   - Configuring JPA settings for database interaction and Hibernate.
-   - Setting a secret key for JWT-based authentication.
-3. Navigate using `cd src\test\resources`, and Configure the `application-test.properties` file.
+
+2. Navigate using `cd src\main\resources`, Create and configure the `application.properties` file. Fill the file with the following properties that suit your setup:
+```
+# Database Configuration
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.url=your_database_URL (e.g. jdbc:mysql://localhost:3306/seamail)
+spring.datasource.username=your_database_username (e.g. root)
+spring.datasource.password=your_database_password (e.g. 1234)
+
+# CORS Configuration
+cors.allowed.origin=your_frontend_url (e.g. http://localhost:8080)
+server.port=your_backend_port_number (e.g. 8081)
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+# spring.jpa.properties.hibernate.formate_sql=true
+
+# Security Configuration
+jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)
+
+# Discord OAuth2 Configuration
+discord.client.id=your_discord_client_id
+discord.client.secret=your_discord_client_secret
+discord.token.url=https://discord.com/api/oauth2/token
+discord.api.url=https://discord.com/api
+
+# Other Application Configurations
+# Add other specific configurations here as necessary
+```
+
+3. Navigate using `cd src\test\resources`, Create and configure the `application-test.properties` file. Fill the file with the following properties that suit your setup:
+```
+# Connecting to H2 Database
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+spring.datasource.username=sa
+spring.datasource.password=
+
+# CORS Configuration
+cors.allowed.origin=your_frontend_url (e.g. http://localhost:8080)
+server.port=your_backend_port_number (e.g. 8081)
+
+# Configuring JPA for H2
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+
+# Security Values
+jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)
+```
+
 4. Clean and Install dependencies
 ```mvn clean install```
 5. Navigate to the `target` folder using ```cd target```

@@ -86,7 +86,7 @@ const SettingsMainContent = () => {
       <div className="flex flex-col w-full bg-gray-900 p-4 rounded-lg">
         <h1 className="text-2xl font-semibold text-blue-400 mb-4">{t('SETTINGS')}</h1>
         
-        <div className="mb-6">
+        {sharedUserEmail.endsWith("@seamail.com") && <div className="mb-6">
           <h2 className="text-lg text-gray-200 mb-2">{t('CHANGE_PASSWORD')}</h2>
           <input
             type="password"
@@ -111,7 +111,8 @@ const SettingsMainContent = () => {
             {t('CHANGE_PASSWORD')}
           </button>
         </div>
-
+        }
+        
         <div className="mb-6">
           <h2 className="text-lg text-gray-200 mb-2">{t('LANGUAGE')}</h2>
           <select
