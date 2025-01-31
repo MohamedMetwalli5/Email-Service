@@ -98,7 +98,8 @@ jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 3. Configure Environment Variables, 
 Create a ```.env``` file in the frontend directory with the following content:
 ```
-VITE_BACKEND_API_URL=http://localhost:8081
+VITE_BACKEND_API_URL=your_frontend_url (e.g. http://localhost:8081)
+VITE_CLIENT_ID=your_discord_client_id
 ```
 4. Start the Frontend
 ``` npm run dev ```
