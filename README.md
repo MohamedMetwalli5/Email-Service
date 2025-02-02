@@ -64,8 +64,7 @@ discord.api.url=https://discord.com/api
 # Add other specific configurations here as necessary
 ```
 
-3. Navigate to `src\test`, create a `resources` folder, and create and configure the `application-test.properties` file inside it. Fill the file with the following properties that suit your setup:  
-Note: Some values can be obtained from the Discord Developer Portal based on your application’s configuration and API keys.
+3. Navigate to `src\test`, create a `resources` folder, and create and configure the `application-test.properties` file inside it. Fill the file with the following properties that suit your setup:
 ```
 # Connecting to H2 Database
 spring.datasource.driver-class-name=org.h2.Driver
@@ -99,6 +98,7 @@ jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 ``` npm install ```
 3. Configure Environment Variables, 
 Create a ```.env``` file in the frontend directory with the following content:
+Note: Some values can be obtained from the Discord Developer Portal based on your application’s configuration and API keys.
 ```
 VITE_BACKEND_API_URL=your_frontend_url (e.g. http://localhost:8081)
 VITE_CLIENT_ID=your_discord_client_id
