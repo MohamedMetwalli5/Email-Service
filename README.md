@@ -97,7 +97,7 @@ jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 2. Install Dependencies
 ``` npm install ```
 3. Configure Environment Variables, 
-Create a ```.env``` file in the frontend directory with the following content:
+Create a ```.env``` file in the frontend directory with the following content:  
 Note: Some values can be obtained from the Discord Developer Portal based on your application’s configuration and API keys.
 ```
 VITE_BACKEND_API_URL=your_frontend_url (e.g. http://localhost:8081)
