@@ -4,7 +4,7 @@ import axios from 'axios';
 import { AppContext } from '../AppContext.jsx';
 import { useContext } from 'react';
 import hash from 'hash.js';
-import LeftCharactersSticker from "../assets/LeftCharactersSticker.png";
+import LeftCharactersSticker from "../assets/LeftCharactersSticker.svg";
 
 
 const SignUpPage = () => {
