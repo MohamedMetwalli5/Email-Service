@@ -19,7 +19,7 @@ Seamail is an email service designed to enhance user interactions with their ema
 - **Email Management:** View and manage inbox, outbox, and trashbox for efficient email organization.
 - **Email Actions:** Send, move to trash, and delete emails with ease.
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender.
-- **Account Deletion:** Allows users to permanently delete their accounts if desired.
+- **Account Management:** Allows users to permanently delete their accounts if desired and change their default profile picture.
 - **Password Management:** Option to securely change user passwords to maintain account security.
 
 
