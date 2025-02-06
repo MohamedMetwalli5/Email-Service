@@ -34,6 +34,8 @@ const resources = {
       ENTER_RECIPIENT_EMAIL: "Enter recipient's email", 
       ENTER_SUBJECT: 'Enter subject',                     
       ENTER_MESSAGE_BODY: 'Enter message body',  
+      PROFILE_PICTURE: 'Profile Picture',
+      UPLOAD_PROFILE_PICTURE: 'Upload Profile Picture',
     },
   },
 
@@ -69,6 +71,8 @@ const resources = {
       ENTER_RECIPIENT_EMAIL: "Entrez l'email du destinataire", 
       ENTER_SUBJECT: 'Entrez le sujet',                        
       ENTER_MESSAGE_BODY: 'Entrez le corps du message', 
+      PROFILE_PICTURE: 'Photo de profil',
+      UPLOAD_PROFILE_PICTURE: 'Télécharger la photo de profil',
     },
   },
 
@@ -104,6 +108,8 @@ const resources = {
       ENTER_RECIPIENT_EMAIL: 'Geben Sie die E-Mail des Empfängers ein', 
       ENTER_SUBJECT: 'Betreff eingeben',                             
       ENTER_MESSAGE_BODY: 'Nachrichtentext eingeben',  
+      PROFILE_PICTURE: 'Profilbild',
+      UPLOAD_PROFILE_PICTURE: 'Profilbild hochladen',
     },
   },
 };

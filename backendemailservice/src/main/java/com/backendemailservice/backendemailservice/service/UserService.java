@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.UserRepository;
+
+import jakarta.transaction.Transactional;
+
 import java.util.Optional;
 
 
@@ -72,4 +75,29 @@ public class UserService {
 	    }
 	    return false;
 	}
+
+	@Transactional
+	public boolean uploadProfilePicture(String email, byte[] profilePicture) {
+        Optional<User> userOptional = repository.findById(email);
+        
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setProfilePicture(profilePicture);
+            repository.save(user);
+            return true;
+        }
+        return false;
+    }
+	
+	@Transactional
+	public byte[] fetchProfilePicture(String email) {
+        Optional<User> userOptional = repository.findById(email);
+        
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return user.getProfilePicture();
+        }
+        return null;
+    }
+	
 }

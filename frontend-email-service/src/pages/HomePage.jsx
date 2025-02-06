@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import HomeMainContent from '../components/HomeMainContent';
@@ -6,10 +6,12 @@ import { AppContext } from '../AppContext.jsx';
 import { useNavigate } from 'react-router-dom';
 
 
+
 const HomePage = () => {
 
   const { setSharedUserEmail, setAuthToken, sharedUserEmail, authToken } = useContext(AppContext);
-  const navigate = useNavigate();
+  
+  const navigate = useNavigate();  
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);

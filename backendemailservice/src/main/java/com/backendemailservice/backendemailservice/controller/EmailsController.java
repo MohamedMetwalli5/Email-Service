@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -256,6 +258,28 @@ public class EmailsController {
             System.err.println("Error updating language for user: " + email);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update language. Please try again later.");
         }
+    }
+    
+
+    @PostMapping("/{email}/profile-picture")
+    public ResponseEntity<String> uploadProfilePicture(@PathVariable String email, @RequestBody byte[] profilePicture) {
+    	boolean isUploaded = userService.uploadProfilePicture(email, profilePicture);
+        return isUploaded
+                ? ResponseEntity.ok("Profile picture uploaded successfully.")
+                : ResponseEntity.badRequest().body("Failed to upload profile picture.");
+    }
+    
+    @GetMapping("/{email}/profile-picture")
+    public ResponseEntity<byte[]> getProfilePicture(@PathVariable String email) {
+        byte[] profilePicture = userService.fetchProfilePicture(email);
+
+        if (profilePicture != null) {
+            return ResponseEntity
+                    .ok()
+                    .header("Content-Type", "image/png")
+                    .body(profilePicture);
+        }
+        return ResponseEntity.notFound().build();
     }
     
 }
