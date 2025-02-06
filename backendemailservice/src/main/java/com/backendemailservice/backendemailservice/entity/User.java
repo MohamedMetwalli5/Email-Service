@@ -21,7 +21,7 @@ public class User {
     private String language;
 	
 	@Lob
-	@Column(columnDefinition = "MEDIUMBLOB")
+	@Column(columnDefinition = "LONGBLOB")
     private byte[] profilePicture;
 	
 	public User(String email, String password){
