@@ -35,7 +35,6 @@ const Navbar = () => {
     if (sharedUserEmail) {
       fetchProfilePicture();
     }
-    console.log("gdfgdf");
 
     return () => {
       if (profilePicture) {
