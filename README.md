@@ -37,7 +37,7 @@ Note: Some values can be obtained from the Discord Developer Portal based on you
 ```
 # Database Configuration
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-spring.datasource.url=your_database_URL (e.g. jdbc:mysql://localhost:3306/seamail)
+spring.datasource.url=your_database_URL (e.g. jdbc:mysql://localhost:3306/seamail?sessionVariables=sql_mode='NO_ENGINE_SUBSTITUTION'&jdbcCompliantTruncation=false)
 spring.datasource.username=your_database_username (e.g. root)
 spring.datasource.password=your_database_password (e.g. 1234)
 
