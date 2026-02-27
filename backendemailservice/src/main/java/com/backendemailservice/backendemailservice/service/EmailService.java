@@ -4,23 +4,24 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.backendemailservice.backendemailservice.FilteringWrapper;
 import com.backendemailservice.backendemailservice.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
-import com.backendemailservice.backendemailservice.repository.UserRepository;
 
-@RestController
+@Service
 public class EmailService {
 
 	@Autowired
 	private EmailRepository repository;
-	
+
+	@Cacheable(value = "inbox", key = "#user.getEmail()")
 	public List<Email> loadInbox(User user){
 		return repository.loadInbox(user.getEmail());
 	}
@@ -33,6 +34,7 @@ public class EmailService {
 		return repository.loadTrashbox(user.getEmail());
 	}
 
+	@CacheEvict(value = "inbox", key = "#email.getReceiver()")
 	public void createEmail(Email email) {
 		repository.save(email);
 	}
@@ -42,6 +44,7 @@ public class EmailService {
 	}
 
 	@Transactional
+	@CacheEvict(value = "inbox", key = "#email.getReceiver()")
 	public void moveToTrashBox(Email email) {
 		repository.moveToTrashBox(email.getEmailID());
 	}

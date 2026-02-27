@@ -1,6 +1,7 @@
 ![Frontend](https://img.shields.io/badge/Frontend-React.js%20-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-SpringBoot%20-green.svg)
 ![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-orange.svg)
+![Cache](https://img.shields.io/badge/Cache-Redis-red.svg)
 ![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-yellow.svg)
 
 <div align="center">
@@ -8,8 +9,7 @@
 </div>
 
 # Seamail: An Email Service
-Seamail is an email service designed to enhance user interactions with their email system. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface.
-
+Seamail is a full-stack email service designed to enhance user interactions with their email system. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface, backed by Redis caching for improved performance.
 
 # Features
 - **User Registration & Sign-in:** Secure registration and login process for users.
@@ -21,12 +21,16 @@ Seamail is an email service designed to enhance user interactions with their ema
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender.
 - **Account Management:** Allows users to permanently delete their accounts if desired and change their default profile picture.
 - **Password Management:** Option to securely change user passwords to maintain account security.
-
+- **Redis Caching:** Caches inbox emails per user using Redis Cloud with a 15-minute TTL to reduce database load and improve response times. Cache is automatically invalidated when new emails are received or moved to trash.
 
 # Setup Instructions
 If you want to replicate the project on your local environment, follow these steps:
 ## Database Setup
 Run the `Tables.sql` script in the "SQL Scripts" folder to set up your database tables.
+
+## Redis Cache Setup
+1. Create a free account on [Redis Cloud](https://redis.io/cloud/)
+2. Create a new database and note down your connection details (host, port, username, and password) to use in the `application.properties` file
 
 ## Backend Setup
 1. Navigate to the Backend Directory 
@@ -60,8 +64,11 @@ discord.client.secret=your_discord_client_secret
 discord.token.url=https://discord.com/api/oauth2/token
 discord.api.url=https://discord.com/api
 
-# Other Application Configurations
-# Add other specific configurations here as necessary
+# Redis Caching Configuration
+spring.data.redis.host=your_redis_cloud_host (e.g. redis-12345.c1.us-east-1-2.ec2.cloud.redislabs.com)
+spring.data.redis.port=your_redis_cloud_port (e.g. 12345)
+spring.data.redis.username=your_redis_username (e.g. default)
+spring.data.redis.password=your_redis_cloud_password
 ```
 
 3. Navigate to `src\test`, create a `resources` folder, and create and configure the `application-test.properties` file inside it. Fill the file with the following properties that suit your setup:
@@ -83,6 +90,9 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
 
 # Security Values
 jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)
+
+# Disabling Redis, using in-memory cache for tests
+spring.cache.type=simple
 ```
 
 4. Clean and Install dependencies
@@ -115,7 +125,7 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
 - **Service Tests**: Tests for the business logic in the service layer.
   - `UserServiceTest`: Validates user creation, finding users, and checking non-existent users.
   - `EmailServiceTest`: Verifies email creation, loading inbox/outbox/trashbox, filtering, sorting, and moving emails to trash.
-
+  - `EmailServiceCacheTest`: Verifies that inbox caching works correctly, including cache population on first load and cache eviction on email creation and trash actions.
 - **Controller Tests**: Tests for the API layers.
   - `AccessControllerTest`: Tests for user authentication endpoints like sign-in and sign-up.
   - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.

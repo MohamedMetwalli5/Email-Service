@@ -1,5 +1,7 @@
 package com.backendemailservice.backendemailservice.entity;
 
+import java.io.Serializable;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,7 +10,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "emails")
-public class Email {
+public class Email implements Serializable {
 	@Id
 	@Column(name="emailID", nullable = false, unique = true)
 	@GeneratedValue

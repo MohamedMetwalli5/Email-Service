@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.backendemailservice.backendemailservice.FilteringWrapper;
@@ -31,11 +32,15 @@ public class EmailServiceTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CacheManager cacheManager;
+
     @BeforeEach
     public void setUp() {
-        // Clearing all users and emails before each test
         emailRepository.deleteAll();
         userRepository.deleteAll();
+        cacheManager.getCacheNames()
+                .forEach(name -> cacheManager.getCache(name).clear());
     }
 
     @Test
@@ -196,4 +201,53 @@ public class EmailServiceTest {
         assertThat(trashedEmail).isNotNull();
         assertThat(trashedEmail.getTrash()).isEqualTo("Yes"); // Checking for the updated trash value
     }
+
+    @Test
+    public void testLoadInbox_IsCached() {
+        User user = new User("test@seamail.com", "password");
+        userRepository.save(user);
+
+        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", "2026-02-27", "No");
+        emailRepository.save(email);
+
+        List<Email> firstCall = emailService.loadInbox(user);
+        List<Email> secondCall = emailService.loadInbox(user);
+
+        assertThat(firstCall).isEqualTo(secondCall);
+        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
+    }
+
+    @Test
+    public void testLoadInbox_CacheEvictedOnCreateEmail() {
+        User user = new User("test@seamail.com", "password");
+        userRepository.save(user);
+
+        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", "2026-02-27", "No");
+        emailRepository.save(email);
+
+        emailService.loadInbox(user);
+        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
+
+        Email newEmail = new Email("sender2@seamail.com", user.getEmail(), "New", "Body", "1", "2026-02-27", "No");
+        emailService.createEmail(newEmail);
+
+        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
+    }
+
+    @Test
+    public void testLoadInbox_CacheEvictedOnMoveToTrash() {
+        User user = new User("test@seamail.com", "password");
+        userRepository.save(user);
+
+        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", "2026-02-27", "No");
+        emailService.createEmail(email);
+
+        emailService.loadInbox(user);
+        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
+
+        emailService.moveToTrashBox(email);
+
+        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
+    }
+
 }
