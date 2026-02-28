@@ -1,8 +1,9 @@
-![Frontend](https://img.shields.io/badge/Frontend-React.js%20-blue.svg)
-![Backend](https://img.shields.io/badge/Backend-SpringBoot%20-green.svg)
-![DBMS](https://img.shields.io/badge/DBMS-MySQL%20-orange.svg)
+![Frontend](https://img.shields.io/badge/Frontend-React.js-blue.svg)
+![Backend](https://img.shields.io/badge/Backend-Spring%20Boot-green.svg)
+![Database](https://img.shields.io/badge/Database-MySQL-orange.svg)
 ![Cache](https://img.shields.io/badge/Cache-Redis-red.svg)
-![License](https://img.shields.io/badge/License-GPL&ndash;3.0%20-yellow.svg)
+![Container](https://img.shields.io/badge/Container-Docker-blue.svg)
+![License](https://img.shields.io/badge/License-GPL--3.0-yellow.svg)
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/3438953d-9596-41fd-9570-2c0ec3713657" alt="The Website Logo" width="200" />
@@ -23,103 +24,204 @@ Seamail is a full-stack email service designed to enhance user interactions with
 - **Password Management:** Option to securely change user passwords to maintain account security.
 - **Redis Caching:** Caches inbox emails per user using Redis Cloud with a 15-minute TTL to reduce database load and improve response times. Cache is automatically invalidated when new emails are received or moved to trash.
 
-# Setup Instructions
-If you want to replicate the project on your local environment, follow these steps:
+---
+
+# Setup Options
+
+There are two ways to run Seamail:
+
+| Method | Best For |
+|--------|----------|
+| 🐳 **Docker** | Quick setup, no local dependencies needed |
+| 🛠️ **Manual** | Local development with IntelliJ |
+
+---
+
+# 🐳 Docker Setup
+
+Docker runs the entire stack (MySQL + Spring Boot + React/Nginx) with a single command. No need to install Java, Node.js, or MySQL locally.
+
+## Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+## Steps
+
+**1. Clone the repository**
+```bash
+git clone https://github.com/your-username/Email-Service.git
+cd Email-Service
+```
+
+**2. Create the `.env` file**
+
+Create a `.env` file in the root `Email-Service/` directory. Use `.env.example` as a template.
+
+Then fill in your values:
+```env
+# Database
+DB_NAME=seamail
+DB_USER=seamail_user
+DB_PASSWORD=your_db_password
+DB_ROOT_PASSWORD=your_root_password
+
+# JWT
+JWT_SECRET=your_base64_encoded_jwt_secret
+
+# Discord OAuth2
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+
+# Redis Cloud
+REDIS_HOST=your_redis_cloud_host
+REDIS_PORT=your_redis_cloud_port
+REDIS_USERNAME=your_redis_username
+REDIS_PASSWORD=your_redis_cloud_password
+
+# CORS
+CORS_ALLOWED_ORIGIN=http://localhost
+```
+
+Discord credentials can be obtained from the [Discord Developer Portal](https://discord.com/developers/applications).  
+Redis credentials can be obtained from [Redis Cloud](https://redis.io/cloud/) (free tier available).
+
+**3. Build and run**
+```bash
+docker compose up --build
+```
+
+**4. Access the app**
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost |
+| Backend API | http://localhost:8081 |
+
+**5. Subsequent runs** (after the first build)
+```bash
+docker compose up
+```
+
+## Useful Docker Commands
+
+```bash
+# Stop containers (data is preserved)
+docker compose down
+
+# Stop containers and delete all data
+docker compose down -v
+
+# View logs
+docker compose logs -f
+
+# Rebuild a specific service
+docker compose up --build backend
+```
+
+> Note: MySQL data is stored in a Docker volume and persists across restarts. It is only deleted when you run `docker compose down -v`.
+
+---
+
+# 🛠️ Manual Setup (Local Development)
+
+## Prerequisites
+- Java JDK 21
+- Maven
+- MySQL
+- Node.js & npm
+- Redis Cloud account
+
 ## Database Setup
 Run the `Tables.sql` script in the "SQL Scripts" folder to set up your database tables.
 
 ## Redis Cache Setup
 1. Create a free account on [Redis Cloud](https://redis.io/cloud/)
-2. Create a new database and note down your connection details (host, port, username, and password) to use in the `application.properties` file
+2. Create a new database and note down your connection details (host, port, username, and password)
 
 ## Backend Setup
-1. Navigate to the Backend Directory 
-```cd backendemailservice```
 
-2. Navigate to `src\main`, create a `resources` folder, and create and configure the `application.properties` file inside it. Fill the file with the following properties that suit your setup:  
-Note: Some values can be obtained from the Discord Developer Portal based on your application’s configuration and API keys.
-```
-# Database Configuration
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-spring.datasource.url=your_database_URL (e.g. jdbc:mysql://localhost:3306/seamail?sessionVariables=sql_mode='NO_ENGINE_SUBSTITUTION'&jdbcCompliantTruncation=false)
-spring.datasource.username=your_database_username (e.g. root)
-spring.datasource.password=your_database_password (e.g. 1234)
-
-# CORS Configuration
-cors.allowed.origin=your_frontend_url (e.g. http://localhost:8080)
-server.port=your_backend_port_number (e.g. 8081)
-
-# JPA Configuration
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
-# spring.jpa.properties.hibernate.formate_sql=true
-
-# Security Configuration
-jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)
-
-# Discord OAuth2 Configuration
-discord.client.id=your_discord_client_id
-discord.client.secret=your_discord_client_secret
-discord.token.url=https://discord.com/api/oauth2/token
-discord.api.url=https://discord.com/api
-
-# Redis Caching Configuration
-spring.data.redis.host=your_redis_cloud_host (e.g. redis-12345.c1.us-east-1-2.ec2.cloud.redislabs.com)
-spring.data.redis.port=your_redis_cloud_port (e.g. 12345)
-spring.data.redis.username=your_redis_username (e.g. default)
-spring.data.redis.password=your_redis_cloud_password
+**1. Navigate to the backend directory**
+```bash
+cd backendemailservice
 ```
 
-3. Navigate to `src\test`, create a `resources` folder, and create and configure the `application-test.properties` file inside it. Fill the file with the following properties that suit your setup:
-```
-# Connecting to H2 Database
-spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-spring.datasource.username=sa
-spring.datasource.password=
+**2. Create `.env`**
 
-# CORS Configuration
-cors.allowed.origin=your_frontend_url (e.g. http://localhost:8080)
-server.port=your_backend_port_number (e.g. 8081)
+Create a `.env` file in the root `backendemailservice` directory. Use `.env.example` as a template.
 
-# Configuring JPA for H2
-spring.jpa.hibernate.ddl-auto=create-drop
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
-
-# Security Values
-jwt.secret=your_jwt_secret_key (e.g. TheSecretKeyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)
-
-# Disabling Redis, using in-memory cache for tests
-spring.cache.type=simple
+Then fill in your values:
+```env
+DB_NAME=seamail
+DB_USER=root
+DB_PASSWORD=your_db_password
+JWT_SECRET=your_jwt_secret_key
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+REDIS_HOST=your_redis_host
+REDIS_PORT=your_redis_port
+REDIS_USERNAME=your_redis_username
+REDIS_PASSWORD=your_redis_password
 ```
 
-4. Clean and Install dependencies
-```mvn clean install```
-5. Navigate to the `target` folder using ```cd target```
-6. Run the JAR file ```java -jar backendemailservice-0.0.1-SNAPSHOT.jar```
-7. The backend will start on http://localhost:8081
+> Note: `DB_USER=root` here (local MySQL), vs `DB_USER=seamail_user` in Docker.
+
+**3. Configure IntelliJ run configuration**
+
+Install the [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) in IntelliJ, then in your run configuration:
+- **EnvFile tab** → enable and point to `backendemailservice/.env`
+- **Active profiles** → set to `local`
+![image](https://github.com/user-attachments/assets/...)
+
+This activates `application-local.properties` which connects to your local MySQL instead of the Docker `db` host.
+
+**4. Run the backend**
+
+Either run directly from IntelliJ, or:
+```bash
+mvn clean install
+cd target
+java -jar backendemailservice-0.0.1-SNAPSHOT.jar
+```
+
+The backend will start on http://localhost:8081
 
 ## Frontend Setup
-1. Navigate to the Frontend Directory
-``` cd frontend-email-service ```
-2. Install Dependencies
-``` npm install ```
-3. Configure Environment Variables, 
-Create a ```.env``` file in the frontend directory with the following content:  
-Note: Some values can be obtained from the Discord Developer Portal based on your application’s configuration and API keys.
+
+**1. Navigate to the frontend directory**
+```bash
+cd frontend-email-service
 ```
-VITE_BACKEND_API_URL=your_frontend_url (e.g. http://localhost:8081)
+
+**2. Install dependencies**
+```bash
+npm install
+```
+
+**3. Create `.env`**
+Create a `.env` file in the root `frontend-email-service` directory. Use `.env.example` as a template.
+
+Then fill in your values:
+```env
+VITE_BACKEND_API_URL=/api
 VITE_CLIENT_ID=your_discord_client_id
 ```
-4. Start the Frontend
-``` npm run dev ```
-5. The frontend will start on http://localhost:8080
 
+**4. Start the frontend**
+```bash
+npm run dev
+```
+
+The frontend will start on http://localhost:8080
+
+---
 
 # Testing
 Seamail includes comprehensive unit tests to ensure reliability and functionality. These tests are built using JUnit and Mockito.
+
+## Running Tests
+```bash
+cd backendemailservice
+mvn test
+```
 
 ## Test Structure
 - **Service Tests**: Tests for the business logic in the service layer.
@@ -129,6 +231,8 @@ Seamail includes comprehensive unit tests to ensure reliability and functionalit
 - **Controller Tests**: Tests for the API layers.
   - `AccessControllerTest`: Tests for user authentication endpoints like sign-in and sign-up.
   - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.
+
+---
 
 # Screenshot
 ![image](https://github.com/user-attachments/assets/6ac251dd-e2e2-49ee-9d3f-c1fbe756d6e0)
