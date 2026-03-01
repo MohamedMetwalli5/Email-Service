@@ -57,4 +57,17 @@ public class JwtUtil {
             throw new IllegalArgumentException("Invalid or malformed token");
         }
     }
+
+    // Extracting and validating token from Authorization header
+    public String extractAndValidateToken(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authorizationHeader.substring(7);
+        String email = extractEmail(token);
+        if (!isTokenValid(token, email)) {
+            return null;
+        }
+        return email;
+    }
 }

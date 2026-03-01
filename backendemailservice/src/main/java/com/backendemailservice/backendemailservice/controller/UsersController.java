@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.backendemailservice.backendemailservice.service.UserService;
 import com.backendemailservice.backendemailservice.util.JwtUtil;
 
-
 @RestController
 public class UsersController {
 
@@ -27,26 +26,23 @@ public class UsersController {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
     }
-    
+
     @PostMapping("/deleteaccount")
     public ResponseEntity<String> deleteAccount(@RequestBody Map<String, String> payload, @RequestHeader("Authorization") String authorizationHeader) {
-        String userEmail = payload.get("email");
-        
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String token = authorizationHeader.substring(7);
-
-        if (!jwtUtil.isTokenValid(token, userEmail)) {
-            System.out.println("Token validation failed for user: " + userEmail);
+        String userEmail = payload.get("email");
+        if (!tokenEmail.equals(userEmail)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         userService.deleteUserAccount(userEmail);
-        return ResponseEntity.ok("Email is deleted!");
+        return ResponseEntity.ok("Account is deleted!");
     }
-    
+
     @PutMapping("/changepassword")
     public ResponseEntity<String> changeUserPassword(@RequestBody Map<String, String> payload,
                                                      @RequestHeader("Authorization") String authorizationHeader) {
@@ -57,32 +53,22 @@ public class UsersController {
             return ResponseEntity.badRequest().body("Email and new password are required.");
         }
 
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String token = authorizationHeader.substring(7);
-
-        if (!jwtUtil.isTokenValid(token, email)) {
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null || !tokenEmail.equals(email)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         userService.changeUserPassword(email, newPassword);
         return ResponseEntity.ok("Password changed successfully!");
     }
-    
+
     @PutMapping("/updatelanguage")
     public ResponseEntity<String> updateLanguage(@RequestBody Map<String, String> request, @RequestHeader("Authorization") String authorizationHeader) {
-        String language = request.get("language");
         String email = request.get("email");
+        String language = request.get("language");
 
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String token = authorizationHeader.substring(7);
-
-        if (!jwtUtil.isTokenValid(token, email)) {
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null || !tokenEmail.equals(email)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -92,29 +78,19 @@ public class UsersController {
 
     @PostMapping("/{email}/profile-picture")
     public ResponseEntity<String> uploadProfilePicture(@PathVariable String email, @RequestBody byte[] profilePicture, @RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String token = authorizationHeader.substring(7);
-
-        if (!jwtUtil.isTokenValid(token, email)) {
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null || !tokenEmail.equals(email)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         userService.uploadProfilePicture(email, profilePicture);
         return ResponseEntity.ok("Profile picture uploaded successfully.");
     }
-    
+
     @GetMapping("/{email}/profile-picture")
     public ResponseEntity<byte[]> getProfilePicture(@PathVariable String email, @RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String token = authorizationHeader.substring(7);
-
-        if (!jwtUtil.isTokenValid(token, email)) {
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null || !tokenEmail.equals(email)){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -126,5 +102,4 @@ public class UsersController {
         }
         return ResponseEntity.notFound().build();
     }
-    
 }

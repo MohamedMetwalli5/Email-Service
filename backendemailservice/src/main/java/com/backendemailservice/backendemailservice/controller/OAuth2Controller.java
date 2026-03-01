@@ -110,5 +110,4 @@ public class OAuth2Controller {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Failed to get access token from Discord.");
         }
     }
-}
-    
+} 
