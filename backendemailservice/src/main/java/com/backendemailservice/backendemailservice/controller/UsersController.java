@@ -4,7 +4,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,23 +12,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.backendemailservice.backendemailservice.entity.User;
-import com.backendemailservice.backendemailservice.repository.UserRepository;
-import com.backendemailservice.backendemailservice.service.EmailService;
 import com.backendemailservice.backendemailservice.service.UserService;
 import com.backendemailservice.backendemailservice.util.JwtUtil;
 
 
 @RestController
 public class UsersController {
-	
-    private final EmailService emailService;
+
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
     @Autowired
-    public UsersController(EmailService emailService, UserService userService, JwtUtil jwtUtil) {
-        this.emailService = emailService;
+    public UsersController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
     }
@@ -97,20 +91,36 @@ public class UsersController {
     }
 
     @PostMapping("/{email}/profile-picture")
-    public ResponseEntity<String> uploadProfilePicture(@PathVariable String email, @RequestBody byte[] profilePicture) {
-    	boolean isUploaded = userService.uploadProfilePicture(email, profilePicture);
-        return isUploaded
-                ? ResponseEntity.ok("Profile picture uploaded successfully.")
-                : ResponseEntity.badRequest().body("Failed to upload profile picture.");
+    public ResponseEntity<String> uploadProfilePicture(@PathVariable String email, @RequestBody byte[] profilePicture, @RequestHeader("Authorization") String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String token = authorizationHeader.substring(7);
+
+        if (!jwtUtil.isTokenValid(token, email)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        userService.uploadProfilePicture(email, profilePicture);
+        return ResponseEntity.ok("Profile picture uploaded successfully.");
     }
     
     @GetMapping("/{email}/profile-picture")
-    public ResponseEntity<byte[]> getProfilePicture(@PathVariable String email) {
-        byte[] profilePicture = userService.fetchProfilePicture(email);
+    public ResponseEntity<byte[]> getProfilePicture(@PathVariable String email, @RequestHeader("Authorization") String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
+        String token = authorizationHeader.substring(7);
+
+        if (!jwtUtil.isTokenValid(token, email)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        byte[] profilePicture = userService.fetchProfilePicture(email);
         if (profilePicture != null) {
-            return ResponseEntity
-                    .ok()
+            return ResponseEntity.ok()
                     .header("Content-Type", "image/png")
                     .body(profilePicture);
         }

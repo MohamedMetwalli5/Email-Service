@@ -80,7 +80,7 @@ public class EmailsControllerTest {
     @Test
     public void testLoadInbox_Unauthorized_NoToken() throws Exception {
         mockMvc.perform(post("/inbox"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
     
     @Test
@@ -147,7 +147,7 @@ public class EmailsControllerTest {
         mockMvc.perform(post("/sortemails")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"user\":{\"email\":\"test@example.com\"}, \"sortingOption\":\"priority\"}"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -181,7 +181,7 @@ public class EmailsControllerTest {
         mockMvc.perform(post("/filteremails")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"user\":{\"email\":\"test@example.com\"}, \"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 
 }
