@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.backendemailservice.backendemailservice.dto.UserRequestDto;
+import com.backendemailservice.backendemailservice.exception.InvalidEmailDomainException;
+import com.backendemailservice.backendemailservice.exception.UserAlreadyExistsException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.backendemailservice.backendemailservice.exception.UserNotFoundException;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.service.UserService;
 import com.backendemailservice.backendemailservice.util.*;
@@ -34,27 +36,18 @@ public class AccessController {
         if (foundUser.isPresent()) {
             String token = jwtUtil.generateToken(userRequestDto.getEmail());
             return ResponseEntity.ok().body("Bearer " + token);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
+        throw new UserNotFoundException("User not found");
     }
 
-    
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody UserRequestDto userRequestDto) {
-        if (userRequestDto.getEmail() == null || userRequestDto.getEmail().isEmpty() || userRequestDto.getPassword() == null || userRequestDto.getPassword().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Email and password must not be empty"));
+        if (userService.findUser(userRequestDto.getEmail(), userRequestDto.getPassword()).isPresent()) {
+            throw new UserAlreadyExistsException("User already exists");
         }
 
-        if (userService.findUser(userRequestDto.getEmail(), userRequestDto.getPassword()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("message", "User already exists"));
-        }
-        
         if (!userRequestDto.getEmail().endsWith("@seamail.com")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Emails must end with @seamail.com"));
+            throw new InvalidEmailDomainException("Emails must end with @seamail.com");
         }
 
         User user = new User(userRequestDto.getEmail(), userRequestDto.getPassword());
@@ -62,7 +55,6 @@ public class AccessController {
 
         String token = jwtUtil.generateToken(userRequestDto.getEmail());
 
-        // Returning the response with JWT
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of(
                     "message", "User created successfully",

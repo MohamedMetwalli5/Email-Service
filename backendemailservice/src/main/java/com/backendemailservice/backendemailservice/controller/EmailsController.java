@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.backendemailservice.backendemailservice.exception.ReceiverNotFoundException;
 import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
 import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
@@ -126,21 +126,19 @@ public class EmailsController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Optional<User> foundReceiver = userService.foundReceiver(emailRequestDto.getReceiver());
-        if (foundReceiver.isPresent()) {
-            Email email = new Email();
-            email.setSender(senderEmail);
-            email.setReceiver(emailRequestDto.getReceiver());
-            email.setSubject(emailRequestDto.getSubject());
-            email.setBody(emailRequestDto.getBody());
-            email.setPriority(emailRequestDto.getPriority());
-            email.setDate(java.time.LocalDateTime.now());
-            email.setTrash(false);
-            emailService.createEmail(email);
-            return ResponseEntity.ok("Email is sent!");
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email wasn't sent! Receiver not found.");
+        if (userService.foundReceiver(emailRequestDto.getReceiver()).isEmpty()) {
+            throw new ReceiverNotFoundException("Email wasn't sent! Receiver not found.");
         }
+        Email email = new Email();
+        email.setSender(senderEmail);
+        email.setReceiver(emailRequestDto.getReceiver());
+        email.setSubject(emailRequestDto.getSubject());
+        email.setBody(emailRequestDto.getBody());
+        email.setPriority(emailRequestDto.getPriority());
+        email.setDate(java.time.LocalDateTime.now());
+        email.setTrash(false);
+        emailService.createEmail(email);
+        return ResponseEntity.ok("Email is sent!");
     }
 
     @PostMapping("/moveemailtotrashbox")

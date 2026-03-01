@@ -58,7 +58,7 @@ public class AccessControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"unknown@example.com\",\"password\":\"wrongpassword\"}"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("User not found"));
+                .andExpect(jsonPath("$.message").value("User not found"));
     }
 
     @Test

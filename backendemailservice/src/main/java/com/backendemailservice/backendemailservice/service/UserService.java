@@ -1,5 +1,6 @@
 package com.backendemailservice.backendemailservice.service;
 
+import com.backendemailservice.backendemailservice.exception.UserNotFoundException;
 import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,54 +52,34 @@ public class UserService {
 		repository.deleteById(userEmail);
 	}
 
-	public boolean changeUserPassword(String userEmail, String newPassword) {
-        Optional<User> optionalUser = repository.findByEmail(userEmail);
-        
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-    		String saltedNewPassword = passwordEncoder.encode(newPassword);
-            user.setPassword(saltedNewPassword);
-            repository.save(user);
-            return true;
-        } else {
-            return false;
-        }
-    }
+	public void changeUserPassword(String userEmail, String newPassword) {
+		User user = repository.findByEmail(userEmail)
+				.orElseThrow(() -> new UserNotFoundException("User not found."));
+		user.setPassword(passwordEncoder.encode(newPassword));
+		repository.save(user);
+	}
 
-	public boolean updateLanguage(String email, String language) {
-	    Optional<User> optionalUser = repository.findByEmail(email);
-	    
-	    if (optionalUser.isPresent()) {
-	        User user = optionalUser.get();
-	        user.setLanguage(language);
-	        repository.save(user);
-	        return true;
-	    }
-	    return false;
+	public void updateLanguage(String email, String language) {
+		User user = repository.findByEmail(email)
+				.orElseThrow(() -> new UserNotFoundException("User not found."));
+		user.setLanguage(language);
+		repository.save(user);
 	}
 
 	@Transactional
 	public boolean uploadProfilePicture(String email, byte[] profilePicture) {
-        Optional<User> userOptional = repository.findById(email);
-        
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            user.setProfilePicture(profilePicture);
-            repository.save(user);
-            return true;
-        }
-        return false;
-    }
-	
+		User user = repository.findById(email)
+				.orElseThrow(() -> new UserNotFoundException("User not found."));
+		user.setProfilePicture(profilePicture);
+		repository.save(user);
+		return true;
+	}
+
 	@Transactional
 	public byte[] fetchProfilePicture(String email) {
-        Optional<User> userOptional = repository.findById(email);
-        
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            return user.getProfilePicture();
-        }
-        return null;
-    }
+		User user = repository.findById(email)
+				.orElseThrow(() -> new UserNotFoundException("User not found."));
+		return user.getProfilePicture();
+	}
 	
 }
