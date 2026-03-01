@@ -4,13 +4,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.backendemailservice.backendemailservice.FilteringWrapper;
-import com.backendemailservice.backendemailservice.SortingWrapper;
+import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
+import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
@@ -20,6 +22,9 @@ public class EmailService {
 
 	@Autowired
 	private EmailRepository repository;
+
+	@Autowired
+	private CacheManager cacheManager;
 
 	@Cacheable(value = "inbox", key = "#user.getEmail()")
 	public List<Email> loadInbox(User user){
@@ -39,14 +44,21 @@ public class EmailService {
 		repository.save(email);
 	}
 
-	public void deleteEmail(Email email) {
-		repository.deleteById(email.getEmailID());
+	public void deleteEmail(Integer emailID) {
+		repository.deleteById(emailID);
 	}
 
+	@CacheEvict(value = "inbox", key = "#receiver")
+	public void evictInboxCache(String receiver) {}
+
 	@Transactional
-	@CacheEvict(value = "inbox", key = "#email.getReceiver()")
-	public void moveToTrashBox(Email email) {
-		repository.moveToTrashBox(email.getEmailID());
+	public void moveToTrashBox(Integer emailID) {
+		Email email = repository.findById(emailID).orElseThrow();
+		repository.moveToTrashBox(emailID);
+		Cache cache = cacheManager.getCache("inbox");
+		if (cache != null) {
+			cache.evict(email.getReceiver());
+		}
 	}
 
 	public List<Email> sortEmails(SortingWrapper sortingWrapper) {

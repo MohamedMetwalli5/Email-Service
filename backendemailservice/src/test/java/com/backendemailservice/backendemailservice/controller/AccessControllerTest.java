@@ -79,7 +79,6 @@ public class AccessControllerTest {
         mockMvc.perform(post("/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"\",\"password\":\"\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Email and password must not be empty"));
+                .andExpect(status().isBadRequest());
     }
 }

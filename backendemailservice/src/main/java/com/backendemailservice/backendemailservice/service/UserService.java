@@ -2,7 +2,7 @@ package com.backendemailservice.backendemailservice.service;
 
 import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.backendemailservice.backendemailservice.entity.User;
@@ -18,8 +18,9 @@ public class UserService {
 
 	@Autowired
 	private UserRepository repository;
-	
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
     
 	public void createUser(User user) {
 		String saltedPassword = passwordEncoder.encode(user.getPassword());

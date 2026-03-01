@@ -1,4 +1,4 @@
-package com.backendemailservice.backendemailservice;
+package com.backendemailservice.backendemailservice.dto;
 
 import com.backendemailservice.backendemailservice.entity.User;
 

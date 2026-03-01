@@ -2,7 +2,6 @@ package com.backendemailservice.backendemailservice.controller;
 
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,9 +22,6 @@ import com.backendemailservice.backendemailservice.util.JwtUtil;
 
 @RestController
 public class UsersController {
-	
-	@Value("${cors.allowed.origin}")
-    private String allowedOrigin;
 	
     private final EmailService emailService;
     private final UserService userService;

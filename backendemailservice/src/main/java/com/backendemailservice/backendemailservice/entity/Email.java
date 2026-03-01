@@ -79,7 +79,20 @@ public class Email implements Serializable {
 	public String getTrash() {
 		return trash;
 	}
-	
+
+	public void setSender(String sender) { this.sender = sender; }
+
+	public void setReceiver(String receiver) { this.receiver = receiver; }
+
+	public void setSubject(String subject) { this.subject = subject; }
+
+	public void setBody(String body) { this.body = body; }
+
+	public void setPriority(String priority) { this.priority = priority; }
+
+	public void setDate(String date) { this.date = date; }
+
+	public void setTrash(String trash) { this.trash = trash; }
 
 	public Email() {
 		

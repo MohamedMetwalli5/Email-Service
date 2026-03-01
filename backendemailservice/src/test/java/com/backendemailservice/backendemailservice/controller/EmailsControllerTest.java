@@ -1,7 +1,7 @@
 package com.backendemailservice.backendemailservice.controller;
 
-import com.backendemailservice.backendemailservice.FilteringWrapper;
-import com.backendemailservice.backendemailservice.SortingWrapper;
+import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
+import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.service.EmailService;

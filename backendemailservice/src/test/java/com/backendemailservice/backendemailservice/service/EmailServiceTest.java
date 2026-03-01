@@ -12,8 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.backendemailservice.backendemailservice.FilteringWrapper;
-import com.backendemailservice.backendemailservice.SortingWrapper;
+import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
+import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
@@ -52,7 +52,7 @@ public class EmailServiceTest {
         emailService.createEmail(email);
 
         assertThat(emailRepository.count()).isEqualTo(1);
-        
+
         // Validating the details of the saved email
         Email savedEmail = emailRepository.findById(email.getEmailID()).orElse(null);
         assertThat(savedEmail).isNotNull();
@@ -69,7 +69,7 @@ public class EmailServiceTest {
     public void testLoadInbox() {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
-        
+
         Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", "2023-10-01", "No");
         emailRepository.save(email);
 
@@ -83,10 +83,10 @@ public class EmailServiceTest {
     public void testLoadOutbox() {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
-        
+
         Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", "2023-10-01", "No");
         emailService.createEmail(email);
-        
+
         List<Email> outboxEmails = emailService.loadOutbox(user);
         assertThat(outboxEmails).isNotNull();
         assertThat(outboxEmails.size()).isEqualTo(1);
@@ -97,10 +97,10 @@ public class EmailServiceTest {
     public void testLoadTrashbox() {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
-        
+
         Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", "2023-10-01", "Yes");
         emailService.createEmail(email);
-        
+
         List<Email> trashedEmails = emailService.loadTrashbox(user);
         assertThat(trashedEmails).isNotNull();
         assertThat(trashedEmails.size()).isEqualTo(1);
@@ -111,13 +111,13 @@ public class EmailServiceTest {
     public void testDeleteEmail() {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
-        
+
         Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", "2023-10-01", "No");
         emailService.createEmail(email);
 
         assertThat(emailRepository.count()).isEqualTo(1);
 
-        emailService.deleteEmail(email);
+        emailService.deleteEmail(email.getEmailID());
 
         assertThat(emailRepository.count()).isEqualTo(0);
     }
@@ -169,19 +169,19 @@ public class EmailServiceTest {
     public void testFilterEmailsBySender() {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
-        
+
         Email email1 = new Email("sender1@example.com", user.getEmail(), "Test Email 1", "First email", "1", "2023-10-01", "No");
         Email email2 = new Email("sender2@example.com", user.getEmail(), "Test Email 2", "Second email", "1", "2023-10-02", "No");
         emailService.createEmail(email1);
         emailService.createEmail(email2);
-        
+
         FilteringWrapper filteringWrapper = new FilteringWrapper();
         filteringWrapper.setUser(user);
         filteringWrapper.setFilteringOption("sender");
         filteringWrapper.setFilteringValue("sender1@example.com");
 
         List<Email> filteredEmails = emailService.filterEmails(filteringWrapper);
-        
+
         assertThat(filteredEmails).isNotNull();
         assertThat(filteredEmails.size()).isEqualTo(1);
         assertThat(filteredEmails.get(0).getSender()).isEqualTo("sender1@example.com");
@@ -191,12 +191,12 @@ public class EmailServiceTest {
     public void testMoveToTrashBox() {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
-        
+
         Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", "2023-10-01", "No");
         emailService.createEmail(email);
-        
-        emailService.moveToTrashBox(email);
-        
+
+        emailService.moveToTrashBox(email.getEmailID());
+
         Email trashedEmail = emailRepository.findById(email.getEmailID()).orElse(null);
         assertThat(trashedEmail).isNotNull();
         assertThat(trashedEmail.getTrash()).isEqualTo("Yes"); // Checking for the updated trash value
@@ -245,7 +245,7 @@ public class EmailServiceTest {
         emailService.loadInbox(user);
         assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
 
-        emailService.moveToTrashBox(email);
+        emailService.moveToTrashBox(email.getEmailID());
 
         assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
     }
