@@ -1,7 +1,6 @@
 package com.backendemailservice.backendemailservice.repository;
 
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,23 +10,23 @@ import com.backendemailservice.backendemailservice.entity.Email;
 @Repository
 public interface EmailRepository extends JpaRepository<Email, Integer>{
 
-	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No'")
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = false")
     List<Email> loadInbox(String receiverEmail);
-	
-	@Query("SELECT e FROM Email e WHERE e.sender = :senderEmail AND e.trash = 'No'")
+
+    @Query("SELECT e FROM Email e WHERE e.sender = :senderEmail AND e.trash = false")
     List<Email> loadOutbox(String senderEmail);
 
-	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'Yes'")
-	List<Email> loadTrashbox(String receiverEmail);
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = true")
+    List<Email> loadTrashbox(String receiverEmail);
 
-	@Modifying
-	@Query("UPDATE Email e SET e.trash = 'Yes' WHERE e.emailID = :emailID")
-	void moveToTrashBox(Integer emailID);
+    @Modifying
+    @Query("UPDATE Email e SET e.trash = true WHERE e.emailID = :emailID")
+    void moveToTrashBox(Integer emailID);
 
-	@Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.priority ASC")
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = false ORDER BY e.priority ASC")
     List<Email> sortEmailsByPriority(String receiverEmail);
 
-    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = 'No' ORDER BY e.date ASC")
+    @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.trash = false ORDER BY e.date ASC")
     List<Email> sortEmailsByDate(String receiverEmail);
 
     @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.subject = :subjectEmailOption")
@@ -36,4 +35,3 @@ public interface EmailRepository extends JpaRepository<Email, Integer>{
     @Query("SELECT e FROM Email e WHERE e.receiver = :receiverEmail AND e.sender = :senderEmailOption")
     List<Email> filterEmailsBySender(String receiverEmail, String senderEmailOption);
 }
-

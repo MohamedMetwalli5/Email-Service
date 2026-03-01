@@ -8,6 +8,7 @@ USE seamail;
 CREATE TABLE IF NOT EXISTS emails_seq (
     next_val INT NOT NULL
 );
+
 -- Initializing the sequence with a starting value
 INSERT INTO emails_seq (next_val) VALUES (1) ON DUPLICATE KEY UPDATE next_val = next_val;
 
@@ -19,8 +20,8 @@ CREATE TABLE IF NOT EXISTS emails (
     subject NVARCHAR(40),
     body NVARCHAR(100),
     priority INT,
-    date DATETIME,
-    trash ENUM('Yes', 'No') NOT NULL DEFAULT 'No'
+    date DATETIME NOT NULL,
+    trash TINYINT(1) NOT NULL DEFAULT 0
 );
 
 -- Creating the users table

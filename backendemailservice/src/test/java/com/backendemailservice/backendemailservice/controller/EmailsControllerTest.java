@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +89,7 @@ public class EmailsControllerTest {
         String receiverEmail = "example2@seamail.com";
         String token = jwtUtil.generateToken(email);
 
-        Email emailObj = new Email(email, receiverEmail, "Subject", "Body", "1", "2023-10-01", "No");
+        Email emailObj = new Email(email, receiverEmail, "Subject", "Body", "1", LocalDateTime.now(), false);
         
         when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
         when(userService.foundReceiver(emailObj.getReceiver())).thenReturn(Optional.of(new User(receiverEmail, "password")));
@@ -127,8 +128,8 @@ public class EmailsControllerTest {
         sortingWrapper.setSortingOption("priority");
 
         List<Email> sortedEmails = Arrays.asList(
-            new Email("sender1@example.com", "receiver1@example.com", "Subject 1", "Body 1", "1", "2023-10-01", "No"),
-            new Email("sender2@example.com", "receiver2@example.com", "Subject 2", "Body 2", "2", "2023-10-02", "No")
+            new Email("sender1@example.com", "receiver1@example.com", "Subject 1", "Body 1", "1", LocalDateTime.now(), false),
+            new Email("sender2@example.com", "receiver2@example.com", "Subject 2", "Body 2", "2", LocalDateTime.now(), false)
         );
 
         when(jwtUtil.isTokenValid(token, user.getEmail())).thenReturn(true);
@@ -161,8 +162,8 @@ public class EmailsControllerTest {
         filteringWrapper.setFilteringValue("Important");
 
         List<Email> filteredEmails = Arrays.asList(
-            new Email("sender@example.com", "test@example.com", "Important", "This is an important email", "2", "2023-10-01", "No"),
-            new Email("sender2@example.com", "test@example.com", "Important Update", "Details on important updates", "1", "2023-10-02", "No")
+            new Email("sender@example.com", "test@example.com", "Important", "This is an important email", "2", LocalDateTime.now(), false),
+            new Email("sender2@example.com", "test@example.com", "Important Update", "Details on important updates", "1", LocalDateTime.now(), false)
         );
 
         when(jwtUtil.isTokenValid(token, user.getEmail())).thenReturn(true);

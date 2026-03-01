@@ -45,7 +45,12 @@ public class EmailService {
 	}
 
 	public void deleteEmail(Integer emailID) {
+		Email email = repository.findById(emailID).orElseThrow();
 		repository.deleteById(emailID);
+		Cache cache = cacheManager.getCache("inbox");
+		if (cache != null) {
+			cache.evict(email.getReceiver());
+		}
 	}
 
 	@CacheEvict(value = "inbox", key = "#receiver")

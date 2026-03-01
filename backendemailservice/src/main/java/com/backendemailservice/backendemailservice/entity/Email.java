@@ -1,6 +1,7 @@
 package com.backendemailservice.backendemailservice.entity;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,13 +33,13 @@ public class Email implements Serializable {
 	private String priority;
 	
 	@Column(name="date", nullable = false)
-	private String date;
+	private LocalDateTime date;
 	
 	@Column(name="trash", nullable = false)
-	private String trash;
+	private boolean trash;
 	
 	
-	public Email(String sender, String receiver, String subject, String body, String priority, String date, String trash) {
+	public Email(String sender, String receiver, String subject, String body, String priority, LocalDateTime date, boolean trash) {
 		this.sender = sender;
 		this.receiver = receiver;
 		this.subject = subject;
@@ -72,11 +73,11 @@ public class Email implements Serializable {
 		return priority;
 	}
 
-	public String getDate() {
+	public LocalDateTime getDate() {
 		return date;
 	}
 	
-	public String getTrash() {
+	public boolean isTrash() {
 		return trash;
 	}
 
@@ -90,9 +91,9 @@ public class Email implements Serializable {
 
 	public void setPriority(String priority) { this.priority = priority; }
 
-	public void setDate(String date) { this.date = date; }
+	public void setDate(LocalDateTime date) { this.date = date; }
 
-	public void setTrash(String trash) { this.trash = trash; }
+	public void setTrash(boolean trash) { this.trash = trash; }
 
 	public Email() {
 		

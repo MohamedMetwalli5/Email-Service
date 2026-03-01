@@ -90,7 +90,7 @@ const EmailFullView = () => {
       {email.emailID && (sharedMailBoxOption === "Inbox" || sharedMailBoxOption === "Trashbox")? (
         <button
           onClick={() =>
-            email.trash === "No"? moveToTrash() : deletePermanently()
+            email.trash === false? moveToTrash() : deletePermanently()
           }
           className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-all duration-300"
         >

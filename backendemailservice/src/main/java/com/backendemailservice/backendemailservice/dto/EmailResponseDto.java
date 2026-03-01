@@ -1,5 +1,7 @@
 package com.backendemailservice.backendemailservice.dto;
 
+import java.time.LocalDateTime;
+
 public class EmailResponseDto {
 
     private Integer emailID;
@@ -8,10 +10,10 @@ public class EmailResponseDto {
     private String subject;
     private String body;
     private String priority;
-    private String date;
-    private String trash;
+    private LocalDateTime date;
+    private boolean trash;
 
-    public EmailResponseDto(Integer emailID, String sender, String receiver, String subject, String body, String priority, String date, String trash) {
+    public EmailResponseDto(Integer emailID, String sender, String receiver, String subject, String body, String priority, LocalDateTime date, boolean trash) {
         this.emailID = emailID;
         this.sender = sender;
         this.receiver = receiver;
@@ -28,6 +30,6 @@ public class EmailResponseDto {
     public String getSubject() { return subject; }
     public String getBody() { return body; }
     public String getPriority() { return priority; }
-    public String getDate() { return date; }
-    public String getTrash() { return trash; }
+    public LocalDateTime getDate() { return date; }
+    public boolean isTrash() { return trash; }
 }

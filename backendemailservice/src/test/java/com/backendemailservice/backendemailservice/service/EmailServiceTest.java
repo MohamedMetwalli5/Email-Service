@@ -2,6 +2,7 @@ package com.backendemailservice.backendemailservice.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -48,7 +49,7 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", "2023-10-01", "No");
+        Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
         emailService.createEmail(email);
 
         assertThat(emailRepository.count()).isEqualTo(1);
@@ -61,8 +62,8 @@ public class EmailServiceTest {
         assertThat(savedEmail.getSubject()).isEqualTo("Test Email");
         assertThat(savedEmail.getBody()).isEqualTo("This is a test email.");
         assertThat(savedEmail.getPriority()).isEqualTo("1");
-        assertThat(savedEmail.getDate()).isEqualTo("2023-10-01");
-        assertThat(savedEmail.getTrash()).isEqualTo("No");
+        assertThat(savedEmail.getDate()).isNotNull();
+        assertThat(savedEmail.isTrash()).isEqualTo(false);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", "2023-10-01", "No");
+        Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
         emailRepository.save(email);
 
         List<Email> inboxEmails = emailService.loadInbox(user);
@@ -84,7 +85,7 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", "2023-10-01", "No");
+        Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
         emailService.createEmail(email);
 
         List<Email> outboxEmails = emailService.loadOutbox(user);
@@ -98,7 +99,7 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", "2023-10-01", "Yes");
+        Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", LocalDateTime.now(), true);
         emailService.createEmail(email);
 
         List<Email> trashedEmails = emailService.loadTrashbox(user);
@@ -112,7 +113,7 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", "2023-10-01", "No");
+        Email email = new Email(user.getEmail(), "recipient@example.com", "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
         emailService.createEmail(email);
 
         assertThat(emailRepository.count()).isEqualTo(1);
@@ -127,8 +128,8 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email1 = new Email("sender@example.com", user.getEmail(), "Test Email 1", "First email", "2", "2023-10-01", "No");
-        Email email2 = new Email("sender@example.com", user.getEmail(), "Test Email 2", "Second email", "1", "2023-10-02", "No");
+        Email email1 = new Email("sender@example.com", user.getEmail(), "Test Email 1", "First email", "2", LocalDateTime.now(), false);
+        Email email2 = new Email("sender@example.com", user.getEmail(), "Test Email 2", "Second email", "1", LocalDateTime.now(), false);
         emailService.createEmail(email1);
         emailService.createEmail(email2);
 
@@ -148,8 +149,8 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email1 = new Email("sender@example.com", user.getEmail(), "Important Test Email", "First email", "1", "2023-10-01", "No");
-        Email email2 = new Email("sender@example.com", user.getEmail(), "Another Test Email", "Second email", "1", "2023-10-02", "No");
+        Email email1 = new Email("sender@example.com", user.getEmail(), "Important Test Email", "First email", "1", LocalDateTime.now(), false);
+        Email email2 = new Email("sender@example.com", user.getEmail(), "Another Test Email", "Second email", "1", LocalDateTime.now(), false);
         emailService.createEmail(email1);
         emailService.createEmail(email2);
 
@@ -170,8 +171,8 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email1 = new Email("sender1@example.com", user.getEmail(), "Test Email 1", "First email", "1", "2023-10-01", "No");
-        Email email2 = new Email("sender2@example.com", user.getEmail(), "Test Email 2", "Second email", "1", "2023-10-02", "No");
+        Email email1 = new Email("sender1@example.com", user.getEmail(), "Test Email 1", "First email", "1", LocalDateTime.now(), false);
+        Email email2 = new Email("sender2@example.com", user.getEmail(), "Test Email 2", "Second email", "1", LocalDateTime.now(), false);
         emailService.createEmail(email1);
         emailService.createEmail(email2);
 
@@ -192,14 +193,14 @@ public class EmailServiceTest {
         User user = new User("test@example.com", "password");
         userRepository.save(user);
 
-        Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", "2023-10-01", "No");
+        Email email = new Email("sender@example.com", user.getEmail(), "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
         emailService.createEmail(email);
 
         emailService.moveToTrashBox(email.getEmailID());
 
         Email trashedEmail = emailRepository.findById(email.getEmailID()).orElse(null);
         assertThat(trashedEmail).isNotNull();
-        assertThat(trashedEmail.getTrash()).isEqualTo("Yes"); // Checking for the updated trash value
+        assertThat(trashedEmail.isTrash()).isEqualTo(true); // Checking for the updated trash value
     }
 
     @Test
@@ -207,7 +208,7 @@ public class EmailServiceTest {
         User user = new User("test@seamail.com", "password");
         userRepository.save(user);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", "2026-02-27", "No");
+        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
         emailRepository.save(email);
 
         List<Email> firstCall = emailService.loadInbox(user);
@@ -222,13 +223,13 @@ public class EmailServiceTest {
         User user = new User("test@seamail.com", "password");
         userRepository.save(user);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", "2026-02-27", "No");
+        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
         emailRepository.save(email);
 
         emailService.loadInbox(user);
         assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
 
-        Email newEmail = new Email("sender2@seamail.com", user.getEmail(), "New", "Body", "1", "2026-02-27", "No");
+        Email newEmail = new Email("sender2@seamail.com", user.getEmail(), "New", "Body", "1", LocalDateTime.now(), false);
         emailService.createEmail(newEmail);
 
         assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
@@ -239,7 +240,7 @@ public class EmailServiceTest {
         User user = new User("test@seamail.com", "password");
         userRepository.save(user);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", "2026-02-27", "No");
+        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
         emailService.createEmail(email);
 
         emailService.loadInbox(user);

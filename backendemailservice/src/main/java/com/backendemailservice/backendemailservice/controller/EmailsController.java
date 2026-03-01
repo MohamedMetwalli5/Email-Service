@@ -61,7 +61,7 @@ public class EmailsController {
 
         List<EmailResponseDto> inboxEmails = emailService.loadInbox(new User(email, null))
         .stream()
-        .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.getTrash()))
+        .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
         .toList();
 
         return ResponseEntity.ok(inboxEmails);
@@ -84,7 +84,7 @@ public class EmailsController {
 
         List<EmailResponseDto> outboxEmails = emailService.loadOutbox(new User(email, null))
             .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.getTrash()))
+            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
             .toList();
 
         return ResponseEntity.ok(outboxEmails);
@@ -107,7 +107,7 @@ public class EmailsController {
 
         List<EmailResponseDto> trashboxEmails = emailService.loadTrashbox(new User(email, null))
             .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.getTrash()))
+            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
             .toList();
 
         return ResponseEntity.ok(trashboxEmails);
@@ -134,8 +134,8 @@ public class EmailsController {
             email.setSubject(emailRequestDto.getSubject());
             email.setBody(emailRequestDto.getBody());
             email.setPriority(emailRequestDto.getPriority());
-            email.setDate(java.time.LocalDate.now().toString());
-            email.setTrash("No");
+            email.setDate(java.time.LocalDateTime.now());
+            email.setTrash(false);
             emailService.createEmail(email);
             return ResponseEntity.ok("Email is sent!");
         } else {
@@ -191,7 +191,7 @@ public class EmailsController {
 
         List<EmailResponseDto> sortedEmails = emailService.sortEmails(sortingWrapper)
             .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.getTrash()))
+            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
             .toList();
 
         return ResponseEntity.ok(sortedEmails);
@@ -211,7 +211,7 @@ public class EmailsController {
 
         List<EmailResponseDto> filteredEmails = emailService.filterEmails(filteringWrapper)
             .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.getTrash()))
+            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
             .toList();
 
         return ResponseEntity.ok(filteredEmails);

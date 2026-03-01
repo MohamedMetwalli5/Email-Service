@@ -20,7 +20,7 @@ const NewMessageComposer = ({ onClose }) => {
     subject: "",
     body: "",
     priority: "1",
-    trash:"No",
+    trash: false,
     date: new Date().toISOString().slice(0, 10), // Today's date in the YYYY-MM-DD format
   });
 
