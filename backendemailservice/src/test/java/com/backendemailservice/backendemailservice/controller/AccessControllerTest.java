@@ -81,4 +81,42 @@ public class AccessControllerTest {
                 .content("{\"email\":\"\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    public void testSignUp_Success() throws Exception {
+        String email = "newuser@seamail.com";
+        String password = "password123";
+        String mockToken = "mock-jwt-token";
+
+        // Mock: User doesn't exist, then sign up succeeds
+        when(userService.findUser(eq(email), anyString())).thenReturn(Optional.empty());
+        when(jwtUtil.generateToken(email)).thenReturn(mockToken);
+
+        mockMvc.perform(post("/api/v1/sign-up")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
+                // Updated from isOk() to isCreated() to match production behavior (201)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.message").value("User created successfully"));
+    }
+
+    @Test
+    public void testSignIn_Success() throws Exception {
+        String email = "existing@seamail.com";
+        String password = "password123";
+        User mockUser = new User(email, password);
+        String mockToken = "mock-jwt-token";
+
+        // Mock: UserService finds the user, and JwtUtil generates the token
+        when(userService.findUser(email, password)).thenReturn(Optional.of(mockUser));
+        when(jwtUtil.generateToken(email)).thenReturn(mockToken);
+
+        mockMvc.perform(post("/api/v1/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
+                .andExpect(status().isOk())
+                // Matches the "Bearer " + token logic in your controller
+                .andExpect(content().string("Bearer " + mockToken));
+    }
 }
