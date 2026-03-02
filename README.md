@@ -16,13 +16,96 @@ Seamail is a full-stack email service designed to enhance user interactions with
 - **User Registration & Sign-in:** Secure registration and login process for users.
 - **OAuth2 Authentication:** Allow users to optionally sign in effortlessly with their Discord account.
 - **JWT Authentication:** Ensures secure access to the platform with token-based authentication.
-- **Multi-language Support:** Enhances accessibility by offering the platform in multiple languages.
+- **Multi-language Support:** Enhances accessibility by offering the platform in English, German, and French via i18next.
 - **Email Management:** View and manage inbox, outbox, and trashbox for efficient email organization.
 - **Email Actions:** Send, move to trash, and delete emails with ease.
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender.
 - **Account Management:** Allows users to permanently delete their accounts if desired and change their default profile picture.
 - **Password Management:** Option to securely change user passwords to maintain account security.
 - **Redis Caching:** Caches inbox emails per user using Redis Cloud with a 15-minute TTL to reduce database load and improve response times. Cache is automatically invalidated when new emails are received or moved to trash.
+
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────┐
+│              React (Vite)               │
+│   TailwindCSS · React Router · i18next  │
+└─────────────────┬───────────────────────┘
+                  │ HTTPS / REST (JSON)
+┌─────────────────▼───────────────────────┐
+│          Spring Boot  /api/v1           │
+│  Controller → Service → Repository      │
+│  JWT Filter · GlobalExceptionHandler    │
+└────────┬───────────────────┬────────────┘
+         │                   │
+┌────────▼──────┐   ┌────────▼──────────┐
+│     MySQL     │   │   Redis Cloud     │
+│  Spring Data  │   │  Inbox cache      │
+│     JPA       │   │  TTL 15 min       │
+└───────────────┘   └───────────────────┘
+```
+
+**Key design decisions:**
+- **Versioned REST API:** all endpoints live under `/api/v1`, making future versioning straightforward.
+- **DTO layer:** request/response objects are fully decoupled from JPA entities; no entity is ever serialised directly over the wire.
+- **Centralised exception handling:** a single `@RestControllerAdvice` maps every custom domain exception to a consistent JSON error shape and correct HTTP status.
+- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis with a 15-minute TTL; cache is evicted automatically on send or trash actions.
+- **Stateless security:** a custom `JwtFilter` (extending `OncePerRequestFilter`) validates Bearer tokens before every protected request; no session state is held server-side.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Vite, TailwindCSS, React Router v7, Axios |
+| Internationalisation | i18next / react-i18next (EN, FR, DE) |
+| Backend | Spring Boot 3, Java 21, Maven |
+| Security | Spring Security, JWT (JJWT HS256), Discord OAuth2 |
+| Database | MySQL |
+| Caching | Redis Cloud via Spring Cache (`@Cacheable` / `@CacheEvict`) |
+| Infrastructure | Docker, Nginx |
+| Testing | JUnit 5, Spring MockMvc, Mockito, AssertJ |
+
+---
+
+## API Reference
+
+All protected endpoints require `Authorization: Bearer <token>`.
+
+### Auth `/api/v1`
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/sign-in` | Authenticates a user with email and password, returns a signed JWT |
+| POST | `/sign-up` | Registers a new user account and returns a signed JWT |
+| GET | `/DiscordSignin` | Initiates the Discord OAuth2 flow and returns a JWT on success |
+
+### Emails `/api/v1`
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/inbox` | Returns all emails received by the authenticated user |
+| GET | `/outbox` | Returns all emails sent by the authenticated user |
+| GET | `/trashbox` | Returns all emails moved to trash by the authenticated user |
+| POST | `/send-email` | Sends a new email to a specified recipient |
+| POST | `/move-to-trash` | Moves a specified email to the trash |
+| DELETE | `/delete-email` | Permanently deletes a specified email |
+| POST | `/sort-emails` | Returns the user's emails sorted by date or priority |
+| POST | `/filter-emails` | Returns the user's emails filtered by subject or sender |
+
+### Users `/api/v1`
+
+| Method | Path | Description |
+|---|---|---|
+| PUT | `/change-password` | Updates the authenticated user's password |
+| PUT | `/update-language` | Updates the authenticated user's language preference |
+| DELETE | `/delete-account` | Permanently deletes the authenticated user's account |
+| POST | `/{email}/profile-picture` | Uploads a profile picture for the specified user |
+| GET | `/{email}/profile-picture` | Retrieves the profile picture for the specified user |
 
 ---
 
@@ -203,7 +286,7 @@ Create a `.env` file in the root `frontend-email-service` directory. Use `.env.e
 
 Then fill in your values:
 ```env
-VITE_BACKEND_API_URL=/api
+VITE_BACKEND_API_URL=http://localhost:8081/api/v1
 VITE_CLIENT_ID=your_discord_client_id
 ```
 
@@ -216,23 +299,25 @@ The frontend will start on http://localhost:8080
 
 ---
 
-# Testing
-Seamail includes comprehensive unit tests to ensure reliability and functionality. These tests are built using JUnit and Mockito.
+## Testing
 
-## Running Tests
+Tests use JUnit 5, Spring MockMvc, Mockito, and AssertJ, covering the service, controller, and caching layers end-to-end.
+
 ```bash
 cd backendemailservice
 mvn test
 ```
 
-## Test Structure
-- **Service Tests**: Tests for the business logic in the service layer.
-  - `UserServiceTest`: Validates user creation, finding users, and checking non-existent users.
-  - `EmailServiceTest`: Verifies email creation, loading inbox/outbox/trashbox, filtering, sorting, and moving emails to trash.
-  - `EmailServiceCacheTest`: Verifies that inbox caching works correctly, including cache population on first load and cache eviction on email creation and trash actions.
-- **Controller Tests**: Tests for the API layers.
-  - `AccessControllerTest`: Tests for user authentication endpoints like sign-in and sign-up.
-  - `EmailsControllerTest`: Tests for email endpoints like sending, deleting, and moving emails to trash.
+### Test Coverage
+
+| Layer | Tests |
+|---|---|
+| **Services** | `EmailServiceTest`: CRUD, sorting, filtering, trash logic |
+| | `EmailServiceCacheTest`: cache population and eviction |
+| | `UserServiceTest`: registration, credential validation |
+| **Controllers** | `AccessControllerTest`: sign-in / sign-up edge cases |
+| | `EmailsControllerTest`: authorised and unauthorised email endpoints |
+| | `UsersControllerTest`: account management and error paths |
 
 ---
 
