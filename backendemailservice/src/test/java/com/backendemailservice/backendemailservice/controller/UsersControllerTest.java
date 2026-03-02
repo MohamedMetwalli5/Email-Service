@@ -35,7 +35,7 @@ public class UsersControllerTest {
 
     @Test
     public void testDeleteAccount_Unauthorized() throws Exception {
-        mockMvc.perform(post("/deleteaccount")
+        mockMvc.perform(delete("/api/v1/delete-account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"test@seamail.com\"}"))
                 .andExpect(status().isUnauthorized());
@@ -43,7 +43,7 @@ public class UsersControllerTest {
 
     @Test
     public void testChangePassword_Unauthorized() throws Exception {
-        mockMvc.perform(put("/changepassword")
+        mockMvc.perform(put("/api/v1/change-password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"test@seamail.com\",\"newPassword\":\"newpass\"}"))
                 .andExpect(status().isUnauthorized());
@@ -51,7 +51,7 @@ public class UsersControllerTest {
 
     @Test
     public void testUpdateLanguage_Unauthorized() throws Exception {
-        mockMvc.perform(put("/updatelanguage")
+        mockMvc.perform(put("/api/v1/update-language")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"test@seamail.com\",\"language\":\"en\"}"))
                 .andExpect(status().isUnauthorized());
@@ -59,7 +59,7 @@ public class UsersControllerTest {
 
     @Test
     public void testUploadProfilePicture_Unauthorized() throws Exception {
-        mockMvc.perform(post("/test@seamail.com/profile-picture")
+        mockMvc.perform(post("/api/v1/test@seamail.com/profile-picture")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .content(new byte[]{1, 2, 3}))
                 .andExpect(status().isUnauthorized());
@@ -67,7 +67,7 @@ public class UsersControllerTest {
 
     @Test
     public void testGetProfilePicture_Unauthorized() throws Exception {
-        mockMvc.perform(get("/test@seamail.com/profile-picture"))
+        mockMvc.perform(get("/api/v1/test@seamail.com/profile-picture"))
                 .andExpect(status().isUnauthorized());
     }
 }

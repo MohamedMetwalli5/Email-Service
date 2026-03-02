@@ -44,7 +44,7 @@ const SignInPage = () => {
     };
 
     try {
-      const response = await axios.post(`${backendUrl}/signin`, payload);
+      const response = await axios.post(`${backendUrl}/sign-in`, payload);
       
       const token = response.data.split(' ')[1];
 

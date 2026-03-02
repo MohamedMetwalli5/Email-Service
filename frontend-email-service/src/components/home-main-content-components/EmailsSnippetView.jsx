@@ -36,7 +36,7 @@ const EmailsSnippetView = () => {
 
   const sortEmails = async(requestBody) => {
     try {
-        const response = await axios.post(`${backendUrl}/sortemails`, requestBody, {
+        const response = await axios.post(`${backendUrl}/sort-emails`, requestBody, {
             headers: {
                 Authorization: `Bearer ${authToken}`,
             },
@@ -50,7 +50,7 @@ const EmailsSnippetView = () => {
 
   const filterEmails = async(requestBody) => {
     try {
-      const response = await axios.post(`${backendUrl}/filteremails`, requestBody, {
+      const response = await axios.post(`${backendUrl}/filter-emails`, requestBody, {
           headers: {
               Authorization: `Bearer ${authToken}`,
           },
@@ -65,7 +65,7 @@ const EmailsSnippetView = () => {
   const filterAndSortEmails = async (requestBody, sortType) => {
     var tempFilteredEmails = [];
     try {
-      const response = await axios.post(`${backendUrl}/filteremails`, requestBody, {
+      const response = await axios.post(`${backendUrl}/filter-emails`, requestBody, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -106,9 +106,8 @@ const EmailsSnippetView = () => {
 
   const getEmails = async(sharedMailBoxOption) => {
     try {
-      const response = await axios.post(
+      const response = await axios.get(
         `${backendUrl}/${sharedMailBoxOption.toLowerCase()}`,
-        {},
         {
           headers: {
             Authorization: `Bearer ${authToken}`,

@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.backendemailservice.backendemailservice.exception.UserNotFoundException;
 import com.backendemailservice.backendemailservice.entity.User;
@@ -19,6 +20,7 @@ import com.backendemailservice.backendemailservice.service.UserService;
 import com.backendemailservice.backendemailservice.util.*;
 
 @RestController
+@RequestMapping("/api/v1")
 public class AccessController {
 	
     private final UserService userService;
@@ -30,7 +32,7 @@ public class AccessController {
         this.jwtUtil = jwtUtil;
     }
     
-    @PostMapping("/signin")
+    @PostMapping("/sign-in")
     public ResponseEntity<String> signin(@Valid @RequestBody UserRequestDto userRequestDto) {
         Optional<User> foundUser = userService.findUser(userRequestDto.getEmail(), userRequestDto.getPassword());
         if (foundUser.isPresent()) {
@@ -40,7 +42,7 @@ public class AccessController {
         throw new UserNotFoundException("User not found");
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/sign-up")
     public ResponseEntity<?> signup(@Valid @RequestBody UserRequestDto userRequestDto) {
         if (userService.findUser(userRequestDto.getEmail(), userRequestDto.getPassword()).isPresent()) {
             throw new UserAlreadyExistsException("User already exists");
@@ -61,7 +63,4 @@ public class AccessController {
                     "token", token
                 ));
     }
-
-
-    
 }

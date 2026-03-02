@@ -16,7 +16,7 @@ createRoot(document.getElementById('root')).render(
       <DataProvider>
         <Routes>
           <Route path="/" element={<SignUpPage />} />
-          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>

@@ -59,7 +59,7 @@ const SignUpPage = () => {
 
   const signUp = async (payload) => {
     try {
-      const response = await axios.post(`${backendUrl}/signup`, payload);
+      const response = await axios.post(`${backendUrl}/sign-up`, payload);
       const token = response.data.token;
 
       setAuthToken(token);
@@ -142,7 +142,7 @@ const SignUpPage = () => {
         </form>
         <p className="text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <a href="/signin" className="text-blue-500 hover:text-blue-700">
+          <a href="/sign-in" className="text-blue-500 hover:text-blue-700">
             Sign In
           </a>
         </p>

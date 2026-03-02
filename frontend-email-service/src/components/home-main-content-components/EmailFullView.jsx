@@ -39,7 +39,7 @@ const EmailFullView = () => {
 
     try {
       const response = await axios.post(
-        `${backendUrl}/moveemailtotrashbox`,
+        `${backendUrl}/move-to-trash`,
         {
           emailId: email.emailID
         },
@@ -62,7 +62,7 @@ const EmailFullView = () => {
     if (!email?.emailID) return;
 
     try {
-      const response = await axios.delete(`${backendUrl}/deleteemail`, {
+      const response = await axios.delete(`${backendUrl}/delete-email`, {
         data: {
           emailId: email.emailID
         },

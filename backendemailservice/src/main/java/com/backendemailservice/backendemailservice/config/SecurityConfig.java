@@ -44,7 +44,7 @@ public class SecurityConfig {
     .cors(Customizer.withDefaults())
     .csrf(csrf -> csrf.disable())
     .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/signin", "/signup", "/DiscordSignin").permitAll()
+        .requestMatchers("/api/v1/sign-in", "/api/v1/sign-up", "/DiscordSignin").permitAll()
         .anyRequest().authenticated()
     )
     .sessionManagement(session -> session

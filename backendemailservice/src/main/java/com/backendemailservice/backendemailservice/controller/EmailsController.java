@@ -20,6 +20,7 @@ import com.backendemailservice.backendemailservice.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
+@RequestMapping("/api/v1")
 public class EmailsController {
 
     private final EmailService emailService;
@@ -33,49 +34,49 @@ public class EmailsController {
         this.jwtUtil = jwtUtil;
     }
 
-    @PostMapping("/inbox")
+    @GetMapping("/inbox")
     public ResponseEntity<List<EmailResponseDto>> loadInbox(HttpServletRequest request) {
         String email = jwtUtil.extractAndValidateToken(request.getHeader("Authorization"));
-        if (email == null){
+        if (email == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         List<EmailResponseDto> inboxEmails = emailService.loadInbox(new User(email, null))
-            .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
-            .toList();
+                .stream()
+                .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
+                .toList();
         return ResponseEntity.ok(inboxEmails);
     }
 
-    @PostMapping("/outbox")
+    @GetMapping("/outbox")
     public ResponseEntity<List<EmailResponseDto>> loadOutbox(HttpServletRequest request) {
         String email = jwtUtil.extractAndValidateToken(request.getHeader("Authorization"));
-        if (email == null){
+        if (email == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         List<EmailResponseDto> outboxEmails = emailService.loadOutbox(new User(email, null))
-            .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
-            .toList();
+                .stream()
+                .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
+                .toList();
         return ResponseEntity.ok(outboxEmails);
     }
 
-    @PostMapping("/trashbox")
+    @GetMapping("/trashbox")
     public ResponseEntity<List<EmailResponseDto>> loadTrashbox(HttpServletRequest request) {
         String email = jwtUtil.extractAndValidateToken(request.getHeader("Authorization"));
-        if (email == null){
+        if (email == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         List<EmailResponseDto> trashboxEmails = emailService.loadTrashbox(new User(email, null))
-            .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
-            .toList();
+                .stream()
+                .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
+                .toList();
         return ResponseEntity.ok(trashboxEmails);
     }
 
-    @PostMapping("/sendemail")
+    @PostMapping("/send-email")
     public ResponseEntity<?> sendEmail(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody SendEmailRequestDto request) {
@@ -103,7 +104,7 @@ public class EmailsController {
         return ResponseEntity.ok(Map.of("message", "Email is sent!"));
     }
 
-    @PostMapping("/moveemailtotrashbox")
+    @PostMapping("/move-to-trash")
     public ResponseEntity<?> moveEmailToTrashbox(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody EmailActionRequestDto request) {
@@ -118,7 +119,7 @@ public class EmailsController {
         return ResponseEntity.ok(Map.of("message", "Moved email to trashbox!"));
     }
 
-    @DeleteMapping("/deleteemail")
+    @DeleteMapping("/delete-email")
     public ResponseEntity<?> deleteEmail(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody EmailActionRequestDto request) {
@@ -133,7 +134,7 @@ public class EmailsController {
         return ResponseEntity.ok(Map.of("message", "Email is deleted!"));
     }
 
-    @PostMapping("/sortemails")
+    @PostMapping("/sort-emails")
     public ResponseEntity<?> sortEmails(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody SortEmailsRequestDto request) {
@@ -154,7 +155,7 @@ public class EmailsController {
         return ResponseEntity.ok(sorted);
     }
 
-    @PostMapping("/filteremails")
+    @PostMapping("/filter-emails")
     public ResponseEntity<?> filterEmails(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody FilterEmailsRequestDto request) {

@@ -27,6 +27,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -66,7 +67,7 @@ public class EmailsControllerTest {
         // Setting up the email service mock
         when(emailService.loadInbox(any(User.class))).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(post("/inbox")
+        mockMvc.perform(get("/api/v1/inbox")
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
@@ -74,7 +75,7 @@ public class EmailsControllerTest {
 
     @Test
     public void testLoadInbox_Unauthorized_NoToken() throws Exception {
-        mockMvc.perform(post("/inbox"))
+        mockMvc.perform(get("/api/v1/inbox"))
                 .andExpect(status().isUnauthorized());
     }
     
@@ -87,7 +88,7 @@ public class EmailsControllerTest {
         when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
         when(userService.foundReceiver(receiverEmail)).thenReturn(Optional.of(new User(receiverEmail, "password")));
 
-        mockMvc.perform(post("/sendemail")
+        mockMvc.perform(post("/api/v1/send-email")
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"receiver\":\"" + receiverEmail + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\"}"))
@@ -104,7 +105,7 @@ public class EmailsControllerTest {
         when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
         when(emailService.loadOutbox(any(User.class))).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(post("/outbox")
+        mockMvc.perform(get("/api/v1/outbox")
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
@@ -123,7 +124,7 @@ public class EmailsControllerTest {
     when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
     when(emailService.sortEmails(eq(email), eq("priority"))).thenReturn(sortedEmails);
 
-    mockMvc.perform(post("/sortemails")
+    mockMvc.perform(post("/api/v1/sort-emails")
             .header("Authorization", "Bearer " + token)
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"sortingOption\":\"priority\"}"))
@@ -132,7 +133,7 @@ public class EmailsControllerTest {
 
     @Test
     public void testSortEmails_Unauthorized_NoToken() throws Exception {
-        mockMvc.perform(post("/sortemails")
+        mockMvc.perform(post("/api/v1/sort-emails")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"user\":{\"email\":\"test@example.com\"}, \"sortingOption\":\"priority\"}"))
                 .andExpect(status().isUnauthorized());
@@ -151,7 +152,7 @@ public class EmailsControllerTest {
     when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
     when(emailService.filterEmails(eq(email), eq("subject"), eq("Important"))).thenReturn(filteredEmails);
 
-    mockMvc.perform(post("/filteremails")
+    mockMvc.perform(post("/api/v1/filter-emails")
             .header("Authorization", "Bearer " + token)
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
@@ -160,7 +161,7 @@ public class EmailsControllerTest {
 
     @Test
     public void testFilterEmails_Unauthorized_NoToken() throws Exception {
-        mockMvc.perform(post("/filteremails")
+        mockMvc.perform(post("/api/v1/filter-emails")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"user\":{\"email\":\"test@example.com\"}, \"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
                 .andExpect(status().isUnauthorized());

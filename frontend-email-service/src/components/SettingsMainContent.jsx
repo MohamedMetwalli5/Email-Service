@@ -36,7 +36,7 @@ const SettingsMainContent = () => {
     }
     const hashedPassword = handleHashPassword(newPassword);
     try {
-      const response = await axios.put(`${backendUrl}/changepassword`, { 
+      const response = await axios.put(`${backendUrl}/change-password`, { 
         newPassword: hashedPassword, 
         email: sharedUserEmail 
       }, {
@@ -58,8 +58,9 @@ const SettingsMainContent = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      const response = await axios.post(`${backendUrl}/deleteaccount`, { email: sharedUserEmail }, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      const response = await axios.delete(`${backendUrl}/delete-account`, { 
+        data: { email: sharedUserEmail }, 
+      headers: { Authorization: `Bearer ${authToken}` },
       });
       console.log(response.data);
       navigate("/");
@@ -77,7 +78,7 @@ const SettingsMainContent = () => {
 
   const handleLanguageChange = async (language) => {
     try {
-      await axios.put(`${backendUrl}/updatelanguage`, 
+      await axios.put(`${backendUrl}/update-language`, 
         { language, email: sharedUserEmail }, 
         { headers: { Authorization: `Bearer ${authToken}` } }
       );

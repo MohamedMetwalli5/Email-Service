@@ -54,7 +54,7 @@ public class AccessControllerTest {
     public void testSignIn_UserNotFound() throws Exception {
         when(userService.findUser("unknown@example.com", "wrongpassword")).thenReturn(Optional.empty());
 
-        mockMvc.perform(post("/signin")
+        mockMvc.perform(post("/api/v1/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"unknown@example.com\",\"password\":\"wrongpassword\"}"))
                 .andExpect(status().isNotFound())
@@ -67,7 +67,7 @@ public class AccessControllerTest {
 
         when(userService.findUser("existing@seamail.com", "password")).thenReturn(Optional.of(existingUser));
 
-        mockMvc.perform(post("/signup")
+        mockMvc.perform(post("/api/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"existing@seamail.com\",\"password\":\"password\"}"))
                 .andExpect(status().isConflict())
@@ -76,7 +76,7 @@ public class AccessControllerTest {
 
     @Test
     public void testSignUp_InvalidInput() throws Exception {
-        mockMvc.perform(post("/signup")
+        mockMvc.perform(post("/api/v1/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest());

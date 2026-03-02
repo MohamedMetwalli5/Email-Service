@@ -96,7 +96,7 @@ const Sidebar = () => {
                 localStorage.removeItem('sharedEmailToFullyView');
                 localStorage.removeItem('sharedUserLanguage');
 
-                navigate('/signin');
+                navigate('/sign-in');
               }}
             >
               <PiSignOutBold />

@@ -36,7 +36,7 @@ const NewMessageComposer = ({ onClose }) => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        `${backendUrl}/sendemail`,
+        `${backendUrl}/send-email`,
         {
           receiver: formData.receiver,
           subject: formData.subject,
