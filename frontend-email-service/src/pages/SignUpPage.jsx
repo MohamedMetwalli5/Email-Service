@@ -34,25 +34,32 @@ const SignUpPage = () => {
     return hash.sha256().update(password).digest('hex');
   };
 
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    
     if (formData.password.length < 8) {
       alert("Password must be at least 8 characters long!");
       return;
-    }else if (formData.password !== formData.confirmPassword) {
+    } else if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
-    }else if (!formData.email.endsWith("@seamail.com")) {
+    } else if (!formData.email.endsWith("@seamail.com")) {
       alert("Emails must end with @seamail.com");
       return;
     }
-    formData.password = handleHashPassword(formData.password);
-    signUp();
+
+    const payload = {
+      ...formData,
+      password: handleHashPassword(formData.password)
+    };
+
+    signUp(payload);
   };
 
-  const signUp = async() => {
+  const signUp = async (payload) => {
     try {
-      const response = await axios.post(`${backendUrl}/signup`, formData);
+      const response = await axios.post(`${backendUrl}/signup`, payload);
       const token = response.data.token;
 
       setAuthToken(token);
@@ -62,9 +69,17 @@ const SignUpPage = () => {
       navigate("/home");
     } catch (error) {
       console.error("Error adding user:", error.response?.data || error.message);
-      alert("An error occurred during sign-up. Please try again.");
+
+      const backendErrors = error.response?.data?.errors;
+      
+      if (Array.isArray(backendErrors)) {
+        alert(`Sign-up failed:\n${backendErrors.join('\n')}`);
+      } else {
+        const errorMsg = error.response?.data?.message || "An error occurred during sign-up.";
+        alert(errorMsg);
+      }
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center p-4">

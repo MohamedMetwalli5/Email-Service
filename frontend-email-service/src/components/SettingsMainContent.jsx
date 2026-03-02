@@ -36,65 +36,82 @@ const SettingsMainContent = () => {
     }
     const hashedPassword = handleHashPassword(newPassword);
     try {
-      const response = await axios.put(`${backendUrl}/changepassword`, 
-        { newPassword: hashedPassword, email: sharedUserEmail }, 
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-      console.log(response.data);
-      alert('Password is changed successfully!');
-      window.location.reload();
-    } catch (error) {
-      console.error(error.response?.data || error.message);
-      setError('Failed to change password.');
+      const response = await axios.put(`${backendUrl}/changepassword`, { 
+        newPassword: hashedPassword, 
+        email: sharedUserEmail 
+      }, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      alert('Password changed successfully!');
+      setNewPassword('');
+    } catch (err) {
+      console.error("Password change error:", err.response?.data);
+      
+      const backendErrors = err.response?.data?.errors;
+      if (Array.isArray(backendErrors)) {
+          setError(backendErrors.join(", ")); 
+      } else {
+          setError(err.response?.data?.message || 'Failed to change password.');
+      }
     }
   };
 
   const handleDeleteAccount = async () => {
     try {
       const response = await axios.post(`${backendUrl}/deleteaccount`, { email: sharedUserEmail }, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       console.log(response.data);
       navigate("/");
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      console.error("Account deletion error:", error.response?.data || error.message);
+      
+      const backendErrors = error.response?.data?.errors;
+      if (Array.isArray(backendErrors)) {
+        setError(`Delete failed: ${backendErrors.join(", ")}`);
+      } else {
+        setError(error.response?.data?.message || "Failed to delete account.");
+      }
     }
   };
 
   const handleLanguageChange = async (language) => {
     try {
-      const response = await axios.put(`${backendUrl}/updatelanguage`, 
+      await axios.put(`${backendUrl}/updatelanguage`, 
         { language, email: sharedUserEmail }, 
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
-      console.log(response.data);
       setSharedUserLanguage(language);
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      console.error("Language update error:", error.response?.data);
+      
+      const backendErrors = error.response?.data?.errors;
+      if (Array.isArray(backendErrors)) {
+        setError(`Language error: ${backendErrors.join(", ")}`);
+      } else {
+        alert(error.response?.data?.message || "Failed to update language.");
+      }
     }
   };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+    
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
 
     if (selectedFile) {
-      const fileSize = Math.floor(selectedFile.size / 1024);
-      console.log(`Selected file: ${selectedFile.name} - ${fileSize} KB`);
-      
+      if (!allowedTypes.includes(selectedFile.type)) {
+        setFileSizeError('Invalid file type. Please upload a PNG or JPEG image.');
+        setFile(null);
+        e.target.value = null;
+        return;
+      }
+
       if (selectedFile.size > maxSizeInBytes) {
         setFileSizeError('File size exceeds 5 MB. Please upload a smaller file.');
         setFile(null);
+        e.target.value = null;
       } else {
         setFileSizeError('');
         setFile(selectedFile);
@@ -109,10 +126,8 @@ const SettingsMainContent = () => {
     }
 
     const reader = new FileReader();
-    
     reader.onloadend = async () => {
       const imageBytes = new Uint8Array(reader.result);
-  
       try {
         await axios.post(`${backendUrl}/${sharedUserEmail}/profile-picture`, imageBytes, {
           headers: {
@@ -123,11 +138,16 @@ const SettingsMainContent = () => {
         alert('Profile picture uploaded successfully!');
         window.location.reload();
       } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        alert('Error uploading profile picture. Please try again.');
+        console.error('Error uploading profile picture:', error.response?.data);
+
+        const backendErrors = error.response?.data?.errors;
+        if (Array.isArray(backendErrors)) {
+          alert(`Upload failed:\n${backendErrors.join('\n')}`);
+        } else {
+          alert(error.response?.data?.message || 'Error uploading profile picture. Please try again.');
+        }
       }
     };
-    
     reader.readAsArrayBuffer(file);
   };
 

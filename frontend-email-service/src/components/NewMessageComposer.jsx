@@ -33,7 +33,6 @@ const NewMessageComposer = ({ onClose }) => {
   };
 
   const handleSubmit = async(e) => {
-    // console.log(formData);
     e.preventDefault();
     try {
       const response = await axios.post(
@@ -50,11 +49,23 @@ const NewMessageComposer = ({ onClose }) => {
           },
         }
       );
-      console.log(response.data);
+      
+      console.log("Email sent:", response.data);
+      onClose(); 
+      
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      console.error("Send error:", error.response?.data || error.message);
+
+      const backendErrors = error.response?.data?.errors;
+      
+      if (Array.isArray(backendErrors)) {
+        alert(`Failed to send email:\n${backendErrors.join('\n')}`);
+      } else {
+        const errorMsg = error.response?.data?.message || "An error occurred while sending.";
+        alert(errorMsg);
+      }
+      
     }
-    onClose();
   };
 
   return (

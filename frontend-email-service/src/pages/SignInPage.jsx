@@ -37,9 +37,15 @@ const SignInPage = () => {
 
   const handleSubmit = async(e) => {
     e.preventDefault();
-    formData.password = handleHashPassword(formData.password);
+
+    const payload = {
+      ...formData,
+      password: handleHashPassword(formData.password)
+    };
+
     try {
-      const response = await axios.post(`${backendUrl}/signin`, formData);
+      const response = await axios.post(`${backendUrl}/signin`, payload);
+      
       const token = response.data.split(' ')[1];
 
       setAuthToken(token);
@@ -48,8 +54,16 @@ const SignInPage = () => {
       
       navigate("/home");
     } catch (error) {
-      console.error("Error adding user:", error.response?.data || error.message);
-      alert("An error occurred during sign-in. Please try again.");
+      console.error("Sign-in error:", error.response?.data || error.message);
+
+      const backendErrors = error.response?.data?.errors;
+      
+      if (Array.isArray(backendErrors)) {
+        alert(`Sign-in failed:\n${backendErrors.join('\n')}`);
+      } else {
+        const msg = error.response?.data?.message || "Invalid email or password.";
+        alert(msg);
+      }
     }
   };
 
