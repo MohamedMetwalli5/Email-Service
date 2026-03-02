@@ -14,20 +14,19 @@ Seamail is a full-stack email service designed to enhance user interactions with
 
 # Features
 - **User Registration & Sign-in:** Secure registration and login process for users.
-- **OAuth2 Authentication:** Allow users to optionally sign in effortlessly with their Discord account.
+- **OAuth2 Authentication:** Allows users to optionally sign in with their Discord account.
 - **JWT Authentication:** Ensures secure access to the platform with token-based authentication.
-- **Multi-language Support:** Enhances accessibility by offering the platform in English, German, and French via i18next.
-- **Email Management:** View and manage inbox, outbox, and trashbox for efficient email organization.
-- **Email Actions:** Send, move to trash, and delete emails with ease.
+- **Multi-language Support:** Enhances accessibility by making the platform available in English, German, and French via i18next.
+- **Email Management:** Allows users to view and manage inbox, outbox, and trashbox for efficient email organization.
+- **Email Actions:** Send, move to trash, and delete emails directly from any mailbox.
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender.
-- **Account Management:** Allows users to permanently delete their accounts if desired and change their default profile picture.
-- **Password Management:** Option to securely change user passwords to maintain account security.
+- **Password Management:** Allows users to securely change their password to maintain account security.
+- **Account Management:** Allows users to permanently delete their accounts and change their default profile picture.
 - **Redis Caching:** Caches inbox emails per user using Redis Cloud with a 15-minute TTL to reduce database load and improve response times. Cache is automatically invalidated when new emails are received or moved to trash.
-
 
 ---
 
-## Architecture Overview
+# Architecture Overview
 
 ```
 ┌─────────────────────────────────────────┐
@@ -57,7 +56,7 @@ Seamail is a full-stack email service designed to enhance user interactions with
 
 ---
 
-## Tech Stack
+# Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -72,11 +71,11 @@ Seamail is a full-stack email service designed to enhance user interactions with
 
 ---
 
-## API Reference
+# API Reference
 
 All protected endpoints require `Authorization: Bearer <token>`.
 
-### Auth `/api/v1`
+## Auth `/api/v1`
 
 | Method | Path | Description |
 |---|---|---|
@@ -84,7 +83,7 @@ All protected endpoints require `Authorization: Bearer <token>`.
 | POST | `/sign-up` | Registers a new user account and returns a signed JWT |
 | GET | `/DiscordSignin` | Initiates the Discord OAuth2 flow and returns a JWT on success |
 
-### Emails `/api/v1`
+## Emails `/api/v1`
 
 | Method | Path | Description |
 |---|---|---|
@@ -97,7 +96,7 @@ All protected endpoints require `Authorization: Bearer <token>`.
 | POST | `/sort-emails` | Returns the user's emails sorted by date or priority |
 | POST | `/filter-emails` | Returns the user's emails filtered by subject or sender |
 
-### Users `/api/v1`
+## Users `/api/v1`
 
 | Method | Path | Description |
 |---|---|---|
@@ -299,7 +298,7 @@ The frontend will start on http://localhost:8080
 
 ---
 
-## Testing
+# Testing
 
 Tests use JUnit 5, Spring MockMvc, Mockito, and AssertJ, covering the service, controller, and caching layers end-to-end.
 
@@ -308,7 +307,7 @@ cd backendemailservice
 mvn test
 ```
 
-### Test Coverage
+## Test Coverage
 
 | Layer | Tests |
 |---|---|
