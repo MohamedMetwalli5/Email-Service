@@ -34,17 +34,23 @@ const EmailFullView = () => {
     }
   };
 
-  const moveToTrash = async() => {
-    if(email == {}){
-      return;
-    }
+  const moveToTrash = async () => {
+    if (!email?.emailID) return;
+
     try {
-      const response = await axios.post(`${backendUrl}/moveemailtotrashbox`, email, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
+      const response = await axios.post(
+        `${backendUrl}/moveemailtotrashbox`,
+        {
+          emailId: email.emailID
         },
-      });
-      console.log(`Email with id ${email.emailID} moved to the trash box`, response.data);
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      console.log(`Email with id ${email.id} moved to the trash box`, response.data);
       setEmail({});
       setIsMovedToTrash(true);
     } catch (error) {
@@ -52,20 +58,26 @@ const EmailFullView = () => {
     }
   };
   
-  const deletePermanently = async() => {
+  const deletePermanently = async () => {
+    if (!email?.emailID) return;
+
     try {
-      const response = await axios.post(`${backendUrl}/deleteemail`, email, {
+      const response = await axios.delete(`${backendUrl}/deleteemail`, {
+        data: {
+          emailId: email.emailID
+        },
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
       });
+
       console.log(response.data);
       setEmail({});
       setIsDeletedPermanently(true);
     } catch (error) {
       console.error(error.response?.data || error.message);
     }
-  }
+  };
 
   useEffect(() => {
     setIsDeletedPermanently(false);
@@ -87,7 +99,7 @@ const EmailFullView = () => {
 
   return (
     <div className="h-full w-full bg-gray-900 text-gray-100 rounded-lg shadow-md p-6 relative">
-      {email.emailID && (sharedMailBoxOption === "Inbox" || sharedMailBoxOption === "Trashbox")? (
+      {email?.emailID && (sharedMailBoxOption === "Inbox" || sharedMailBoxOption === "Trashbox") ? (
         <button
           onClick={() =>
             email.trash === false? moveToTrash() : deletePermanently()

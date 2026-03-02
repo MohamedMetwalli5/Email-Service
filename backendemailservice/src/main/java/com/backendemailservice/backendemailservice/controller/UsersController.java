@@ -1,6 +1,11 @@
 package com.backendemailservice.backendemailservice.controller;
 
 import java.util.Map;
+
+import com.backendemailservice.backendemailservice.dto.ChangePasswordRequestDto;
+import com.backendemailservice.backendemailservice.dto.DeleteAccountRequestDto;
+import com.backendemailservice.backendemailservice.dto.UpdateLanguageRequestDto;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,52 +33,48 @@ public class UsersController {
     }
 
     @PostMapping("/deleteaccount")
-    public ResponseEntity<String> deleteAccount(@RequestBody Map<String, String> payload, @RequestHeader("Authorization") String authorizationHeader) {
-        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (tokenEmail == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<?> deleteAccount(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody DeleteAccountRequestDto request) {
+
+        String tokenEmail = jwtUtil.extractAndValidateToken(authHeader);
+        if (tokenEmail == null || !tokenEmail.equals(request.getEmail())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        String userEmail = payload.get("email");
-        if (!tokenEmail.equals(userEmail)){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        userService.deleteUserAccount(userEmail);
-        return ResponseEntity.ok("Account is deleted!");
+        userService.deleteUserAccount(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "Account is deleted!"));
     }
 
     @PutMapping("/changepassword")
-    public ResponseEntity<String> changeUserPassword(@RequestBody Map<String, String> payload,
-                                                     @RequestHeader("Authorization") String authorizationHeader) {
-        String email = payload.get("email");
-        String newPassword = payload.get("newPassword");
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody ChangePasswordRequestDto request) {
 
-        if (email == null || email.isEmpty() || newPassword == null || newPassword.isEmpty()) {
-            return ResponseEntity.badRequest().body("Email and new password are required.");
+        String tokenEmail = jwtUtil.extractAndValidateToken(authHeader);
+        if (tokenEmail == null || !tokenEmail.equals(request.getEmail())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (tokenEmail == null || !tokenEmail.equals(email)){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        userService.changeUserPassword(email, newPassword);
-        return ResponseEntity.ok("Password changed successfully!");
+        userService.changeUserPassword(request.getEmail(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully!"));
     }
 
     @PutMapping("/updatelanguage")
-    public ResponseEntity<String> updateLanguage(@RequestBody Map<String, String> request, @RequestHeader("Authorization") String authorizationHeader) {
-        String email = request.get("email");
-        String language = request.get("language");
+    public ResponseEntity<?> updateLanguage(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody UpdateLanguageRequestDto request) {
 
-        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (tokenEmail == null || !tokenEmail.equals(email)){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String tokenEmail = jwtUtil.extractAndValidateToken(authHeader);
+        if (tokenEmail == null || !tokenEmail.equals(request.getEmail())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        userService.updateLanguage(email, language);
-        return ResponseEntity.ok("Language updated successfully!");
+        userService.updateLanguage(request.getEmail(), request.getLanguage());
+        return ResponseEntity.ok(Map.of("message", "Language updated successfully!"));
     }
 
     @PostMapping("/{email}/profile-picture")

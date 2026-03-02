@@ -87,39 +87,34 @@ const EmailsSnippetView = () => {
   };
 
   const handleSendOptions = async () => {
-    const user = { email: sharedUserEmail };
-    let requestBody = null;
-
     if ((filterType === "subject" || filterType === "sender") && filterText.length > 0 && sortType.length === 0) {
-      requestBody = {
-          user: user,  
-          filteringOption: filterType,
-          filteringValue: filterText 
-      };
-      filterEmails(requestBody);
-    } else if (sortType.length > 0 && filterType.length === 0) {
-        requestBody = {
-            user: user,
-            sortingOption: sortType 
-        };
-        sortEmails(requestBody);
-    }else if (sortType.length > 0 && (filterType === "subject" || filterType === "sender") && filterText.length > 0) { // Both cases
-      requestBody = {
-            user: user,  
+        filterEmails({
             filteringOption: filterType,
-            filteringValue: filterText 
-      };
-      filterAndSortEmails(requestBody, sortType);
+            filteringValue: filterText
+        });
+    } else if (sortType.length > 0 && filterType.length === 0) {
+        sortEmails({
+            sortingOption: sortType
+        });
+    } else if (sortType.length > 0 && (filterType === "subject" || filterType === "sender") && filterText.length > 0) {
+        filterAndSortEmails({
+            filteringOption: filterType,
+            filteringValue: filterText
+        }, sortType);
     }
-  };
+};
 
   const getEmails = async(sharedMailBoxOption) => {
     try {
-      const response = await axios.post(`${backendUrl}/${sharedMailBoxOption.toLowerCase()}`, null, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const response = await axios.post(
+        `${backendUrl}/${sharedMailBoxOption.toLowerCase()}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
       setEmails(response.data);
     } catch (error) {
       console.error(error.response?.data || error.message);
@@ -127,8 +122,10 @@ const EmailsSnippetView = () => {
   }
 
   useEffect(() => {
-    getEmails(sharedMailBoxOption);
-  }, [sharedMailBoxOption]);
+    if (authToken) {
+      getEmails(sharedMailBoxOption);
+    }
+  }, [sharedMailBoxOption, authToken]);
   
 
   return (

@@ -1,5 +1,6 @@
 package com.backendemailservice.backendemailservice.exception;
 
+import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,15 +12,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult()
+    public ResponseEntity<Map<String, Object>> handleValidationException(
+            MethodArgumentNotValidException ex) {
+
+        List<String> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .findFirst()
-                .orElse("Validation error");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", errorMessage));
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .toList();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("errors", errors));
     }
 
     @ExceptionHandler(Exception.class)

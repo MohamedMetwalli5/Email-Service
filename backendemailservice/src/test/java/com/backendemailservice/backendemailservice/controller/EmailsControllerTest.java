@@ -1,7 +1,5 @@
 package com.backendemailservice.backendemailservice.controller;
 
-import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
-import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.service.EmailService;
@@ -10,7 +8,6 @@ import com.backendemailservice.backendemailservice.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,8 +17,6 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -89,17 +84,15 @@ public class EmailsControllerTest {
         String receiverEmail = "example2@seamail.com";
         String token = jwtUtil.generateToken(email);
 
-        Email emailObj = new Email(email, receiverEmail, "Subject", "Body", "1", LocalDateTime.now(), false);
-        
         when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
-        when(userService.foundReceiver(emailObj.getReceiver())).thenReturn(Optional.of(new User(receiverEmail, "password")));
-        
+        when(userService.foundReceiver(receiverEmail)).thenReturn(Optional.of(new User(receiverEmail, "password")));
+
         mockMvc.perform(post("/sendemail")
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"sender\":\"" + email + "\", \"receiver\":\"" + receiverEmail + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\", \"date\":\"2023-10-01\",\"trash\":\"No\"}"))
+                .content("{\"receiver\":\"" + receiverEmail + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\"}"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Email is sent!"));
+                .andExpect(jsonPath("$.message").value("Email is sent!"));
     }
 
     @Test
@@ -119,28 +112,23 @@ public class EmailsControllerTest {
 
     @Test
     public void testSortEmails_Authorized() throws Exception {
-        User user = new User("test@example.com", "password");
+    String email = "test@example.com";
+    String token = jwtUtil.generateToken(email);
 
-        String token = jwtUtil.generateToken(user.getEmail());
+    List<Email> sortedEmails = Arrays.asList(
+        new Email("sender1@example.com", "receiver1@example.com", "Subject 1", "Body 1", "1", LocalDateTime.now(), false),
+        new Email("sender2@example.com", "receiver2@example.com", "Subject 2", "Body 2", "2", LocalDateTime.now(), false)
+    );
 
-        SortingWrapper sortingWrapper = new SortingWrapper();
-        sortingWrapper.setUser(user);
-        sortingWrapper.setSortingOption("priority");
+    when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
+    when(emailService.sortEmails(eq(email), eq("priority"))).thenReturn(sortedEmails);
 
-        List<Email> sortedEmails = Arrays.asList(
-            new Email("sender1@example.com", "receiver1@example.com", "Subject 1", "Body 1", "1", LocalDateTime.now(), false),
-            new Email("sender2@example.com", "receiver2@example.com", "Subject 2", "Body 2", "2", LocalDateTime.now(), false)
-        );
-
-        when(jwtUtil.isTokenValid(token, user.getEmail())).thenReturn(true);
-        when(emailService.sortEmails(any(SortingWrapper.class))).thenReturn(sortedEmails);
-
-        mockMvc.perform(post("/sortemails")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"user\":{\"email\":\"test@example.com\"}, \"sortingOption\":\"priority\"}"))
-                .andExpect(status().isOk());
-    }
+    mockMvc.perform(post("/sortemails")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"sortingOption\":\"priority\"}"))
+            .andExpect(status().isOk());
+}
 
     @Test
     public void testSortEmails_Unauthorized_NoToken() throws Exception {
@@ -152,29 +140,23 @@ public class EmailsControllerTest {
 
     @Test
     public void testFilterEmails_Authorized() throws Exception {
-        User user = new User("test@example.com", "password");
+    String email = "test@example.com";
+    String token = jwtUtil.generateToken(email);
 
-        String token = jwtUtil.generateToken(user.getEmail());
+    List<Email> filteredEmails = Arrays.asList(
+        new Email("sender@example.com", email, "Important", "Body", "2", LocalDateTime.now(), false),
+        new Email("sender2@example.com", email, "Important Update", "Body", "1", LocalDateTime.now(), false)
+    );
 
-        FilteringWrapper filteringWrapper = new FilteringWrapper();
-        filteringWrapper.setUser(user);
-        filteringWrapper.setFilteringOption("subject");
-        filteringWrapper.setFilteringValue("Important");
+    when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
+    when(emailService.filterEmails(eq(email), eq("subject"), eq("Important"))).thenReturn(filteredEmails);
 
-        List<Email> filteredEmails = Arrays.asList(
-            new Email("sender@example.com", "test@example.com", "Important", "This is an important email", "2", LocalDateTime.now(), false),
-            new Email("sender2@example.com", "test@example.com", "Important Update", "Details on important updates", "1", LocalDateTime.now(), false)
-        );
-
-        when(jwtUtil.isTokenValid(token, user.getEmail())).thenReturn(true);
-        when(emailService.filterEmails(any(FilteringWrapper.class))).thenReturn(filteredEmails);
-
-        mockMvc.perform(post("/filteremails")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"user\":{\"email\":\"test@example.com\"}, \"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
-                .andExpect(status().isOk());
-    }
+    mockMvc.perform(post("/filteremails")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
+            .andExpect(status().isOk());
+}
 
     @Test
     public void testFilterEmails_Unauthorized_NoToken() throws Exception {

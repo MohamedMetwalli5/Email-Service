@@ -36,11 +36,20 @@ const NewMessageComposer = ({ onClose }) => {
     // console.log(formData);
     e.preventDefault();
     try {
-      const response = await axios.post(`${backendUrl}/sendemail`, formData, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
+      const response = await axios.post(
+        `${backendUrl}/sendemail`,
+        {
+          receiver: formData.receiver,
+          subject: formData.subject,
+          body: formData.body,
+          priority: formData.priority
         },
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
       console.log(response.data);
     } catch (error) {
       console.error(error.response?.data || error.message);

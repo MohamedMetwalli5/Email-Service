@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
-import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
@@ -133,10 +130,6 @@ public class EmailServiceTest {
         emailService.createEmail(email1);
         emailService.createEmail(email2);
 
-        SortingWrapper sortingWrapper = new SortingWrapper();
-        sortingWrapper.setUser(user);
-        sortingWrapper.setSortingOption("priority");
-
         List<Email> userEmails = emailRepository.loadInbox(user.getEmail());
         List<Email> sortedEmails = emailRepository.sortEmailsByPriority(user.getEmail());
 
@@ -154,12 +147,7 @@ public class EmailServiceTest {
         emailService.createEmail(email1);
         emailService.createEmail(email2);
 
-        FilteringWrapper filteringWrapper = new FilteringWrapper();
-        filteringWrapper.setUser(user);
-        filteringWrapper.setFilteringOption("subject");
-        filteringWrapper.setFilteringValue("Important Test Email");
-
-        List<Email> filteredEmails = emailService.filterEmails(filteringWrapper);
+        List<Email> filteredEmails = emailService.filterEmails(user.getEmail(), "subject", "Important Test Email");
 
         assertThat(filteredEmails).isNotNull();
         assertThat(filteredEmails.size()).isEqualTo(1);
@@ -176,12 +164,7 @@ public class EmailServiceTest {
         emailService.createEmail(email1);
         emailService.createEmail(email2);
 
-        FilteringWrapper filteringWrapper = new FilteringWrapper();
-        filteringWrapper.setUser(user);
-        filteringWrapper.setFilteringOption("sender");
-        filteringWrapper.setFilteringValue("sender1@example.com");
-
-        List<Email> filteredEmails = emailService.filterEmails(filteringWrapper);
+        List<Email> filteredEmails = emailService.filterEmails(user.getEmail(), "sender", "sender1@example.com");
 
         assertThat(filteredEmails).isNotNull();
         assertThat(filteredEmails.size()).isEqualTo(1);

@@ -1,21 +1,17 @@
 package com.backendemailservice.backendemailservice.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import com.backendemailservice.backendemailservice.dto.EmailRequestDto;
-import com.backendemailservice.backendemailservice.dto.EmailResponseDto;
+import com.backendemailservice.backendemailservice.dto.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.backendemailservice.backendemailservice.exception.ReceiverNotFoundException;
-import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
-import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.service.EmailService;
@@ -80,74 +76,102 @@ public class EmailsController {
     }
 
     @PostMapping("/sendemail")
-    public ResponseEntity<String> sendEmail(@Valid @RequestBody EmailRequestDto emailRequestDto, @RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> sendEmail(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody SendEmailRequestDto request) {
+
         String senderEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (senderEmail == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (senderEmail == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        if (userService.foundReceiver(emailRequestDto.getReceiver()).isEmpty()) {
-            throw new ReceiverNotFoundException("Email wasn't sent! Receiver not found.");
+        if (userService.foundReceiver(request.getReceiver()).isEmpty()) {
+            throw new ReceiverNotFoundException("Receiver not found");
         }
+
         Email email = new Email();
         email.setSender(senderEmail);
-        email.setReceiver(emailRequestDto.getReceiver());
-        email.setSubject(emailRequestDto.getSubject());
-        email.setBody(emailRequestDto.getBody());
-        email.setPriority(emailRequestDto.getPriority());
-        email.setDate(java.time.LocalDateTime.now());
+        email.setReceiver(request.getReceiver());
+        email.setSubject(request.getSubject());
+        email.setBody(request.getBody());
+        email.setPriority(request.getPriority());
+        email.setDate(LocalDateTime.now());
         email.setTrash(false);
+
         emailService.createEmail(email);
-        return ResponseEntity.ok("Email is sent!");
+        return ResponseEntity.ok(Map.of("message", "Email is sent!"));
     }
 
     @PostMapping("/moveemailtotrashbox")
-    public ResponseEntity<String> moveToTrashBox(@Valid @RequestBody EmailRequestDto emailRequestDto, @RequestHeader("Authorization") String authorizationHeader) {
-        String userEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (userEmail == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<?> moveEmailToTrashbox(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody EmailActionRequestDto request) {
+
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        emailService.moveToTrashBox(emailRequestDto.getEmailID());
-        return ResponseEntity.ok("Moved email to trashbox!");
+        emailService.moveToTrashBox(request.getEmailId());
+        return ResponseEntity.ok(Map.of("message", "Moved email to trashbox!"));
     }
 
-    @PostMapping("/deleteemail")
-    public ResponseEntity<String> deleteEmail(@Valid @RequestBody EmailRequestDto emailRequestDto, @RequestHeader("Authorization") String authorizationHeader) {
-        String userEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (userEmail == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    @DeleteMapping("/deleteemail")
+    public ResponseEntity<?> deleteEmail(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody EmailActionRequestDto request) {
+
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        emailService.deleteEmail(emailRequestDto.getEmailID());
-        return ResponseEntity.ok("Email is deleted!");
+        emailService.deleteEmail(request.getEmailId());
+        return ResponseEntity.ok(Map.of("message", "Email is deleted!"));
     }
 
     @PostMapping("/sortemails")
-    public ResponseEntity<List<EmailResponseDto>> sortEmails(@RequestBody SortingWrapper sortingWrapper, @RequestHeader("Authorization") String authorizationHeader) {
-        String userEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (userEmail == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<?> sortEmails(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody SortEmailsRequestDto request) {
+
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        List<EmailResponseDto> sortedEmails = emailService.sortEmails(sortingWrapper)
-            .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
-            .toList();
-        return ResponseEntity.ok(sortedEmails);
+        List<EmailResponseDto> sorted = emailService.sortEmails(tokenEmail, request.getSortingOption())
+                .stream()
+                .map(email -> new EmailResponseDto(email.getEmailID(), email.getSender(),
+                        email.getReceiver(), email.getSubject(), email.getBody(),
+                        email.getPriority(), email.getDate(), email.isTrash()))
+                .toList();
+
+        return ResponseEntity.ok(sorted);
     }
 
     @PostMapping("/filteremails")
-    public ResponseEntity<List<EmailResponseDto>> filterEmails(@RequestBody FilteringWrapper filteringWrapper, @RequestHeader("Authorization") String authorizationHeader) {
-        String userEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (userEmail == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<?> filterEmails(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody FilterEmailsRequestDto request) {
+
+        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
+        if (tokenEmail == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
         }
 
-        List<EmailResponseDto> filteredEmails = emailService.filterEmails(filteringWrapper)
-            .stream()
-            .map(e -> new EmailResponseDto(e.getEmailID(), e.getSender(), e.getReceiver(), e.getSubject(), e.getBody(), e.getPriority(), e.getDate(), e.isTrash()))
-            .toList();
-        return ResponseEntity.ok(filteredEmails);
+        List<EmailResponseDto> filtered = emailService.filterEmails(tokenEmail, request.getFilteringOption(), request.getFilteringValue())
+                .stream()
+                .map(email -> new EmailResponseDto(email.getEmailID(), email.getSender(),
+                        email.getReceiver(), email.getSubject(), email.getBody(),
+                        email.getPriority(), email.getDate(), email.isTrash()))
+                .toList();
+
+        return ResponseEntity.ok(filtered);
     }
 }

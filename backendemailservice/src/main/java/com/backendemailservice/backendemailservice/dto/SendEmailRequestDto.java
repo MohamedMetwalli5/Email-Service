@@ -1,24 +1,27 @@
 package com.backendemailservice.backendemailservice.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-public class EmailRequestDto {
+public class SendEmailRequestDto {
 
-    private Integer emailID;
-
-    @NotBlank(message = "Receiver is required")
+    @NotBlank(message = "Receiver must not be blank")
+    @Email(message = "Receiver must be a valid email address")
     private String receiver;
 
-    @NotBlank(message = "Subject is required")
+    @NotBlank(message = "Subject must not be blank")
+    @Size(max = 255, message = "Subject must not exceed 255 characters")
     private String subject;
 
-    @NotBlank(message = "Body is required")
+    @NotBlank(message = "Body must not be blank")
+    @Size(max = 5000, message = "Body must not exceed 5000 characters")
     private String body;
 
+    @NotBlank(message = "Priority must not be blank")
     private String priority;
 
-    public Integer getEmailID() { return emailID; }
-    public void setEmailID(Integer emailID) { this.emailID = emailID; }
+    public SendEmailRequestDto() {}
 
     public String getReceiver() { return receiver; }
     public void setReceiver(String receiver) { this.receiver = receiver; }

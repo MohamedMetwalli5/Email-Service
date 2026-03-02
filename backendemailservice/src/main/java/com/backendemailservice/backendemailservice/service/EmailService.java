@@ -1,6 +1,5 @@
 package com.backendemailservice.backendemailservice.service;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +10,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.backendemailservice.backendemailservice.dto.FilteringWrapper;
-import com.backendemailservice.backendemailservice.dto.SortingWrapper;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
@@ -66,19 +63,19 @@ public class EmailService {
 		}
 	}
 
-	public List<Email> sortEmails(SortingWrapper sortingWrapper) {
-		if(sortingWrapper.getSortingOption().equals("priority")) {
-			return repository.sortEmailsByPriority(sortingWrapper.getUser().getEmail());	
-		}else {
-			return repository.sortEmailsByDate(sortingWrapper.getUser().getEmail());			
+	public List<Email> sortEmails(String receiverEmail, String sortingOption) {
+		if (sortingOption.equals("priority")) {
+			return repository.sortEmailsByPriority(receiverEmail);
+		} else {
+			return repository.sortEmailsByDate(receiverEmail);
 		}
 	}
 
-	public List<Email> filterEmails(FilteringWrapper filteringWrapper) {
-		if(filteringWrapper.getFilteringOption().equals("subject")) {
-			return repository.filterEmailsBySubject(filteringWrapper.getUser().getEmail(), filteringWrapper.getFilteringValue());
-		}else {
-			return repository.filterEmailsBySender(filteringWrapper.getUser().getEmail(), filteringWrapper.getFilteringValue());			
+	public List<Email> filterEmails(String receiverEmail, String filteringOption, String filteringValue) {
+		if (filteringOption.equals("subject")) {
+			return repository.filterEmailsBySubject(receiverEmail, filteringValue);
+		} else {
+			return repository.filterEmailsBySender(receiverEmail, filteringValue);
 		}
 	}
 
