@@ -136,7 +136,7 @@ cd Email-Service
 
 **2. Create the `.env` file**
 
-Create a `.env` file in the root `Email-Service/` directory. Use `.env.example` as a template.
+Create a `.env` file in the root `Email-Service` directory. Use `.env.example` as a template.
 
 Then fill in your values:
 ```env
