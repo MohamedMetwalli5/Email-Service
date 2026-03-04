@@ -29,7 +29,7 @@ public class SecurityConfig {
 
     @Value("${discord.client.secret}")
     private String discordClientSecret;
-    
+
     @Autowired
     private JwtFilter jwtFilter;
 
@@ -37,13 +37,14 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
     .cors(Customizer.withDefaults())
     .csrf(csrf -> csrf.disable())
     .authorizeHttpRequests(auth -> auth
+        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
         .requestMatchers("/api/v1/sign-in", "/api/v1/sign-up", "/DiscordSignin").permitAll()
         .anyRequest().authenticated()
     )
@@ -63,7 +64,7 @@ public class SecurityConfig {
 
     return http.build();
 }
-    
+
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
         return new InMemoryClientRegistrationRepository(discordClientRegistration());
@@ -78,7 +79,7 @@ public class SecurityConfig {
             .tokenUri("https://discord.com/api/oauth2/token") // Token exchange URL
             .userInfoUri("https://discord.com/api/users/@me") // User info endpoint
             .userNameAttributeName("id") // Specifying the user attribute to use as unique ID
-            .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}") 
+            .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE) // Granting type
             .build();
     }
