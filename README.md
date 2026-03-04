@@ -1,8 +1,9 @@
 ![Frontend](https://img.shields.io/badge/Frontend-React.js-blue.svg)
 ![Backend](https://img.shields.io/badge/Backend-Spring%20Boot-green.svg)
-![Database](https://img.shields.io/badge/Database-MySQL-orange.svg)
+![Database](https://img.shields.io/badge/Database-MySQL-white.svg)
 ![Cache](https://img.shields.io/badge/Cache-Redis-red.svg)
 ![Container](https://img.shields.io/badge/Container-Docker-blue.svg)
+![Deployment](https://img.shields.io/badge/Deployment-AWS-orange.svg)
 ![License](https://img.shields.io/badge/License-GPL--3.0-yellow.svg)
 
 <div align="center">
@@ -11,9 +12,11 @@
 
 # Seamail: An Email Service
 Seamail is a full-stack email service designed to enhance user interactions with their email system. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface, backed by Redis caching for improved performance.
+It is officially deployed on **Amazon Web Services (AWS)** using a custom domain.
 
 # Features
 - **User Registration & Sign-in:** Secure registration and login process for users.
+- **HTTPS Encryption & Deployment:** Deployed on AWS with a valid SSL certificate issued by Let's Encrypt, ensuring all data is securely encrypted and protected from interception.
 - **OAuth2 Authentication:** Allows users to optionally sign in with their Discord account.
 - **JWT Authentication:** Ensures secure access to the platform with token-based authentication.
 - **Multi-language Support:** Enhances accessibility by making the platform available in English, German, and French via i18next.
@@ -53,7 +56,7 @@ Seamail is a full-stack email service designed to enhance user interactions with
 - **Centralised exception handling:** a single `@RestControllerAdvice` maps every custom domain exception to a consistent JSON error shape and correct HTTP status.
 - **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis with a 15-minute TTL; cache is evicted automatically on send or trash actions.
 - **Stateless security:** a custom `JwtFilter` (extending `OncePerRequestFilter`) validates Bearer tokens before every protected request; no session state is held server-side.
-
+- **SSL Termination:** Nginx handles HTTPS requests using **Let's Encrypt** certificates, ensuring all traffic between the client and the server is encrypted.
 ---
 
 # Tech Stack
@@ -166,19 +169,21 @@ CORS_ALLOWED_ORIGIN=http://localhost
 Discord credentials can be obtained from the [Discord Developer Portal](https://discord.com/developers/applications).  
 Redis credentials can be obtained from [Redis Cloud](https://redis.io/cloud/) (free tier available).
 
-**3. Build and run**
+**3. Follow the rules in the `nginx.conf` file in the `frontend-email-service` directory**
+
+**4. Build and run**
 ```bash
 docker compose up --build
 ```
 
-**4. Access the app**
+**5. Access the app**
 
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost |
 | Backend API | http://localhost:8081 |
 
-**5. Subsequent runs** (after the first build)
+**6. Subsequent runs** (after the first build)
 ```bash
 docker compose up
 ```
@@ -288,8 +293,9 @@ Then fill in your values:
 VITE_BACKEND_API_URL=http://localhost:8081/api/v1
 VITE_CLIENT_ID=your_discord_client_id
 ```
+**4. Follow the rules in the `nginx.conf` file in the `frontend-email-service` directory**
 
-**4. Start the frontend**
+**5. Start the frontend**
 ```bash
 npm run dev
 ```
