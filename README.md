@@ -120,6 +120,18 @@ There are two ways to run Seamail:
 | 🐳 **Docker** | Quick setup, no local dependencies needed |
 | 🛠️ **Manual** | Local development with IntelliJ |
 
+## Environment Files Overview
+
+Seamail uses separate environment files depending on the context. Each file lives in the **root `Email-Service` directory** and is never committed to version control.
+
+| File | Used By | When |
+|------|---------|------|
+| `.env` | IDE / `npm run dev` | Local development without Docker |
+| `.env.docker` | Docker Compose | Local Docker |
+| `.env.production` | Docker Compose | AWS production |
+
+> The `.env` files inside `frontend-email-service/` and `backendemailservice/` are only read during IDE development. Docker Compose always reads from the root directory env file.
+
 ---
 
 # 🐳 Docker Setup
@@ -137,43 +149,20 @@ git clone https://github.com/your-username/Email-Service.git
 cd Email-Service
 ```
 
-**2. Create the `.env` file**
+**2. Create the `.env.docker` file**
 
-Create a `.env` file in the root `Email-Service` directory. Use `.env.example` as a template.
-
-Then fill in your values:
-```env
-# Database
-DB_NAME=seamail
-DB_USER=seamail_user
-DB_PASSWORD=your_db_password
-DB_ROOT_PASSWORD=your_root_password
-
-# JWT
-JWT_SECRET=your_base64_encoded_jwt_secret
-
-# Discord OAuth2
-DISCORD_CLIENT_ID=your_discord_client_id
-DISCORD_CLIENT_SECRET=your_discord_client_secret
-
-# Redis Cloud
-REDIS_HOST=your_redis_cloud_host
-REDIS_PORT=your_redis_cloud_port
-REDIS_USERNAME=your_redis_username
-REDIS_PASSWORD=your_redis_cloud_password
-
-# CORS
-CORS_ALLOWED_ORIGIN=http://localhost
-```
+Create a `.env.docker` file in the root `Email-Service` directory. Use `.env.docker.example` as a template. Then fill in your values.
 
 Discord credentials can be obtained from the [Discord Developer Portal](https://discord.com/developers/applications).  
 Redis credentials can be obtained from [Redis Cloud](https://redis.io/cloud/) (free tier available).
+
+> Also make sure `http://localhost:8081/DiscordSignin` is added as a redirect URI in your Discord Developer Portal under **OAuth2 → Redirects**.
 
 **3. Follow the rules in the `nginx.conf` file in the `frontend-email-service` directory**
 
 **4. Build and run**
 ```bash
-docker compose up --build
+docker compose --env-file .env.docker up --build
 ```
 
 **5. Access the app**
@@ -185,23 +174,23 @@ docker compose up --build
 
 **6. Subsequent runs** (after the first build)
 ```bash
-docker compose up
+docker compose --env-file .env.docker up
 ```
 
 ## Useful Docker Commands
 
 ```bash
 # Stop containers (data is preserved)
-docker compose down
+docker compose --env-file .env.docker down
 
 # Stop containers and delete all data
-docker compose down -v
+docker compose --env-file .env.docker down -v
 
 # View logs
 docker compose logs -f
 
 # Rebuild a specific service
-docker compose up --build backend
+docker compose --env-file .env.docker up --build backend
 ```
 
 > Note: MySQL data is stored in a Docker volume and persists across restarts. It is only deleted when you run `docker compose down -v`.
@@ -233,21 +222,7 @@ cd backendemailservice
 
 **2. Create `.env`**
 
-Create a `.env` file in the root `backendemailservice` directory. Use `.env.example` as a template.
-
-Then fill in your values:
-```env
-DB_NAME=seamail
-DB_USER=root
-DB_PASSWORD=your_db_password
-JWT_SECRET=your_jwt_secret_key
-DISCORD_CLIENT_ID=your_discord_client_id
-DISCORD_CLIENT_SECRET=your_discord_client_secret
-REDIS_HOST=your_redis_host
-REDIS_PORT=your_redis_port
-REDIS_USERNAME=your_redis_username
-REDIS_PASSWORD=your_redis_password
-```
+Create a `.env` file in the root `backendemailservice` directory. Use `.env.example` as a template. Then fill in your values.
 
 > Note: `DB_USER=root` here (local MySQL), vs `DB_USER=seamail_user` in Docker.
 
@@ -286,13 +261,8 @@ npm install
 ```
 
 **3. Create `.env`**
-Create a `.env` file in the root `frontend-email-service` directory. Use `.env.example` as a template.
+Create a `.env` file in the root `frontend-email-service` directory. Use `.env.example` as a template. Then fill in your values.
 
-Then fill in your values:
-```env
-VITE_BACKEND_API_URL=http://localhost:8081/api/v1
-VITE_CLIENT_ID=your_discord_client_id
-```
 **4. Follow the rules in the `nginx.conf` file in the `frontend-email-service` directory**
 
 **5. Start the frontend**

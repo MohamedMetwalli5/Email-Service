@@ -8,8 +8,7 @@ import { FaDiscord } from "react-icons/fa6";
 const SignInWithDiscord = () => {  
     const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
     const discordClientID = import.meta.env.VITE_CLIENT_ID;
-    const redirectURI = `${backendUrl}/DiscordSignin`;
-
+    const redirectURI = import.meta.env.VITE_DISCORD_REDIRECT_URI;
     
     const handleSignIn = () => {
         const redirectUri = encodeURIComponent(redirectURI);

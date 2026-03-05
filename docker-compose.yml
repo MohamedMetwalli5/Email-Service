@@ -47,7 +47,14 @@ services:
 
   # ── React Frontend ──────────────────────────────────
   frontend:
-    build: ./frontend-email-service
+    build:
+      context: ./frontend-email-service
+      args:
+        VITE_BACKEND_API_URL: ${VITE_BACKEND_API_URL}
+        VITE_CLIENT_ID: ${VITE_CLIENT_ID}
+        VITE_DISCORD_REDIRECT_URI: ${VITE_DISCORD_REDIRECT_URI}
+        VITE_TERMS_OF_USE_URL: ${VITE_TERMS_OF_USE_URL}
+        VITE_PRIVACY_POLICY_URL: ${VITE_PRIVACY_POLICY_URL}
     container_name: react_frontend
     restart: always
     depends_on:
@@ -57,5 +64,6 @@ services:
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      
 volumes:
   mysql_data:
