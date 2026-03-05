@@ -24,7 +24,10 @@ public class OAuth2Controller {
 
 	@Value("${cors.allowed.origin}")
     private String allowedOrigin;
-	
+
+    @Value("${discord.redirect.uri}")
+    private String discordRedirectUri;
+
 	@Value("${server.port}")
     private String serverPort;
 	
@@ -63,7 +66,7 @@ public class OAuth2Controller {
         requestBody.add("client_secret", discordClientSecret);
         requestBody.add("grant_type", "authorization_code");
         requestBody.add("code", code);
-        requestBody.add("redirect_uri", "http://localhost:"+serverPort+"/DiscordSignin");
+        requestBody.add("redirect_uri", discordRedirectUri);
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
