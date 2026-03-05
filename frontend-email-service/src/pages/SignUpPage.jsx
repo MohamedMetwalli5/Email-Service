@@ -9,6 +9,8 @@ import LeftCharactersSticker from "../assets/LeftCharactersSticker.svg";
 
 const SignUpPage = () => {
 
+  const termsOfUse = import.meta.env.VITE_TERMS_OF_USE_URL;
+  const privacyPolicy = import.meta.env.VITE_PRIVACY_POLICY_URL;
   const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
 
   const { setSharedUserEmail } = useContext(AppContext);
@@ -145,6 +147,25 @@ const SignUpPage = () => {
           <a href="/sign-in" className="text-blue-500 hover:text-blue-700">
             Sign In
           </a>
+        </p>
+
+        <p className="text-center text-xs text-gray-400 pt-2">
+          By using this website, you agree to our{' '}
+          <a 
+            href={termsOfUse}
+            className="underline hover:text-blue-500 transition-colors duration-200"
+          >
+          
+            Terms of Use
+          </a>{' '}
+          and{' '}
+          <a 
+            href={privacyPolicy}
+            className="underline hover:text-blue-500 transition-colors duration-200"
+          >
+            Privacy Policy
+          </a>
+          .
         </p>
       </div>
     </div>
