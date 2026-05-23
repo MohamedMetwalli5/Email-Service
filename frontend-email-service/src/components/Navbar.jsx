@@ -2,26 +2,24 @@ import React, { useContext, useEffect, useState } from 'react';
 import defaultPersonalPhoto from '../assets/defaultPersonalPhoto.png'; // The default profile picture
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../AppContext.jsx';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 
 const Navbar = () => {
-  const { sharedUserEmail, authToken } = useContext(AppContext);
+  const { sharedUserEmail } = useContext(AppContext);
   const userEmail = sharedUserEmail;
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
   
   const [profilePicture, setProfilePicture] = useState(null);
 
   const fetchProfilePicture = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/${sharedUserEmail}/profile-picture`, {
+      // Use apiClient for protected endpoints; Bearer header attached by interceptor
+      const response = await apiClient.get(`/${sharedUserEmail}/profile-picture`, {
         responseType: 'arraybuffer',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        }
       });
   
-      const contentType = response.headers['content-type'] || 'image/png';
+      // server always responds Content-Type: image/jpeg; use that value directly
+      const contentType = response.headers['content-type'] || 'image/jpeg';
       const blob = new Blob([response.data], { type: contentType });
       const imageUrl = URL.createObjectURL(blob);
   

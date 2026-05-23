@@ -1,101 +1,77 @@
 package com.backendemailservice.backendemailservice.controller;
 
-import java.util.Map;
-
 import com.backendemailservice.backendemailservice.dto.ChangePasswordRequestDto;
 import com.backendemailservice.backendemailservice.dto.DeleteAccountRequestDto;
 import com.backendemailservice.backendemailservice.dto.UpdateLanguageRequestDto;
+import com.backendemailservice.backendemailservice.service.IUserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.backendemailservice.backendemailservice.service.UserService;
-import com.backendemailservice.backendemailservice.util.JwtUtil;
+
 
 @RestController
 @RequestMapping("/api/v1")
+@Validated
 public class UsersController {
 
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
+    private final IUserService userService;
 
-    @Autowired
-    public UsersController(UserService userService, JwtUtil jwtUtil) {
+    public UsersController(IUserService userService) {
         this.userService = userService;
-        this.jwtUtil = jwtUtil;
     }
 
     @DeleteMapping("/delete-account")
-    public ResponseEntity<?> deleteAccount(
-            @RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Void> deleteAccount(
+            @AuthenticationPrincipal String authenticatedEmail,
             @Valid @RequestBody DeleteAccountRequestDto request) {
-
-        String tokenEmail = jwtUtil.extractAndValidateToken(authHeader);
-        if (tokenEmail == null || !tokenEmail.equals(request.getEmail())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Unauthorized"));
-        }
-
-        userService.deleteUserAccount(request.getEmail());
-        return ResponseEntity.ok(Map.of("message", "Account is deleted!"));
+        userService.deleteUserAccount(authenticatedEmail, request.getEmail());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<?> changePassword(
-            @RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Void> changePassword(
+            @AuthenticationPrincipal String authenticatedEmail,
             @Valid @RequestBody ChangePasswordRequestDto request) {
-
-        String tokenEmail = jwtUtil.extractAndValidateToken(authHeader);
-        if (tokenEmail == null || !tokenEmail.equals(request.getEmail())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Unauthorized"));
-        }
-
-        userService.changeUserPassword(request.getEmail(), request.getNewPassword());
-        return ResponseEntity.ok(Map.of("message", "Password changed successfully!"));
+        userService.changeUserPassword(authenticatedEmail, request.getEmail(),
+                request.getNewPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/update-language")
-    public ResponseEntity<?> updateLanguage(
-            @RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Void> updateLanguage(
+            @AuthenticationPrincipal String authenticatedEmail,
             @Valid @RequestBody UpdateLanguageRequestDto request) {
-
-        String tokenEmail = jwtUtil.extractAndValidateToken(authHeader);
-        if (tokenEmail == null || !tokenEmail.equals(request.getEmail())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Unauthorized"));
-        }
-
-        userService.updateLanguage(request.getEmail(), request.getLanguage());
-        return ResponseEntity.ok(Map.of("message", "Language updated successfully!"));
+        userService.updateLanguage(authenticatedEmail, request.getEmail(),
+                request.getLanguage());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{email}/profile-picture")
-    public ResponseEntity<String> uploadProfilePicture(@PathVariable String email, @RequestBody byte[] profilePicture, @RequestHeader("Authorization") String authorizationHeader) {
-        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (tokenEmail == null || !tokenEmail.equals(email)){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        userService.uploadProfilePicture(email, profilePicture);
-        return ResponseEntity.ok("Profile picture uploaded successfully.");
+    public ResponseEntity<Void> uploadProfilePicture(
+            @AuthenticationPrincipal String authenticatedEmail,
+            @PathVariable String email,
+            @RequestBody byte[] picture) {
+        userService.uploadProfilePicture(authenticatedEmail, email, picture);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{email}/profile-picture")
-    public ResponseEntity<byte[]> getProfilePicture(@PathVariable String email, @RequestHeader("Authorization") String authorizationHeader) {
-        String tokenEmail = jwtUtil.extractAndValidateToken(authorizationHeader);
-        if (tokenEmail == null || !tokenEmail.equals(email)){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        byte[] profilePicture = userService.fetchProfilePicture(email);
-        if (profilePicture != null) {
-            return ResponseEntity.ok()
-                    .header("Content-Type", "image/png")
-                    .body(profilePicture);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<byte[]> getProfilePicture(
+            @AuthenticationPrincipal String authenticatedEmail,
+            @PathVariable String email) {
+        byte[] picture = userService.fetchProfilePicture(authenticatedEmail, email);
+        return ResponseEntity.ok()
+                .header("Content-Type", "image/jpeg")
+                .body(picture);
     }
 }

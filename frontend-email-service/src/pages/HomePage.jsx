@@ -3,27 +3,31 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import HomeMainContent from '../components/HomeMainContent';
 import { AppContext } from '../AppContext.jsx';
-import { useNavigate } from 'react-router-dom';
 
-
+// Read refreshToken from Discord OAuth redirect; use replaceState instead of navigate
 
 const HomePage = () => {
 
-  const { setSharedUserEmail, setAuthToken, sharedUserEmail, authToken } = useContext(AppContext);
-  
-  const navigate = useNavigate();  
+  const { setSharedUserEmail, setAuthToken, setRefreshToken, sharedUserEmail, authToken } = useContext(AppContext);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const token = queryParams.get('token');
-    const email = queryParams.get('email');
+    const params = new URLSearchParams(window.location.search);
+    const token        = params.get('token');
+    const refreshToken = params.get('refreshToken');
+    const email        = params.get('email');
 
     if (token && email) {
       setAuthToken(token);
       setSharedUserEmail(email);
-      navigate("/home"); // to hide the displayed token and email displaying from the URL
+
+      if (refreshToken) {
+        setRefreshToken(refreshToken);
+      }
+
+      // Strip query params from browser URL (UX: don't leave tokens in address bar)
+      window.history.replaceState({}, document.title, '/home');
     }
-  }, [setAuthToken, setSharedUserEmail]);
+  }, []);
 
   if (!sharedUserEmail || !authToken) {
     return <></>;

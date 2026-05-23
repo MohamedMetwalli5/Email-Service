@@ -1,7 +1,8 @@
 package com.backendemailservice.backendemailservice.exception;
 
-public class UserNotFoundException extends RuntimeException {
+// Domain exception with machine-readable errorCode
+public class UserNotFoundException extends ApplicationException {
     public UserNotFoundException(String message) {
-        super(message);
+        super("USER_NOT_FOUND", message);
     }
 }

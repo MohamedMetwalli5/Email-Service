@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaRegTrashCan } from "react-icons/fa6";
-import axios from "axios";
 import { useContext } from 'react';
 import { AppContext } from '../../AppContext.jsx';
+import apiClient from '../../api/apiClient';
 import { useTranslation } from 'react-i18next';
 
 
@@ -10,9 +10,6 @@ const EmailFullView = () => {
   
   const { t } = useTranslation();
 
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
-  
-  const { authToken } = useContext(AppContext);
   const { sharedMailBoxOption } = useContext(AppContext);
   const { sharedEmailToFullyView } = useContext(AppContext);
   const { sharedUserEmail } = useContext(AppContext);
@@ -38,19 +35,12 @@ const EmailFullView = () => {
     if (!email?.emailID) return;
 
     try {
-      const response = await axios.post(
-        `${backendUrl}/move-to-trash`,
-        {
-          emailId: email.emailID
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      // Use apiClient for protected endpoints; Bearer header attached by interceptor
+      await apiClient.post('/move-to-trash', {
+        emailId: email.emailID
+      });
 
-      console.log(`Email with id ${email.id} moved to the trash box`, response.data);
+      console.log(`Email with id ${email.emailID} moved to the trash box`);
       setEmail({});
       setIsMovedToTrash(true);
     } catch (error) {
@@ -62,16 +52,13 @@ const EmailFullView = () => {
     if (!email?.emailID) return;
 
     try {
-      const response = await axios.delete(`${backendUrl}/delete-email`, {
+      // Use apiClient for protected endpoints; Bearer header attached by interceptor
+      await apiClient.delete('/delete-email', {
         data: {
           emailId: email.emailID
         },
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
       });
 
-      console.log(response.data);
       setEmail({});
       setIsDeletedPermanently(true);
     } catch (error) {
@@ -110,7 +97,7 @@ const EmailFullView = () => {
         </button>
       ):("")}
       
-      {email.sender? (
+      {email?.sender ? (
         <>
           <h2 className="text-xl font-semibold mb-4 mr-4">{email.subject}</h2>
           <div className="space-y-4">

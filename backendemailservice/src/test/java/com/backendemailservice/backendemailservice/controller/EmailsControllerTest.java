@@ -1,225 +1,193 @@
 package com.backendemailservice.backendemailservice.controller;
 
-import com.backendemailservice.backendemailservice.entity.Email;
-import com.backendemailservice.backendemailservice.entity.User;
-import com.backendemailservice.backendemailservice.service.EmailService;
-import com.backendemailservice.backendemailservice.service.UserService;
+import com.backendemailservice.backendemailservice.config.TestSecurityConfig;
+import com.backendemailservice.backendemailservice.dto.EmailResponseDto;
+import com.backendemailservice.backendemailservice.dto.SendEmailRequestDto;
+import com.backendemailservice.backendemailservice.exception.ReceiverNotFoundException;
+import com.backendemailservice.backendemailservice.service.IEmailService;
 import com.backendemailservice.backendemailservice.util.JwtUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@AutoConfigureMockMvc(addFilters = false) // Added to prevent security filter chain interference
-public class EmailsControllerTest {
+// V-26: Slice test using @WebMvcTest instead of @SpringBootTest (J-7, MV-1)
+@WebMvcTest(EmailsController.class)
+@Import(TestSecurityConfig.class)
+class EmailsControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private EmailService emailService;
+    private IEmailService emailService;
 
     @MockBean
-    private UserService userService;
-
-    @SpyBean
     private JwtUtil jwtUtil;
 
-    @InjectMocks
-    private EmailsController emailsController;
-
-    private final String dummyToken = "Bearer mock.token.here";
+    private static final String TEST_EMAIL = "testuser@seamail.com";
 
     @BeforeEach
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
+    void setUpSecurity() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(TEST_EMAIL, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_USER")))
+        );
     }
 
-    @Test
-    public void testLoadInbox_Success() throws Exception {
-        String email = "testuser@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
-        when(emailService.loadInbox(any(User.class))).thenReturn(Collections.emptyList());
+    @AfterEach
+    void tearDownSecurity() {
+        SecurityContextHolder.clearContext();
+    }
 
-        mockMvc.perform(get("/api/v1/inbox")
-                .header("Authorization", dummyToken))
+    // --- Load inbox/outbox/trashbox ---
+
+    @Test
+    void shouldReturn200WhenLoadingInbox() throws Exception {
+        when(emailService.loadInboxDtos(TEST_EMAIL)).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/inbox"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    public void testLoadInbox_Unauthorized_NoToken() throws Exception {
-        doReturn(null).when(jwtUtil).extractAndValidateToken(any());
+    void shouldReturn200WhenLoadingOutbox() throws Exception {
+        when(emailService.loadOutboxDtos(TEST_EMAIL)).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/v1/inbox")
-                .header("Authorization", dummyToken))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/outbox"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    public void testSendEmail_Success() throws Exception {
-        String senderEmail = "example1@seamail.com";
+    void shouldReturn200WhenLoadingTrashbox() throws Exception {
+        when(emailService.loadTrashboxDtos(TEST_EMAIL)).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/trashbox"))
+                .andExpect(status().isOk());
+    }
+
+    // --- Send email ---
+
+    @Test
+    void shouldReturn201WhenSendingEmail() throws Exception {
         String receiverEmail = "example2@seamail.com";
 
-        doReturn(senderEmail).when(jwtUtil).extractAndValidateToken(anyString());
-        when(userService.foundReceiver(receiverEmail)).thenReturn(Optional.of(new User(receiverEmail, "password")));
+        mockMvc.perform(post("/api/v1/send-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"receiver\":\"" + receiverEmail
+                        + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\"}"))
+                .andExpect(status().isCreated());
+
+        verify(emailService).sendEmail(eq(TEST_EMAIL), any(SendEmailRequestDto.class));
+    }
+
+    @Test
+    void shouldReturn404WhenReceiverNotFoundOnSendEmail() throws Exception {
+        doThrow(new ReceiverNotFoundException("Receiver not found"))
+                .when(emailService).sendEmail(eq(TEST_EMAIL), any(SendEmailRequestDto.class));
 
         mockMvc.perform(post("/api/v1/send-email")
-                .header("Authorization", dummyToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"receiver\":\"" + receiverEmail + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Email is sent!"));
-
-        verify(emailService, times(1)).createEmail(any(Email.class));
+                .content("{\"receiver\":\"nonexistent@seamail.com\", \"subject\":\"Hi\", \"body\":\"Body\", \"priority\":\"1\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("RECEIVER_NOT_FOUND"));
     }
 
-    @Test
-    public void testLoadOutbox_Success() throws Exception {
-        String email = "testuser@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
-        when(emailService.loadOutbox(any(User.class))).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/v1/outbox")
-                .header("Authorization", dummyToken))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
+    // --- Move to trash ---
 
     @Test
-    public void testSortEmails_Authorized() throws Exception {
-        String email = "test@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
-
-        List<Email> sortedEmails = Arrays.asList(
-            new Email("sender1@seamail.com", "receiver1@seamail.com", "Subject 1", "Body 1", "1", LocalDateTime.now(), false)
-        );
-
-        when(emailService.sortEmails(eq(email), eq("priority"))).thenReturn(sortedEmails);
-
-        mockMvc.perform(post("/api/v1/sort-emails")
-                .header("Authorization", dummyToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"sortingOption\":\"priority\"}"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    public void testSortEmails_Unauthorized_NoToken() throws Exception {
-        doReturn(null).when(jwtUtil).extractAndValidateToken(any());
-
-        mockMvc.perform(post("/api/v1/sort-emails")
-                .header("Authorization", dummyToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"sortingOption\":\"priority\"}"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    public void testFilterEmails_Authorized() throws Exception {
-        String email = "test@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
-
-        List<Email> filteredEmails = Arrays.asList(
-            new Email("sender@seamail.com", email, "Important", "Body", "2", LocalDateTime.now(), false)
-        );
-
-        when(emailService.filterEmails(eq(email), eq("subject"), eq("Important"))).thenReturn(filteredEmails);
-
-        mockMvc.perform(post("/api/v1/filter-emails")
-                .header("Authorization", dummyToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    public void testFilterEmails_Unauthorized_NoToken() throws Exception {
-        doReturn(null).when(jwtUtil).extractAndValidateToken(any());
-
-        mockMvc.perform(post("/api/v1/filter-emails")
-                .header("Authorization", dummyToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"filteringOption\":\"subject\", \"filteringValue\":\"Important\"}"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    public void testLoadTrashbox_Success() throws Exception {
-        String email = "testuser@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
-        when(emailService.loadTrashbox(any(User.class))).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/api/v1/trashbox")
-                .header("Authorization", dummyToken))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    public void testMoveEmailToTrash_Success() throws Exception {
-        String email = "test@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
-
+    void shouldReturn204WhenMovingEmailToTrash() throws Exception {
         mockMvc.perform(post("/api/v1/move-to-trash")
-                .header("Authorization", dummyToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"emailId\":1}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Moved email to trashbox!"));
+                .andExpect(status().isNoContent());
 
-        verify(emailService, times(1)).moveToTrashBox((int) 1L);
+        verify(emailService).moveToTrashBox(1L, TEST_EMAIL);
     }
 
-    @Test
-    public void testDeleteEmail_Success() throws Exception {
-        String email = "test@seamail.com";
-        doReturn(email).when(jwtUtil).extractAndValidateToken(anyString());
+    // --- Delete email ---
 
+    @Test
+    void shouldReturn204WhenDeletingEmail() throws Exception {
         mockMvc.perform(delete("/api/v1/delete-email")
-                .header("Authorization", dummyToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"emailId\":100}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Email is deleted!"));
+                .andExpect(status().isNoContent());
 
-        verify(emailService, times(1)).deleteEmail((int) 100L);
+        verify(emailService).deleteEmail(100L, TEST_EMAIL);
+    }
+
+    // --- Query emails (sort/filter as GET) ---
+
+    @Test
+    void shouldReturn200WhenQueryingEmailsBySort() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        List<EmailResponseDto> sorted = List.of(
+                new EmailResponseDto(1L, "a@b.com", TEST_EMAIL, "S", "B", "1", now, false)
+        );
+
+        when(emailService.queryEmails(eq(TEST_EMAIL), eq("priority"), eq(null), eq(null), eq(null)))
+                .thenReturn(sorted);
+
+        mockMvc.perform(get("/api/v1/emails")
+                .param("sort", "priority"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].subject").value("S"));
     }
 
     @Test
-    public void testSendEmail_ReceiverNotFound() throws Exception {
-        String senderEmail = "sender@seamail.com";
-        String receiverEmail = "nonexistent@seamail.com";
+    void shouldReturn200WhenFilteringEmailsBySubject() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        List<EmailResponseDto> filtered = List.of(
+                new EmailResponseDto(2L, "boss@b.com", TEST_EMAIL, "Invoice", "B", "2", now, false)
+        );
 
-        doReturn(senderEmail).when(jwtUtil).extractAndValidateToken(anyString());
-        when(userService.foundReceiver(receiverEmail)).thenReturn(Optional.empty());
+        when(emailService.queryEmails(eq(TEST_EMAIL), eq(null), eq("subject"), eq("Invoice"), eq(null)))
+                .thenReturn(filtered);
 
-        mockMvc.perform(post("/api/v1/send-email")
-                .header("Authorization", dummyToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"receiver\":\"" + receiverEmail + "\", \"subject\":\"Hi\", \"body\":\"Body\", \"priority\":\"1\"}"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/emails")
+                .param("filterBy", "subject")
+                .param("filterValue", "Invoice"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].subject").value("Invoice"));
     }
+
+    @Test
+    void shouldReturn400WhenSendingEmailWithBlankReceiver() throws Exception {
+        mockMvc.perform(post("/api/v1/send-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"receiver\":\"\", \"subject\":\"Sub\", \"body\":\"Body\", \"priority\":\"1\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void shouldReturn400WhenSendingEmailWithBlankSubject() throws Exception {
+        mockMvc.perform(post("/api/v1/send-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"receiver\":\"user@seamail.com\", \"subject\":\"\", \"body\":\"Body\", \"priority\":\"1\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
+    }
+
 }

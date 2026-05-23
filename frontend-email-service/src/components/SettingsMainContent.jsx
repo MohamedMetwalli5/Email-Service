@@ -1,30 +1,25 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from "axios";
 import { AppContext } from '../AppContext.jsx';
 import { useTranslation } from 'react-i18next';
-import hash from 'hash.js';
+import apiClient from '../api/apiClient';
+import { parseApiError } from '../utils/parseApiError';
 
 const SettingsMainContent = () => {
   
   const { t } = useTranslation();
   
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
-  
-  const { authToken, sharedUserEmail, setSharedUserLanguage, sharedUserLanguage } = useContext(AppContext);
+  const { sharedUserEmail, setSharedUserLanguage, sharedUserLanguage } = useContext(AppContext);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
   const [file, setFile] = useState(null);
   const [fileSizeError, setFileSizeError] = useState('');
 
   const navigate = useNavigate();
-  
-  const handleHashPassword = (password) => {
-    return hash.sha256().update(password).digest('hex');
-  };
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
@@ -34,63 +29,61 @@ const SettingsMainContent = () => {
       setError('Password must be at least 8 characters long!');
       return;
     }
-    const hashedPassword = handleHashPassword(newPassword);
     try {
-      const response = await axios.put(`${backendUrl}/change-password`, { 
-        newPassword: hashedPassword, 
-        email: sharedUserEmail 
-      }, {
-        headers: { Authorization: `Bearer ${authToken}` }
+      await apiClient.put('/change-password', {
+        email: sharedUserEmail,
+        newPassword: newPassword,
       });
-      alert('Password changed successfully!');
+      setSuccessMessage('Password changed successfully.');
       setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
-      console.error("Password change error:", err.response?.data);
-      
-      const backendErrors = err.response?.data?.errors;
-      if (Array.isArray(backendErrors)) {
-          setError(backendErrors.join(", ")); 
+      const parsed = parseApiError(err);
+      // Handle specific error codes for precise UX feedback
+      if (parsed.errorCode === 'USER_NOT_FOUND') {
+        setError('User not found. Please check your email address.');
+      } else if (parsed.fieldErrors.length > 0) {
+        setError(parsed.fieldErrors.join('\n'));
       } else {
-          setError(err.response?.data?.message || 'Failed to change password.');
+        setError(parsed.message);
       }
     }
   };
 
   const handleDeleteAccount = async () => {
     try {
-      const response = await axios.delete(`${backendUrl}/delete-account`, { 
+      // Use apiClient for protected endpoints; Bearer header attached by interceptor
+      await apiClient.delete('/delete-account', { 
         data: { email: sharedUserEmail }, 
-      headers: { Authorization: `Bearer ${authToken}` },
       });
-      console.log(response.data);
       navigate("/");
     } catch (error) {
       console.error("Account deletion error:", error.response?.data || error.message);
-      
-      const backendErrors = error.response?.data?.errors;
-      if (Array.isArray(backendErrors)) {
-        setError(`Delete failed: ${backendErrors.join(", ")}`);
+      // Use parseApiError instead of old errors field; handle specific codes
+      const parsed = parseApiError(error);
+      if (parsed.fieldErrors.length > 0) {
+        setError(parsed.fieldErrors.join('\n'));
       } else {
-        setError(error.response?.data?.message || "Failed to delete account.");
+        setError(parsed.message);
       }
     }
   };
 
   const handleLanguageChange = async (language) => {
     try {
-      await axios.put(`${backendUrl}/update-language`, 
-        { language, email: sharedUserEmail }, 
-        { headers: { Authorization: `Bearer ${authToken}` } }
+      // Use apiClient for protected endpoints; Bearer header attached by interceptor
+      await apiClient.put('/update-language', 
+        { language, email: sharedUserEmail }
       );
       setSharedUserLanguage(language);
     } catch (error) {
       console.error("Language update error:", error.response?.data);
-      
-      const backendErrors = error.response?.data?.errors;
-      if (Array.isArray(backendErrors)) {
-        setError(`Language error: ${backendErrors.join(", ")}`);
+      // Use parseApiError instead of old errors field
+      const parsed = parseApiError(error);
+      if (parsed.fieldErrors.length > 0) {
+        setError(parsed.fieldErrors.join('\n'));
       } else {
-        alert(error.response?.data?.message || "Failed to update language.");
+        setError(parsed.message);
       }
     }
   };
@@ -130,22 +123,24 @@ const SettingsMainContent = () => {
     reader.onloadend = async () => {
       const imageBytes = new Uint8Array(reader.result);
       try {
-        await axios.post(`${backendUrl}/${sharedUserEmail}/profile-picture`, imageBytes, {
+        // Use apiClient for protected endpoints; Bearer header attached by interceptor
+        await apiClient.post(`/${sharedUserEmail}/profile-picture`, imageBytes, {
           headers: {
             'Content-Type': 'application/octet-stream',
-            Authorization: `Bearer ${authToken}`
           }
         });
         alert('Profile picture uploaded successfully!');
         window.location.reload();
       } catch (error) {
         console.error('Error uploading profile picture:', error.response?.data);
-
-        const backendErrors = error.response?.data?.errors;
-        if (Array.isArray(backendErrors)) {
-          alert(`Upload failed:\n${backendErrors.join('\n')}`);
+        // Use parseApiError; handle INVALID_FILE_FORMAT with specific message
+        const parsed = parseApiError(error);
+        if (parsed.errorCode === 'INVALID_FILE_FORMAT') {
+          setError('Only PNG and JPEG images under 5 MB are accepted.');
+        } else if (parsed.fieldErrors.length > 0) {
+          setError(parsed.fieldErrors.join('\n'));
         } else {
-          alert(error.response?.data?.message || 'Error uploading profile picture. Please try again.');
+          setError(parsed.message);
         }
       }
     };
@@ -163,7 +158,7 @@ const SettingsMainContent = () => {
           {profilePicture && <img src={profilePicture} alt="Profile" className="w-32 h-32 rounded-full mb-2" />}
           <input 
             type="file" 
-            accept="image/png" 
+            accept="image/png,image/jpeg"
             onChange={handleFileChange} 
             className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white" 
           />
@@ -194,6 +189,7 @@ const SettingsMainContent = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
             {error && <p className="text-red-500 mb-4">{error}</p>}
+            {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
             <button
               onClick={handlePasswordChange}
               disabled={newPassword !== confirmPassword || error}

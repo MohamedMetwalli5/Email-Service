@@ -1,42 +1,63 @@
 package com.backendemailservice.backendemailservice.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.http.HttpMethod;
 
 import com.backendemailservice.backendemailservice.filter.JwtFilter;
+import com.backendemailservice.backendemailservice.service.CustomUserDetailsService;
 
 @Configuration
+@EnableWebSecurity 
+@EnableConfigurationProperties(DiscordOAuthProperties.class)
 public class SecurityConfig {
 
-    @Value("${discord.client.id}")
-    private String discordClientId;
+    private final JwtFilter jwtFilter; 
+    private final CustomUserDetailsService userDetailsService; 
+    private final DiscordOAuthProperties discordProperties; // grouped @ConfigurationProperties
 
-    @Value("${discord.client.secret}")
-    private String discordClientSecret;
-
-    @Autowired
-    private JwtFilter jwtFilter;
+    public SecurityConfig(JwtFilter jwtFilter,
+                          CustomUserDetailsService userDetailsService,
+                          DiscordOAuthProperties discordProperties) {
+        this.jwtFilter = jwtFilter;
+        this.userDetailsService = userDetailsService;
+        this.discordProperties = discordProperties;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12); 
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean
@@ -46,7 +67,8 @@ public class SecurityConfig {
     .csrf(csrf -> csrf.disable())
     .authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        .requestMatchers("/api/v1/sign-in", "/api/v1/sign-up", "/DiscordSignin").permitAll()
+        .requestMatchers("/api/v1/sign-in", "/api/v1/sign-up",
+                "/api/v1/auth/discord", "/api/v1/auth/refresh").permitAll()
         .anyRequest().authenticated()
     )
     .sessionManagement(session -> session
@@ -59,6 +81,7 @@ public class SecurityConfig {
             response.getWriter().write("{\"message\": \"Unauthorized\"}");
         })
     )
+    .authenticationProvider(authenticationProvider())
     .oauth2Login(Customizer.withDefaults());
 
     http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -73,8 +96,8 @@ public class SecurityConfig {
 
     private ClientRegistration discordClientRegistration() {
         return ClientRegistration.withRegistrationId("discord") // The provider ID
-            .clientId(discordClientId) // The Discord client ID
-            .clientSecret(discordClientSecret) // The Discord client secret
+            .clientId(discordProperties.getClientId())
+            .clientSecret(discordProperties.getClientSecret())
             .scope("identify", "email") // Scopes you want to request
             .authorizationUri("https://discord.com/api/oauth2/authorize") // Authorization URL
             .tokenUri("https://discord.com/api/oauth2/token") // Token exchange URL

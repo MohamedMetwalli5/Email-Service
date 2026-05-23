@@ -1,7 +1,8 @@
 package com.backendemailservice.backendemailservice.exception;
 
-public class InvalidEmailDomainException extends RuntimeException {
+// Domain exception with machine-readable errorCode
+public class InvalidEmailDomainException extends ApplicationException {
     public InvalidEmailDomainException(String message) {
-        super(message);
+        super("INVALID_EMAIL_DOMAIN", message);
     }
 }

@@ -1,66 +1,47 @@
 package com.backendemailservice.backendemailservice.controller;
 
-import java.util.Map;
-import java.util.Optional;
-
+import com.backendemailservice.backendemailservice.dto.AuthResponseDto;
+import com.backendemailservice.backendemailservice.dto.RefreshTokenRequestDto;
 import com.backendemailservice.backendemailservice.dto.UserRequestDto;
-import com.backendemailservice.backendemailservice.exception.InvalidEmailDomainException;
-import com.backendemailservice.backendemailservice.exception.UserAlreadyExistsException;
+import com.backendemailservice.backendemailservice.service.IUserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.backendemailservice.backendemailservice.exception.UserNotFoundException;
-import com.backendemailservice.backendemailservice.entity.User;
-import com.backendemailservice.backendemailservice.service.UserService;
-import com.backendemailservice.backendemailservice.util.*;
+
+
 
 @RestController
 @RequestMapping("/api/v1")
+@Validated
 public class AccessController {
-	
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
 
-    @Autowired
-    public AccessController(UserService userService, JwtUtil jwtUtil) {
+    private final IUserService userService;
+
+    public AccessController(IUserService userService) {
         this.userService = userService;
-        this.jwtUtil = jwtUtil;
     }
-    
+
     @PostMapping("/sign-in")
-    public ResponseEntity<String> signin(@Valid @RequestBody UserRequestDto userRequestDto) {
-        Optional<User> foundUser = userService.findUser(userRequestDto.getEmail(), userRequestDto.getPassword());
-        if (foundUser.isPresent()) {
-            String token = jwtUtil.generateToken(userRequestDto.getEmail());
-            return ResponseEntity.ok().body("Bearer " + token);
-        }
-        throw new UserNotFoundException("User not found");
+    public ResponseEntity<AuthResponseDto> signin(@Valid @RequestBody UserRequestDto request) {
+        String accessToken = userService.authenticate(request.getEmail(), request.getPassword());
+        String refreshToken = userService.generateAndStoreRefreshToken(request.getEmail());
+        return ResponseEntity.ok(new AuthResponseDto(accessToken, refreshToken));
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<?> signup(@Valid @RequestBody UserRequestDto userRequestDto) {
-        if (userService.findUser(userRequestDto.getEmail(), userRequestDto.getPassword()).isPresent()) {
-            throw new UserAlreadyExistsException("User already exists");
-        }
+    public ResponseEntity<AuthResponseDto> signup(@Valid @RequestBody UserRequestDto request) {
+        AuthResponseDto response = userService.register(request.getEmail(), request.getPassword());
+        return ResponseEntity.status(201).body(response);
+    }
 
-        if (!userRequestDto.getEmail().endsWith("@seamail.com")) {
-            throw new InvalidEmailDomainException("Emails must end with @seamail.com");
-        }
-
-        User user = new User(userRequestDto.getEmail(), userRequestDto.getPassword());
-        userService.createUser(user);
-
-        String token = jwtUtil.generateToken(userRequestDto.getEmail());
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of(
-                    "message", "User created successfully",
-                    "token", token
-                ));
+    // refresh token endpoint — validates refresh token, issues new access+refresh pair 
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
+        AuthResponseDto response = userService.refreshAccessToken(request.refreshToken());
+        return ResponseEntity.ok(response);
     }
 }

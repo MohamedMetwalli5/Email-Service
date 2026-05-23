@@ -1,17 +1,15 @@
 import React, { useState } from "react";
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
-import axios from "axios";
+import apiClient from '../api/apiClient';
 import { useTranslation } from 'react-i18next';
+import { parseApiError } from '../utils/parseApiError';
 
 
 const NewMessageComposer = ({ onClose }) => {
 
   const { t } = useTranslation();
 
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
-
-  const { authToken } = useContext(AppContext);
   const { sharedUserEmail } = useContext(AppContext);
 
   const [formData, setFormData] = useState({
@@ -24,6 +22,8 @@ const NewMessageComposer = ({ onClose }) => {
     date: new Date().toISOString().slice(0, 10), // Today's date in the YYYY-MM-DD format
   });
 
+  const [fieldError, setFieldError] = useState('');
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ 
@@ -35,36 +35,28 @@ const NewMessageComposer = ({ onClose }) => {
   const handleSubmit = async(e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        `${backendUrl}/send-email`,
-        {
-          receiver: formData.receiver,
-          subject: formData.subject,
-          body: formData.body,
-          priority: formData.priority
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      // Use apiClient for protected endpoints; Bearer header attached by interceptor
+      const response = await apiClient.post('/send-email', {
+        receiver: formData.receiver,
+        subject: formData.subject,
+        body: formData.body,
+        priority: formData.priority
+      });
       
       console.log("Email sent:", response.data);
       onClose(); 
       
     } catch (error) {
       console.error("Send error:", error.response?.data || error.message);
-
-      const backendErrors = error.response?.data?.errors;
-      
-      if (Array.isArray(backendErrors)) {
-        alert(`Failed to send email:\n${backendErrors.join('\n')}`);
+      const parsed = parseApiError(error);
+      // Handle specific error codes for precise UX feedback
+      if (parsed.errorCode === 'RECEIVER_NOT_FOUND') {
+        setFieldError('The recipient was not found. Please check the email address.');
+      } else if (parsed.fieldErrors.length > 0) {
+        setFieldError(parsed.fieldErrors.join('\n'));
       } else {
-        const errorMsg = error.response?.data?.message || "An error occurred while sending.";
-        alert(errorMsg);
+        setFieldError(parsed.message);
       }
-      
     }
   };
 
@@ -129,6 +121,12 @@ const NewMessageComposer = ({ onClose }) => {
             <label className="block text-sm font-bold">{t('DATE')}</label>
             <label className="block text-sm font-medium">{formData.date}</label>
           </div>
+
+          {fieldError && (
+            <div className="text-red-400 text-sm bg-red-900 bg-opacity-50 p-2 rounded">
+              {fieldError.split('\n').map((line, i) => <div key={i}>{line}</div>)}
+            </div>
+          )}
 
           <div className="flex justify-between mt-4">
             <button

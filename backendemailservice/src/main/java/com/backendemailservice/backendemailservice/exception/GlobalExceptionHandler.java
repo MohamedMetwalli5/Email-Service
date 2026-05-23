@@ -1,71 +1,94 @@
 package com.backendemailservice.backendemailservice.exception;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // --- Validation ---
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<ValidationErrorResponse> handleValidationException(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
 
-        List<String> errors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
+        List<String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .toList();
+                .collect(Collectors.toList());
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("errors", errors));
+        ValidationErrorResponse body = new ValidationErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "VALIDATION_FAILED",
+                "Request validation failed.",
+                request.getRequestURI(),
+                LocalDateTime.now(),
+                fieldErrors
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGenericException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", "An unexpected error occurred. Please try again later."));
-    }
+    // --- Domain exceptions (specific -> general) ---
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<?> handleUserNotFoundException(UserNotFoundException ex) {
+    @ExceptionHandler({UserNotFoundException.class, EmailNotFoundException.class,
+                        ReceiverNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNotFound(ApplicationException ex,
+                                                         HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", ex.getMessage()));
-    }
-
-    @ExceptionHandler(EmailNotFoundException.class)
-    public ResponseEntity<?> handleEmailNotFoundException(EmailNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", ex.getMessage()));
+                .body(ErrorResponse.of(HttpStatus.NOT_FOUND, ex.getErrorCode(),
+                        ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<?> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+    public ResponseEntity<ErrorResponse> handleConflict(ApplicationException ex,
+                                                         HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("message", ex.getMessage()));
+                .body(ErrorResponse.of(HttpStatus.CONFLICT, ex.getErrorCode(),
+                        ex.getMessage(), request.getRequestURI()));
     }
 
-    @ExceptionHandler(InvalidEmailDomainException.class)
-    public ResponseEntity<?> handleInvalidEmailDomainException(InvalidEmailDomainException ex) {
+    @ExceptionHandler({InvalidEmailDomainException.class, InvalidFileFormatException.class})
+    public ResponseEntity<ErrorResponse> handleBadRequest(ApplicationException ex,
+                                                           HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", ex.getMessage()));
+                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, ex.getErrorCode(),
+                        ex.getMessage(), request.getRequestURI()));
     }
 
-    @ExceptionHandler(ReceiverNotFoundException.class)
-    public ResponseEntity<?> handleReceiverNotFoundException(ReceiverNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", ex.getMessage()));
+    // --- ResponseStatusException (preserves status code) ---
+
+    // Consistent error response shape
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex,
+                                                               HttpServletRequest request) {
+        log.warn("Response status exception on [{}]: {}", request.getRequestURI(), ex.getMessage());
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(ErrorResponse.of(HttpStatus.valueOf(ex.getStatusCode().value()),
+                        "REQUEST_ERROR", ex.getReason(), request.getRequestURI()));
     }
 
-    @ExceptionHandler(InvalidFileFormatException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidFileFormatException(InvalidFileFormatException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("errors", List.of(ex.getMessage())));
+    // --- Catch-all ---
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex,
+                                                                 HttpServletRequest request) {
+        log.error("Unhandled exception on [{}]: {}", request.getRequestURI(), ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR",
+                        "An unexpected error occurred. Please try again later.",
+                        request.getRequestURI()));
     }
 }

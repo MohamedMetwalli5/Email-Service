@@ -15,8 +15,8 @@ const Sidebar = () => {
 
   const { t, i18n } = useTranslation();
   
-  const { setSharedMailBoxOption } = useContext(AppContext);
-  const { sharedUserLanguage } = useContext(AppContext);
+  // extract clearSession for sign-out
+  const { setSharedMailBoxOption, sharedUserLanguage, clearSession } = useContext(AppContext);
 
   const [isComposerOpen, setComposerOpen] = useState(false);
   
@@ -90,12 +90,7 @@ const Sidebar = () => {
             <a
               className="flex items-center p-3 text-gray-200 bg-red-500 rounded-lg hover:bg-red-600 hover:cursor-pointer transition-all duration-300"
               onClick={() => {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('sharedUserEmail');
-                localStorage.removeItem('sharedMailBoxOption');
-                localStorage.removeItem('sharedEmailToFullyView');
-                localStorage.removeItem('sharedUserLanguage');
-
+                clearSession();   // clears localStorage + context state atomically
                 navigate('/sign-in');
               }}
             >

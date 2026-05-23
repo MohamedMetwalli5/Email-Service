@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
-import hash from 'hash.js';
+import { parseApiError } from '../utils/parseApiError';
 import SignInWithDiscord from '../components/SigninWithDiscord.jsx';
-
-
+import apiClient from '../api/apiClient';
 
 const SignInPage = () => {
   
   const termsOfUse = import.meta.env.VITE_TERMS_OF_USE_URL;
   const privacyPolicy = import.meta.env.VITE_PRIVACY_POLICY_URL;
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
-  const discordClientID = import.meta.env.VITE_CLIENT_ID;
-  
-  const { setSharedUserEmail } = useContext(AppContext);
-  const { setAuthToken } = useContext(AppContext);
+  const { setAuthToken, setRefreshToken, setSharedUserEmail } = useContext(AppContext);
 
   const navigate = useNavigate();
 
@@ -24,6 +18,7 @@ const SignInPage = () => {
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -33,38 +28,27 @@ const SignInPage = () => {
     }));
   };
 
-  const handleHashPassword = (password) => {
-    return hash.sha256().update(password).digest('hex');
-  };
-
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const payload = {
-      ...formData,
-      password: handleHashPassword(formData.password)
-    };
-
     try {
-      const response = await axios.post(`${backendUrl}/sign-in`, payload);
-      
-      const token = response.data.split(' ')[1];
-
-      setAuthToken(token);
+      const response = await apiClient.post('/sign-in', {
+        email: formData.email,
+        password: formData.password,   
+      });
+      const { accessToken, refreshToken } = response.data;
+      setAuthToken(accessToken);
+      setRefreshToken(refreshToken);
       setSharedUserEmail(formData.email);
-      console.log("User signed in and token stored:", token);
-      
-      navigate("/home");
+      navigate('/home');
     } catch (error) {
-      console.error("Sign-in error:", error.response?.data || error.message);
-
-      const backendErrors = error.response?.data?.errors;
-      
-      if (Array.isArray(backendErrors)) {
-        alert(`Sign-in failed:\n${backendErrors.join('\n')}`);
+      const parsed = parseApiError(error);
+      // Handle specific error codes for precise UX feedback
+      if (parsed.errorCode === 'USER_NOT_FOUND') {
+        setError('Invalid email or password. Please try again.');
+      } else if (parsed.fieldErrors.length > 0) {
+        setError(parsed.fieldErrors.join('\n'));
       } else {
-        const msg = error.response?.data?.message || "Invalid email or password.";
-        alert(msg);
+        setError(parsed.message);
       }
     }
   };

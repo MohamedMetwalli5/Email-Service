@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { AppContext } from '../AppContext.jsx';
 import { useContext } from 'react';
-import hash from 'hash.js';
+import { parseApiError } from '../utils/parseApiError';
 import LeftCharactersSticker from "../assets/LeftCharactersSticker.svg";
-
+import apiClient from '../api/apiClient';
 
 const SignUpPage = () => {
 
   const termsOfUse = import.meta.env.VITE_TERMS_OF_USE_URL;
   const privacyPolicy = import.meta.env.VITE_PRIVACY_POLICY_URL;
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
 
-  const { setSharedUserEmail } = useContext(AppContext);
-  const { setAuthToken } = useContext(AppContext);
+  const { setAuthToken, setRefreshToken, setSharedUserEmail } = useContext(AppContext);
 
   const navigate = useNavigate();
 
@@ -23,6 +20,8 @@ const SignUpPage = () => {
     password: '',
     confirmPassword: ''
   });
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,11 +30,6 @@ const SignUpPage = () => {
       [name]: value
     }));
   };
-
-  const handleHashPassword = (password) => {
-    return hash.sha256().update(password).digest('hex');
-  };
-
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -51,34 +45,31 @@ const SignUpPage = () => {
       return;
     }
 
-    const payload = {
-      ...formData,
-      password: handleHashPassword(formData.password)
-    };
-
-    signUp(payload);
+    signUp({ email: formData.email, password: formData.password });
   };
 
   const signUp = async (payload) => {
     try {
-      const response = await axios.post(`${backendUrl}/sign-up`, payload);
-      const token = response.data.token;
-
-      setAuthToken(token);
-      setSharedUserEmail(formData.email);
-      console.log("User added and token stored:", token);
-      
-      navigate("/home");
+      const response = await apiClient.post('/sign-up', {
+        email: payload.email,
+        password: payload.password,
+      });
+      const { accessToken, refreshToken } = response.data;
+      setAuthToken(accessToken);
+      setRefreshToken(refreshToken);
+      setSharedUserEmail(payload.email);
+      navigate('/home');
     } catch (error) {
-      console.error("Error adding user:", error.response?.data || error.message);
-
-      const backendErrors = error.response?.data?.errors;
-      
-      if (Array.isArray(backendErrors)) {
-        alert(`Sign-up failed:\n${backendErrors.join('\n')}`);
+      const parsed = parseApiError(error);
+      // Handle specific error codes for precise UX feedback
+      if (parsed.errorCode === 'USER_ALREADY_EXISTS') {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else if (parsed.errorCode === 'INVALID_EMAIL_DOMAIN') {
+        setError('Only @seamail.com email addresses are allowed.');
+      } else if (parsed.fieldErrors.length > 0) {
+        setError(parsed.fieldErrors.join('\n'));
       } else {
-        const errorMsg = error.response?.data?.message || "An error occurred during sign-up.";
-        alert(errorMsg);
+        setError(parsed.message);
       }
     }
   };

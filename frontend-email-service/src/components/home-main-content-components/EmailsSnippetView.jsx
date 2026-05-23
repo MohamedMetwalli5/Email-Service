@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useContext } from 'react';
 import { AppContext } from '../../AppContext.jsx';
-import axios from "axios";
+import apiClient from '../../api/apiClient';
+import { parseApiError } from '../../utils/parseApiError';
 import { useTranslation } from 'react-i18next';
+import { Toaster, toast } from 'react-hot-toast';
 
 
 const EmailsSnippetView = () => {
 
   const { t } = useTranslation();
 
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
-
-  const { sharedMailBoxOption } = useContext(AppContext);
-  const { authToken } = useContext(AppContext);
-  const { sharedUserEmail } = useContext(AppContext);
-  const { setSharedEmailToFullyView } = useContext(AppContext);
+  const { sharedMailBoxOption, sharedUserEmail, setSharedEmailToFullyView, authToken } = useContext(AppContext);
 
   const [filterType, setFilterType] = useState("");
   const [filterText, setFilterText] = useState("");
@@ -34,89 +31,68 @@ const EmailsSnippetView = () => {
     }
   };
 
-  const sortEmails = async(requestBody) => {
+  const queryEmails = async (params = {}) => {
     try {
-        const response = await axios.post(`${backendUrl}/sort-emails`, requestBody, {
-            headers: {
-                Authorization: `Bearer ${authToken}`,
-            },
-        });
-        console.log(response.data);
-        setEmails(response.data);
-    } catch (error) {
-        console.error("Error sorting emails:", error.response?.data || error.message);
-    }
-  };
-
-  const filterEmails = async(requestBody) => {
-    try {
-      const response = await axios.post(`${backendUrl}/filter-emails`, requestBody, {
-          headers: {
-              Authorization: `Bearer ${authToken}`,
-          },
+      const response = await apiClient.get('/emails', {
+        params: { ...params, mailbox: sharedMailBoxOption },
       });
-      console.log(response.data);
       setEmails(response.data);
     } catch (error) {
-        console.error("Error filtering emails:", error.response?.data || error.message);
+      const parsed = parseApiError(error);
+      toast.error(parsed.message);
+      console.error('Email query failed:', parsed.message);
     }
   };
 
-  const filterAndSortEmails = async (requestBody, sortType) => {
-    var tempFilteredEmails = [];
-    try {
-      const response = await axios.post(`${backendUrl}/filter-emails`, requestBody, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      tempFilteredEmails = response.data;
-  
-      // Sorting the emails based on the sortType
-      if (sortType === "priority") {
-        tempFilteredEmails.sort((a, b) => parseInt(a.priority) - parseInt(b.priority));
-      } else if (sortType === "date") {
-        tempFilteredEmails.sort((a, b) => new Date(a.date) - new Date(b.date));
-      }
+  const sortByPriority = () => queryEmails({ sort: 'priority' });
 
-      console.log(tempFilteredEmails);
-      setEmails(tempFilteredEmails);
+  const sortByDate = () => queryEmails({ sort: 'date' });
+
+  const filterBySubject = (value) => queryEmails({ filterBy: 'subject', filterValue: value });
+
+  const filterBySender = (value) => queryEmails({ filterBy: 'sender', filterValue: value });
+
+  // Combined filter + sort — backend handles both in one query
+  const filterAndSort = async (filterBy, filterValue, sortKey) => {
+    try {
+      const response = await apiClient.get('/emails', {
+        params: { filterBy, filterValue, sort: sortKey, mailbox: sharedMailBoxOption },
+      });
+      setEmails(response.data);
     } catch (error) {
-      console.error("Error filtering emails:", error.response?.data || error.message);
+      const parsed = parseApiError(error);
+      toast.error(parsed.message);
+      console.error('Filter+sort failed:', parsed.message);
     }
   };
 
   const handleSendOptions = async () => {
     if ((filterType === "subject" || filterType === "sender") && filterText.length > 0 && sortType.length === 0) {
-        filterEmails({
-            filteringOption: filterType,
-            filteringValue: filterText
-        });
+        if (filterType === "subject") {
+            filterBySubject(filterText);
+        } else {
+            filterBySender(filterText);
+        }
     } else if (sortType.length > 0 && filterType.length === 0) {
-        sortEmails({
-            sortingOption: sortType
-        });
+        if (sortType === "priority") {
+            sortByPriority();
+        } else {
+            sortByDate();
+        }
     } else if (sortType.length > 0 && (filterType === "subject" || filterType === "sender") && filterText.length > 0) {
-        filterAndSortEmails({
-            filteringOption: filterType,
-            filteringValue: filterText
-        }, sortType);
+        filterAndSort(filterType, filterText, sortType);
     }
-};
+  };
 
+  // Use apiClient for protected endpoints; Bearer header attached by interceptor
   const getEmails = async(sharedMailBoxOption) => {
     try {
-      const response = await axios.get(
-        `${backendUrl}/${sharedMailBoxOption.toLowerCase()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      const response = await apiClient.get(`/${sharedMailBoxOption.toLowerCase()}`);
       setEmails(response.data);
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      const parsed = parseApiError(error);
+      toast.error(parsed.message);
+      console.error('Failed to load emails:', parsed.message);
     }
   }
 
@@ -129,6 +105,7 @@ const EmailsSnippetView = () => {
 
   return (
     <div className="flex flex-col bg-gray-900 w-fit p-4 rounded-lg h-full text-gray-100">
+      <Toaster position="top-center" />
       <h2 className="text-2xl font-semibold mb-4">
         {sharedMailBoxOption === "Inbox" ? (
           <span>{t('INBOX')}</span>
@@ -187,7 +164,7 @@ const EmailsSnippetView = () => {
           className="bg-green-500 text-white py-2 px-4 rounded mb-4"
           onClick={handleSendOptions}
         >
-          {t('SEND')}
+          {t('APPLY')}
         </button>
       </div>
 
@@ -195,7 +172,8 @@ const EmailsSnippetView = () => {
         <ul className="space-y-4">
           {emails.map((email, index) => (
             <li
-              key={email.id || index}
+              // M-14: backend field is emailID, not id
+              key={email?.emailID ?? index}
               className="flex flex-col p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors hover:cursor-pointer"
               onClick={() => setSharedEmailToFullyView(email)}
             >
@@ -203,28 +181,28 @@ const EmailsSnippetView = () => {
                 <p className="text-sm font-medium text-gray-200">
                   {(sharedMailBoxOption === "Inbox" || sharedMailBoxOption === "Trashbox") ? (
                     <>
-                      <span className="text-blue-400">{t('SENDER')}:</span> {email.sender}
+                      <span className="text-blue-400">{t('SENDER')}:</span> {email?.sender ?? ''}
                     </>
                   ) : (
                     <>
-                      <span className="text-blue-400">Receiver:</span> {email.receiver}
+                      <span className="text-blue-400">Receiver:</span> {email?.receiver ?? ''}
                     </>
                   )}
                 </p>
                 <p className="text-sm font-medium text-gray-200">
-                  <span className="text-blue-400">{t('DATE')}:</span> {email.date}
+                  <span className="text-blue-400">{t('DATE')}:</span> {email?.date ?? ''}
                 </p>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <p className="text-sm font-medium text-gray-200">
                   <span className="text-blue-400">{t('PRIORITY')}:{' '}</span>
-                  <span className={getPriorityColor(email.priority)}>
-                    {email.priority}
+                  <span className={getPriorityColor(email?.priority ?? '')}>
+                    {email?.priority ?? ''}
                   </span>
                 </p>
               </div>
               <p className="text-sm mt-2 text-gray-200">
-                <span className="text-blue-400">{t('SUBJECT')}:</span> {email.subject}
+                <span className="text-blue-400">{t('SUBJECT')}:</span> {email?.subject ?? ''}
               </p>
             </li>
           ))}

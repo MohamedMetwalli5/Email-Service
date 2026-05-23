@@ -1,64 +1,95 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-const AppContext = createContext();
+const AppContext = createContext(null);
 
 const DataProvider = ({ children }) => {
+  const [authToken, setAuthTokenState] = useState(
+    () => localStorage.getItem('authToken') || null
+  );
+  const [refreshToken, setRefreshTokenState] = useState(
+    () => localStorage.getItem('refreshToken') || null
+  );
+  const [sharedUserEmail, setSharedUserEmailState] = useState(
+    () => localStorage.getItem('sharedUserEmail') || null
+  );
+  const [sharedMailBoxOption, setSharedMailBoxOptionState] = useState(
+    () => localStorage.getItem('sharedMailBoxOption') || 'Inbox'
+  );
+  const [sharedEmailToFullyView, setSharedEmailToFullyViewState] = useState(
+    () => {
+      const raw = localStorage.getItem('sharedEmailToFullyView');
+      try { return raw ? JSON.parse(raw) : null; }
+      catch { return null; }
+    }
+  );
+  const [sharedUserLanguage, setSharedUserLanguageState] = useState(
+    () => localStorage.getItem('sharedUserLanguage') || 'en'
+  );
 
-    // Retrieving the initial value for sharedUserEmail from local storage or set it to an empty string
-    const [sharedUserEmail, setSharedUserEmail] = useState(() => {
-        return localStorage.getItem('sharedUserEmail') || "";
-    });
+  const setAuthToken = (token) => {
+    setAuthTokenState(token);
+    if (token) localStorage.setItem('authToken', token);
+    else localStorage.removeItem('authToken');
+  };
 
-    // Retrieving the initial value for sharedMailBoxOption from local storage or set it to "Inbox"
-    const [sharedMailBoxOption, setSharedMailBoxOption] = useState(() => {
-        return localStorage.getItem('sharedMailBoxOption') || "Inbox";
-    });
+  const setRefreshToken = (token) => {
+    setRefreshTokenState(token);
+    if (token) localStorage.setItem('refreshToken', token);
+    else localStorage.removeItem('refreshToken');
+  };
 
-    // Retrieving the initial value for sharedEmailToFullyView from local storage or set it to an empty object
-    const [sharedEmailToFullyView, setSharedEmailToFullyView] = useState(() => {
-        return localStorage.getItem('sharedEmailToFullyView') || {};
-    });
-    
-    // Retrieving the initial value for authToken from local storage or null
-    const [authToken, setAuthToken] = useState(() => {
-        return localStorage.getItem('authToken') || null;
-      });
+  const setSharedUserEmail = (email) => {
+    setSharedUserEmailState(email);
+    if (email) localStorage.setItem('sharedUserEmail', email);
+    else localStorage.removeItem('sharedUserEmail');
+  };
 
-    // Retrieving the initial value for sharedUserLanguage from local storage or null
-    const [sharedUserLanguage, setSharedUserLanguage] = useState(() => {
-        return localStorage.getItem('sharedUserLanguage') || "English";
-      });
+  const setSharedMailBoxOption = (option) => {
+    setSharedMailBoxOptionState(option);
+    localStorage.setItem('sharedMailBoxOption', option);
+  };
 
-    // Updating the local storage whenever the sharedUserEmail state changes
-    useEffect(() => {
-        localStorage.setItem('sharedUserEmail', sharedUserEmail);
-    }, [sharedUserEmail]);
+  const setSharedEmailToFullyView = (email) => {
+    setSharedEmailToFullyViewState(email);
+    // JSON.stringify before storing (prevents "[object Object]" on reload)
+    localStorage.setItem('sharedEmailToFullyView', JSON.stringify(email));
+  };
 
-    // Updating the local storage whenever the sharedMailBoxOption state changes
-    useEffect(() => {
-        localStorage.setItem('sharedMailBoxOption', sharedMailBoxOption);
-    }, [sharedMailBoxOption]);
+  const setSharedUserLanguage = (lang) => {
+    setSharedUserLanguageState(lang);
+    localStorage.setItem('sharedUserLanguage', lang);
+  };
 
-    // Updating the local storage whenever the sharedEmailToFullyView state changes
-    useEffect(() => {
-        localStorage.setItem('sharedEmailToFullyView', sharedEmailToFullyView);
-    }, [sharedEmailToFullyView]);
+  // clearSession resets both localStorage and context state atomically
+  const clearSession = () => {
+    setAuthToken(null);
+    setRefreshToken(null);
+    setSharedUserEmailState(null);
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('sharedUserEmail');
+    localStorage.removeItem('sharedMailBoxOption');
+    localStorage.removeItem('sharedEmailToFullyView');
+    localStorage.removeItem('sharedUserLanguage');
+  };
 
-    // Updating the local storage whenever the authToken state changes
-    useEffect(() => {
-        localStorage.setItem('authToken', authToken);
-      }, [authToken]);
-
-    // Updating the local storage whenever the sharedUserLanguage state changes
-    useEffect(() => {
-    localStorage.setItem('sharedUserLanguage', sharedUserLanguage);
-    }, [sharedUserLanguage]);
-      
-    return (
-        <AppContext.Provider value={{ sharedUserEmail, setSharedUserEmail, sharedMailBoxOption, setSharedMailBoxOption, sharedEmailToFullyView, setSharedEmailToFullyView , authToken, setAuthToken, sharedUserLanguage, setSharedUserLanguage}}>
-            {children}
-        </AppContext.Provider>
-    );
+  return (
+    <AppContext.Provider value={{
+      authToken, setAuthToken,
+      refreshToken, setRefreshToken,
+      sharedUserEmail, setSharedUserEmail,
+      sharedMailBoxOption, setSharedMailBoxOption,
+      sharedEmailToFullyView, setSharedEmailToFullyView,
+      sharedUserLanguage, setSharedUserLanguage,
+      clearSession,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
 };
 
-export { AppContext, DataProvider };
+const useAppContext = () => useContext(AppContext);
+
+const AppProvider = DataProvider;
+
+export { AppContext, DataProvider, AppProvider, useAppContext };

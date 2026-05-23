@@ -1,7 +1,8 @@
 package com.backendemailservice.backendemailservice.exception;
 
-public class ReceiverNotFoundException extends RuntimeException {
+// Domain exception with machine-readable errorCode
+public class ReceiverNotFoundException extends ApplicationException {
     public ReceiverNotFoundException(String message) {
-        super(message);
+        super("RECEIVER_NOT_FOUND", message);
     }
 }

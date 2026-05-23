@@ -1,283 +1,477 @@
 package com.backendemailservice.backendemailservice.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.CacheManager;
-import org.springframework.test.context.ActiveProfiles;
-
+import com.backendemailservice.backendemailservice.dto.EmailResponseDto;
+import com.backendemailservice.backendemailservice.dto.SendEmailRequestDto;
 import com.backendemailservice.backendemailservice.entity.Email;
 import com.backendemailservice.backendemailservice.entity.User;
+import com.backendemailservice.backendemailservice.exception.EmailNotFoundException;
+import com.backendemailservice.backendemailservice.exception.ReceiverNotFoundException;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
 import com.backendemailservice.backendemailservice.repository.UserRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 
-@SpringBootTest
-@ActiveProfiles("test")
-public class EmailServiceTest {
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-    @Autowired
-    private EmailService emailService;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-    @Autowired
+// Pure unit test using MockitoExtension instead of @SpringBootTest
+@ExtendWith(MockitoExtension.class)
+class EmailServiceTest {
+
+    @Mock
     private EmailRepository emailRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
+    @Mock
     private CacheManager cacheManager;
 
-    @BeforeEach
-    public void setUp() {
-        emailRepository.deleteAll();
-        userRepository.deleteAll();
-        cacheManager.getCacheNames()
-                .forEach(name -> cacheManager.getCache(name).clear());
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private EmailService emailService;
+
+    // --- loadInboxDtos ---
+
+    @Test
+    void shouldLoadInboxDtos() {
+        String userEmail = "user@seamail.com";
+        Email entity = new Email("sender@seamail.com", userEmail, "Subject", "Body", "1",
+                LocalDateTime.now(), false);
+
+        when(emailRepository.loadInbox(userEmail)).thenReturn(List.of(entity));
+
+        List<EmailResponseDto> result = emailService.loadInboxDtos(userEmail);
+
+        assertEquals(1, result.size());
+        assertEquals("Subject", result.get(0).getSubject());
+        assertEquals(userEmail, result.get(0).getReceiver());
+        verify(emailRepository).loadInbox(userEmail);
+    }
+
+    // --- loadOutboxDtos ---
+
+    @Test
+    void shouldLoadOutboxDtos() {
+        String userEmail = "sender@seamail.com";
+        Email entity = new Email(userEmail, "receiver@seamail.com", "Out", "Body", "1",
+                LocalDateTime.now(), false);
+
+        when(emailRepository.loadOutbox(userEmail)).thenReturn(List.of(entity));
+
+        List<EmailResponseDto> result = emailService.loadOutboxDtos(userEmail);
+
+        assertEquals(1, result.size());
+        assertEquals("Out", result.get(0).getSubject());
+        verify(emailRepository).loadOutbox(userEmail);
+    }
+
+    // --- loadTrashboxDtos ---
+
+    @Test
+    void shouldLoadTrashboxDtos() {
+        String userEmail = "user@seamail.com";
+        Email entity = new Email("sender@seamail.com", userEmail, "Trashed", "Body", "1",
+                LocalDateTime.now(), true);
+
+        when(emailRepository.loadTrashbox(userEmail)).thenReturn(List.of(entity));
+
+        List<EmailResponseDto> result = emailService.loadTrashboxDtos(userEmail);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).isTrash());
+        verify(emailRepository).loadTrashbox(userEmail);
+    }
+
+    // --- sendEmail ---
+
+    @Test
+    void shouldSendEmailWhenReceiverExists() {
+        String senderEmail = "sender@seamail.com";
+        String receiverEmail = "receiver@seamail.com";
+
+        SendEmailRequestDto request = new SendEmailRequestDto();
+        request.setReceiver(receiverEmail);
+        request.setSubject("Test Subject");
+        request.setBody("Test Body");
+        request.setPriority("1");
+
+        when(userRepository.findByEmail(receiverEmail))
+                .thenReturn(Optional.of(new User(receiverEmail, "pass")));
+
+        emailService.sendEmail(senderEmail, request);
+
+        ArgumentCaptor<Email> captor = ArgumentCaptor.forClass(Email.class);
+        verify(emailRepository).save(captor.capture());
+
+        Email saved = captor.getValue();
+        assertEquals(senderEmail, saved.getSender());
+        assertEquals(receiverEmail, saved.getReceiver());
+        assertEquals("Test Subject", saved.getSubject());
+        assertEquals("Test Body", saved.getBody());
+        assertEquals("1", saved.getPriority());
+        assertFalse(saved.isTrash());
+        assertNotNull(saved.getDate());
     }
 
     @Test
-    public void testCreateEmail() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldThrowReceiverNotFoundWhenReceiverDoesNotExist() {
+        SendEmailRequestDto request = new SendEmailRequestDto();
+        request.setReceiver("missing@seamail.com");
 
-        Email email = new Email(user.getEmail(), "recipient@seamail.com", "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
+        when(userRepository.findByEmail("missing@seamail.com")).thenReturn(Optional.empty());
 
-        assertThat(emailRepository.count()).isEqualTo(1);
+        ReceiverNotFoundException ex = assertThrows(ReceiverNotFoundException.class,
+                () -> emailService.sendEmail("sender@seamail.com", request));
 
-        // Validating the details of the saved email
-        Email savedEmail = emailRepository.findById(email.getEmailID()).orElse(null);
-        assertThat(savedEmail).isNotNull();
-        assertThat(savedEmail.getSender()).isEqualTo(user.getEmail());
-        assertThat(savedEmail.getReceiver()).isEqualTo("recipient@seamail.com");
-        assertThat(savedEmail.getSubject()).isEqualTo("Test Email");
-        assertThat(savedEmail.getBody()).isEqualTo("This is a test email.");
-        assertThat(savedEmail.getPriority()).isEqualTo("1");
-        assertThat(savedEmail.getDate()).isNotNull();
-        assertThat(savedEmail.isTrash()).isEqualTo(false);
+        assertEquals("RECEIVER_NOT_FOUND", ex.getErrorCode());
+        verifyNoInteractions(emailRepository);
+    }
+
+    // --- deleteEmail (auth-check overload) ---
+
+    @Test
+    void shouldDeleteEmailWhenEmailExists() {
+        Long emailId = 1L;
+        when(emailRepository.findById(emailId)).thenReturn(Optional.of(new Email()));
+
+        emailService.deleteEmail(emailId, "user@seamail.com");
+
+        verify(emailRepository).findById(emailId);
+        verify(emailRepository).deleteById(emailId);
     }
 
     @Test
-    public void testLoadInbox() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldThrowEmailNotFoundWhenDeletingNonExistentEmail() {
+        Long emailId = 999L;
+        when(emailRepository.findById(emailId)).thenReturn(Optional.empty());
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
-        emailRepository.save(email);
+        EmailNotFoundException ex = assertThrows(EmailNotFoundException.class,
+                () -> emailService.deleteEmail(emailId, "user@seamail.com"));
 
-        List<Email> inboxEmails = emailService.loadInbox(user);
-        assertThat(inboxEmails).isNotNull();
-        assertThat(inboxEmails.size()).isEqualTo(1);
-        assertThat(inboxEmails.get(0).getSubject()).isEqualTo("Test Email");
+        assertTrue(ex.getMessage().contains("999"));
+        verify(emailRepository, never()).deleteById(any());
+    }
+
+    // --- moveToTrashBox (auth-check overload) ---
+
+    @Test
+    void shouldMoveEmailToTrashWhenEmailExists() {
+        Long emailId = 1L;
+        when(emailRepository.findById(emailId)).thenReturn(Optional.of(new Email()));
+
+        emailService.moveToTrashBox(emailId, "user@seamail.com");
+
+        verify(emailRepository).findById(emailId);
+        verify(emailRepository).moveToTrashBox(emailId);
     }
 
     @Test
-    public void testLoadOutbox() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldThrowEmailNotFoundWhenMovingNonExistentEmailToTrash() {
+        Long emailId = 999L;
+        when(emailRepository.findById(emailId)).thenReturn(Optional.empty());
 
-        Email email = new Email(user.getEmail(), "recipient@seamail.com", "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
+        EmailNotFoundException ex = assertThrows(EmailNotFoundException.class,
+                () -> emailService.moveToTrashBox(emailId, "user@seamail.com"));
 
-        List<Email> outboxEmails = emailService.loadOutbox(user);
-        assertThat(outboxEmails).isNotNull();
-        assertThat(outboxEmails.size()).isEqualTo(1);
-        assertThat(outboxEmails.get(0).getSubject()).isEqualTo("Test Email");
+        assertTrue(ex.getMessage().contains("999"));
+        verify(emailRepository, never()).moveToTrashBox(any());
+    }
+
+    // --- queryEmails ---
+
+    @Test
+    void shouldQueryEmailsByPrioritySort() {
+        String userEmail = "user@seamail.com";
+        Email e1 = new Email("a@b.com", userEmail, "Low", "B", "1", LocalDateTime.now(), false);
+
+        when(emailRepository.sortEmailsByPriority(userEmail)).thenReturn(List.of(e1));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "priority", null, null, null);
+
+        assertEquals(1, result.size());
+        assertEquals("Low", result.get(0).getSubject());
+        verify(emailRepository).sortEmailsByPriority(userEmail);
     }
 
     @Test
-    public void testLoadTrashbox() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldQueryEmailsByDateSort() {
+        String userEmail = "user@seamail.com";
+        Email old = new Email("a@b.com", userEmail, "Old", "B", "1",
+                LocalDateTime.now().minusDays(2), false);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Test Email", "This is a test email.", "1", LocalDateTime.now(), true);
-        emailService.createEmail(email);
+        when(emailRepository.sortEmailsByDate(userEmail)).thenReturn(List.of(old));
 
-        List<Email> trashedEmails = emailService.loadTrashbox(user);
-        assertThat(trashedEmails).isNotNull();
-        assertThat(trashedEmails.size()).isEqualTo(1);
-        assertThat(trashedEmails.get(0).getSubject()).isEqualTo("Test Email");
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "date", null, null, null);
+
+        assertEquals(1, result.size());
+        assertEquals("Old", result.get(0).getSubject());
+        verify(emailRepository).sortEmailsByDate(userEmail);
     }
 
     @Test
-    public void testDeleteEmail() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldFilterEmailsBySubject() {
+        String userEmail = "user@seamail.com";
+        Email match = new Email("boss@b.com", userEmail, "Invoice", "B", "1",
+                LocalDateTime.now(), false);
 
-        Email email = new Email(user.getEmail(), "recipient@seamail.com", "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
+        when(emailRepository.filterEmailsBySubject(userEmail, "Invoice")).thenReturn(List.of(match));
 
-        assertThat(emailRepository.count()).isEqualTo(1);
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, "subject", "Invoice", null);
 
-        emailService.deleteEmail(email.getEmailID());
-
-        assertThat(emailRepository.count()).isEqualTo(0);
+        assertEquals(1, result.size());
+        assertEquals("Invoice", result.get(0).getSubject());
+        verify(emailRepository).filterEmailsBySubject(userEmail, "Invoice");
     }
 
     @Test
-    public void testSortEmailsByPriority() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldFilterEmailsBySender() {
+        String userEmail = "user@seamail.com";
+        Email match = new Email("specific@b.com", userEmail, "Sub", "B", "1",
+                LocalDateTime.now(), false);
 
-        Email email1 = new Email("sender@seamail.com", user.getEmail(), "Test Email 1", "First email", "2", LocalDateTime.now(), false);
-        Email email2 = new Email("sender@seamail.com", user.getEmail(), "Test Email 2", "Second email", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email1);
-        emailService.createEmail(email2);
+        when(emailRepository.filterEmailsBySender(userEmail, "specific@b.com")).thenReturn(List.of(match));
 
-        List<Email> userEmails = emailRepository.loadInbox(user.getEmail());
-        List<Email> sortedEmails = emailRepository.sortEmailsByPriority(user.getEmail());
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, "sender", "specific@b.com", null);
 
-        assertThat(sortedEmails).isNotNull();
-        assertThat(sortedEmails.size()).isEqualTo(userEmails.size());
+        assertEquals(1, result.size());
+        assertEquals("specific@b.com", result.get(0).getSender());
+        verify(emailRepository).filterEmailsBySender(userEmail, "specific@b.com");
     }
 
     @Test
-    public void testFilterEmailsBySubject() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldDefaultToInboxWhenNoSortOrFilterProvided() {
+        String userEmail = "user@seamail.com";
+        Email entity = new Email("sender@seamail.com", userEmail, "Default", "B", "1",
+                LocalDateTime.now(), false);
 
-        Email email1 = new Email("sender@seamail.com", user.getEmail(), "Important Test Email", "First email", "1", LocalDateTime.now(), false);
-        Email email2 = new Email("sender@seamail.com", user.getEmail(), "Another Test Email", "Second email", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email1);
-        emailService.createEmail(email2);
+        when(emailRepository.loadInbox(userEmail)).thenReturn(List.of(entity));
 
-        List<Email> filteredEmails = emailService.filterEmails(user.getEmail(), "subject", "Important Test Email");
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, null, null, null);
 
-        assertThat(filteredEmails).isNotNull();
-        assertThat(filteredEmails.size()).isEqualTo(1);
-        assertThat(filteredEmails.get(0).getSubject()).isEqualTo("Important Test Email");
+        assertEquals(1, result.size());
+        assertEquals("Default", result.get(0).getSubject());
+        verify(emailRepository).loadInbox(userEmail);
+    }
+
+    // --- queryEmails with Outbox ---
+
+    @Test
+    void shouldQueryOutboxByPrioritySort() {
+        String userEmail = "sender@seamail.com";
+        Email e1 = new Email(userEmail, "a@b.com", "Out", "B", "1", LocalDateTime.now(), false);
+
+        when(emailRepository.sortOutboxByPriority(userEmail)).thenReturn(List.of(e1));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "priority", null, null, "Outbox");
+
+        assertEquals(1, result.size());
+        assertEquals("Out", result.get(0).getSubject());
+        verify(emailRepository).sortOutboxByPriority(userEmail);
     }
 
     @Test
-    public void testFilterEmailsBySender() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldQueryOutboxByDateSort() {
+        String userEmail = "sender@seamail.com";
+        Email old = new Email(userEmail, "a@b.com", "Old", "B", "1",
+                LocalDateTime.now().minusDays(2), false);
 
-        Email email1 = new Email("sender1@seamail.com", user.getEmail(), "Test Email 1", "First email", "1", LocalDateTime.now(), false);
-        Email email2 = new Email("sender2@seamail.com", user.getEmail(), "Test Email 2", "Second email", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email1);
-        emailService.createEmail(email2);
+        when(emailRepository.sortOutboxByDate(userEmail)).thenReturn(List.of(old));
 
-        List<Email> filteredEmails = emailService.filterEmails(user.getEmail(), "sender", "sender1@seamail.com");
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "date", null, null, "Outbox");
 
-        assertThat(filteredEmails).isNotNull();
-        assertThat(filteredEmails.size()).isEqualTo(1);
-        assertThat(filteredEmails.get(0).getSender()).isEqualTo("sender1@seamail.com");
+        assertEquals(1, result.size());
+        assertEquals("Old", result.get(0).getSubject());
+        verify(emailRepository).sortOutboxByDate(userEmail);
     }
 
     @Test
-    public void testMoveToTrashBox() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldFilterOutboxBySubject() {
+        String userEmail = "sender@seamail.com";
+        Email match = new Email(userEmail, "a@b.com", "Invoice", "B", "1",
+                LocalDateTime.now(), false);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Test Email", "This is a test email.", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
+        when(emailRepository.filterOutboxBySubject(userEmail, "Invoice")).thenReturn(List.of(match));
 
-        emailService.moveToTrashBox(email.getEmailID());
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, "subject", "Invoice", "Outbox");
 
-        Email trashedEmail = emailRepository.findById(email.getEmailID()).orElse(null);
-        assertThat(trashedEmail).isNotNull();
-        assertThat(trashedEmail.isTrash()).isEqualTo(true); // Checking for the updated trash value
+        assertEquals(1, result.size());
+        assertEquals("Invoice", result.get(0).getSubject());
+        verify(emailRepository).filterOutboxBySubject(userEmail, "Invoice");
     }
 
     @Test
-    public void testLoadInbox_IsCached() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldFilterOutboxByReceiver() {
+        String userEmail = "sender@seamail.com";
+        Email match = new Email(userEmail, "specific@b.com", "Sub", "B", "1",
+                LocalDateTime.now(), false);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
-        emailRepository.save(email);
+        when(emailRepository.filterOutboxByReceiver(userEmail, "specific@b.com")).thenReturn(List.of(match));
 
-        List<Email> firstCall = emailService.loadInbox(user);
-        List<Email> secondCall = emailService.loadInbox(user);
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, "sender", "specific@b.com", "Outbox");
 
-        assertThat(firstCall).isEqualTo(secondCall);
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
+        assertEquals(1, result.size());
+        assertEquals("specific@b.com", result.get(0).getReceiver());
+        verify(emailRepository).filterOutboxByReceiver(userEmail, "specific@b.com");
     }
 
     @Test
-    public void testLoadInbox_CacheEvictedOnCreateEmail() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldDefaultToOutboxWhenNoSortOrFilterProvided() {
+        String userEmail = "sender@seamail.com";
+        Email entity = new Email(userEmail, "a@b.com", "Default", "B", "1",
+                LocalDateTime.now(), false);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
-        emailRepository.save(email);
+        when(emailRepository.loadOutbox(userEmail)).thenReturn(List.of(entity));
 
-        emailService.loadInbox(user);
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, null, null, "Outbox");
 
-        Email newEmail = new Email("sender2@seamail.com", user.getEmail(), "New", "Body", "1", LocalDateTime.now(), false);
-        emailService.createEmail(newEmail);
+        assertEquals(1, result.size());
+        assertEquals("Default", result.get(0).getSubject());
+        verify(emailRepository).loadOutbox(userEmail);
+    }
 
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
+    // --- queryEmails with Trashbox ---
+
+    @Test
+    void shouldQueryTrashboxByPrioritySort() {
+        String userEmail = "user@seamail.com";
+        Email e1 = new Email("a@b.com", userEmail, "Trashed", "B", "1", LocalDateTime.now(), true);
+
+        when(emailRepository.sortTrashboxByPriority(userEmail)).thenReturn(List.of(e1));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "priority", null, null, "Trashbox");
+
+        assertEquals(1, result.size());
+        assertEquals("Trashed", result.get(0).getSubject());
+        verify(emailRepository).sortTrashboxByPriority(userEmail);
     }
 
     @Test
-    public void testLoadInbox_CacheEvictedOnMoveToTrash() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldQueryTrashboxByDateSort() {
+        String userEmail = "user@seamail.com";
+        Email old = new Email("a@b.com", userEmail, "Old", "B", "1",
+                LocalDateTime.now().minusDays(2), true);
 
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
+        when(emailRepository.sortTrashboxByDate(userEmail)).thenReturn(List.of(old));
 
-        emailService.loadInbox(user);
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "date", null, null, "Trashbox");
 
-        emailService.moveToTrashBox(email.getEmailID());
-
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
+        assertEquals(1, result.size());
+        assertEquals("Old", result.get(0).getSubject());
+        verify(emailRepository).sortTrashboxByDate(userEmail);
     }
 
     @Test
-    public void testSortEmailsByDate() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldFilterTrashboxBySubject() {
+        String userEmail = "user@seamail.com";
+        Email match = new Email("boss@b.com", userEmail, "Invoice", "B", "1",
+                LocalDateTime.now(), true);
 
+        when(emailRepository.filterTrashBySubject(userEmail, "Invoice")).thenReturn(List.of(match));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, "subject", "Invoice", "Trashbox");
+
+        assertEquals(1, result.size());
+        assertEquals("Invoice", result.get(0).getSubject());
+        verify(emailRepository).filterTrashBySubject(userEmail, "Invoice");
+    }
+
+    @Test
+    void shouldFilterTrashboxBySender() {
+        String userEmail = "user@seamail.com";
+        Email match = new Email("boss@b.com", userEmail, "Sub", "B", "1",
+                LocalDateTime.now(), true);
+
+        when(emailRepository.filterTrashBySender(userEmail, "boss@b.com")).thenReturn(List.of(match));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, "sender", "boss@b.com", "Trashbox");
+
+        assertEquals(1, result.size());
+        assertEquals("boss@b.com", result.get(0).getSender());
+        verify(emailRepository).filterTrashBySender(userEmail, "boss@b.com");
+    }
+
+    @Test
+    void shouldDefaultToTrashboxWhenNoSortOrFilterProvided() {
+        String userEmail = "user@seamail.com";
+        Email entity = new Email("sender@seamail.com", userEmail, "Default", "B", "1",
+                LocalDateTime.now(), true);
+
+        when(emailRepository.loadTrashbox(userEmail)).thenReturn(List.of(entity));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, null, null, null, "Trashbox");
+
+        assertEquals(1, result.size());
+        assertEquals("Default", result.get(0).getSubject());
+        verify(emailRepository).loadTrashbox(userEmail);
+    }
+
+    // --- Combined filter + sort ---
+
+    @Test
+    void shouldFilterBySubjectAndSortByPriority() {
+        String userEmail = "user@seamail.com";
+        Email low = new Email("a@b.com", userEmail, "Invoice", "B", "3",
+                LocalDateTime.now(), false);
+        Email high = new Email("c@b.com", userEmail, "Invoice", "B", "1",
+                LocalDateTime.now(), false);
+
+        when(emailRepository.filterEmailsBySubject(userEmail, "Invoice"))
+                .thenReturn(new ArrayList<>(List.of(low, high)));
+
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "priority", "subject", "Invoice", null);
+
+        assertEquals(2, result.size());
+        assertEquals("1", result.get(0).getPriority());
+        assertEquals("3", result.get(1).getPriority());
+        verify(emailRepository).filterEmailsBySubject(userEmail, "Invoice");
+    }
+
+    @Test
+    void shouldFilterOutboxByReceiverAndSortByDate() {
+        String userEmail = "sender@seamail.com";
         LocalDateTime now = LocalDateTime.now();
-        Email oldEmail = new Email("s@seamail.com", user.getEmail(), "Old", "Body", "1", now.minusDays(1), false);
-        Email newEmail = new Email("s@seamail.com", user.getEmail(), "New", "Body", "1", now, false);
+        Email older = new Email(userEmail, "specific@b.com", "Old", "B", "1",
+                now.minusDays(2), false);
+        Email newer = new Email(userEmail, "specific@b.com", "New", "B", "1",
+                now, false);
 
-        emailService.createEmail(oldEmail);
-        emailService.createEmail(newEmail);
+        when(emailRepository.filterOutboxByReceiver(userEmail, "specific@b.com"))
+                .thenReturn(new ArrayList<>(List.of(newer, older)));
 
-        List<Email> sorted = emailService.sortEmails(user.getEmail(), "date");
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "date", "sender", "specific@b.com", "Outbox");
 
-        assertThat(sorted).isNotNull();
-        assertThat(sorted.get(0).getSubject()).isEqualTo("Old");
+        assertEquals(2, result.size());
+        assertTrue(result.get(0).getDate().isBefore(result.get(1).getDate()) ||
+                   result.get(0).getDate().isEqual(result.get(1).getDate()));
+        verify(emailRepository).filterOutboxByReceiver(userEmail, "specific@b.com");
     }
 
     @Test
-    public void testFilterEmailsBySender_AlternativePath() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
+    void shouldFilterTrashboxBySubjectAndSortByPriority() {
+        String userEmail = "user@seamail.com";
+        Email low = new Email("a@b.com", userEmail, "Invoice", "B", "3",
+                LocalDateTime.now(), true);
+        Email high = new Email("c@b.com", userEmail, "Invoice", "B", "1",
+                LocalDateTime.now(), true);
 
-        Email email = new Email("specific-sender@seamail.com", user.getEmail(), "Sub", "Body", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
+        when(emailRepository.filterTrashBySubject(userEmail, "Invoice"))
+                .thenReturn(new ArrayList<>(List.of(low, high)));
 
-        List<Email> filtered = emailService.filterEmails(user.getEmail(), "sender", "specific-sender@seamail.com");
+        List<EmailResponseDto> result = emailService.queryEmails(userEmail, "priority", "subject", "Invoice", "Trashbox");
 
-        assertThat(filtered).hasSize(1);
-        assertThat(filtered.get(0).getSender()).isEqualTo("specific-sender@seamail.com");
-    }
-
-    @Test
-    public void testDeleteEmail_CacheEviction() {
-        User user = new User("test@seamail.com", "password");
-        userRepository.save(user);
-
-        Email email = new Email("sender@seamail.com", user.getEmail(), "Subject", "Body", "1", LocalDateTime.now(), false);
-        emailService.createEmail(email);
-
-        emailService.loadInbox(user);
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNotNull();
-
-        emailService.deleteEmail(email.getEmailID());
-        assertThat(cacheManager.getCache("inbox").get(user.getEmail())).isNull();
+        assertEquals(2, result.size());
+        assertEquals("1", result.get(0).getPriority());
+        assertEquals("3", result.get(1).getPriority());
+        verify(emailRepository).filterTrashBySubject(userEmail, "Invoice");
     }
 }

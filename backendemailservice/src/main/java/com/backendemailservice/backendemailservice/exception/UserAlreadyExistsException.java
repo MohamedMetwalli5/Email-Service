@@ -1,7 +1,8 @@
 package com.backendemailservice.backendemailservice.exception;
 
-public class UserAlreadyExistsException extends RuntimeException {
+// Domain exception with machine-readable errorCode
+public class UserAlreadyExistsException extends ApplicationException {
     public UserAlreadyExistsException(String message) {
-        super(message);
+        super("USER_ALREADY_EXISTS", message);
     }
 }

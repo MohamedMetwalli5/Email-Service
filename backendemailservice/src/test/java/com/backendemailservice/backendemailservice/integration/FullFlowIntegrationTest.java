@@ -1,4 +1,4 @@
-package com.backendemailservice.backendemailservice;
+package com.backendemailservice.backendemailservice.integration;
 
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 public class FullFlowIntegrationTest {
 
     @Autowired
@@ -67,7 +67,7 @@ public class FullFlowIntegrationTest {
                         "\"body\":\"Hello from the full flow test!\"," +
                         "\"priority\":\"1\"" +
                         "}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // 3. Receiver checks inbox via the API
         mockMvc.perform(get("/api/v1/inbox")
