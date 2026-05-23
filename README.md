@@ -46,7 +46,7 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 │  Spring Boot Actuator (health probes)   │
 └────────┬───────────────────┬────────────┘
          │                   │
-┌────────▼──────┐   ┌────────▼──────────────────┐
+┌────────▼──────┐   ┌────────▼───────────────────┐
 │     MySQL     │   │        Redis Cloud         │
 │  Spring Data  │   │  Inbox cache  TTL 15 min   │
 │     JPA       │   │  Refresh tokens TTL 7 days │
