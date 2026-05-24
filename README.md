@@ -195,7 +195,7 @@ Docker runs the entire stack (MySQL + Spring Boot + React/Nginx) with a single c
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/your-username/Email-Service.git
+git clone https://github.com/MohamedMetwalli5/Email-Service.git
 cd Email-Service
 ```
 
