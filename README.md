@@ -405,7 +405,7 @@ Email-Service/
 │   ├── .env.example                   # VITE_* variables
 │   └── src/
 │       ├── main.jsx                   # Router: /, /sign-in, /home, /settings
-│       ├── context/AppContext.jsx     # Auth + mailbox global state, localStorage
+│       ├── AppContext.jsx              # Auth + mailbox global state, localStorage
 │       ├── api/apiClient.js           # Axios instance, Bearer header, refresh interceptor
 │       ├── utils/parseApiError.js     # Normalises all backend error shapes
 │       ├── pages/                     # SignUp, SignIn, Home, Settings screens

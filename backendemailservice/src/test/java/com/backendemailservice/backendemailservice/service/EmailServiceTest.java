@@ -14,8 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.CacheManager;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +28,6 @@ class EmailServiceTest {
 
     @Mock
     private EmailRepository emailRepository;
-
-    @Mock
-    private CacheManager cacheManager;
 
     @Mock
     private UserRepository userRepository;

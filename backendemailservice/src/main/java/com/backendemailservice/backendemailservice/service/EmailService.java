@@ -3,13 +3,10 @@ package com.backendemailservice.backendemailservice.service;
 import com.backendemailservice.backendemailservice.dto.EmailResponseDto;
 import com.backendemailservice.backendemailservice.dto.SendEmailRequestDto;
 import com.backendemailservice.backendemailservice.entity.Email;
-import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.exception.EmailNotFoundException;
 import com.backendemailservice.backendemailservice.exception.ReceiverNotFoundException;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
 import com.backendemailservice.backendemailservice.repository.UserRepository;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -17,19 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 
 @Service
 public class EmailService implements IEmailService {
 
     private final EmailRepository repository;
-    private final CacheManager cacheManager;
     private final UserRepository userRepository;
 
-    public EmailService(EmailRepository repository, CacheManager cacheManager, UserRepository userRepository) {
+    public EmailService(EmailRepository repository, UserRepository userRepository) {
         this.repository = repository;
-        this.cacheManager = cacheManager;
         this.userRepository = userRepository;
     }
 
@@ -38,6 +32,7 @@ public class EmailService implements IEmailService {
     // DTO mapping in service layer, not controller
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "inbox", key = "#userEmail")
     public List<EmailResponseDto> loadInboxDtos(String userEmail) {
         return repository.loadInbox(userEmail).stream()
                 .map(this::toDto)
@@ -63,6 +58,7 @@ public class EmailService implements IEmailService {
     // sendEmail handles entity construction + receiver check 
     @Override
     @Transactional
+    @CacheEvict(value = "inbox", key = "#request.receiver")
     public void sendEmail(String senderEmail, SendEmailRequestDto request) {
         if (userRepository.findByEmail(request.getReceiver()).isEmpty()) {
             throw new ReceiverNotFoundException("Receiver not found");
@@ -81,21 +77,21 @@ public class EmailService implements IEmailService {
     // auth-check overload
     @Override
     @Transactional
+    @CacheEvict(value = "inbox", key = "#userEmail")
     public void deleteEmail(Long emailID, String userEmail) {
         Email email = repository.findById(emailID)
                 .orElseThrow(() -> new EmailNotFoundException("Email not found: " + emailID));
         repository.deleteById(emailID);
-        evictInboxCache(userEmail);
     }
 
     // auth-check overload
     @Override
     @Transactional
+    @CacheEvict(value = "inbox", key = "#userEmail")
     public void moveToTrashBox(Long emailID, String userEmail) {
         Email email = repository.findById(emailID)
                 .orElseThrow(() -> new EmailNotFoundException("Email not found: " + emailID));
         repository.moveToTrashBox(emailID);
-        evictInboxCache(userEmail);
     }
 
     // unified query with optional sort/filter params and mailbox context
@@ -152,91 +148,6 @@ public class EmailService implements IEmailService {
             case "Trashbox" -> loadTrashboxDtos(email);
             default -> loadInboxDtos(email);
         };
-    }
-
-    // --- Legacy methods ---
-
-    // add @Transactional(readOnly = true) 
-    @Override
-    @Transactional(readOnly = true)
-    @Cacheable(value = "inbox", key = "#user.getEmail()")
-    public List<Email> loadInbox(User user) {
-        return repository.loadInbox(user.getEmail());
-    }
-
-    // add @Transactional(readOnly = true) 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Email> loadOutbox(User user) {
-        return repository.loadOutbox(user.getEmail());
-    }
-
-    // add @Transactional(readOnly = true) 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Email> loadTrashbox(User user) {
-        return repository.loadTrashbox(user.getEmail());
-    }
-
-    // add @Transactional on write operations 
-    @Override
-    @Transactional
-    @CacheEvict(value = "inbox", key = "#email.getReceiver()")
-    public void createEmail(Email email) {
-        repository.save(email);
-    }
-
-    // add @Transactional on write operations 
-    @Override
-    @Transactional
-    public void deleteEmail(Long emailID) {
-        Email email = repository.findById(emailID)
-                .orElseThrow(() -> new EmailNotFoundException("Email not found: " + emailID));
-        repository.deleteById(emailID);
-        Cache cache = cacheManager.getCache("inbox");
-        if (cache != null) {
-            cache.evict(email.getReceiver());
-        }
-    }
-
-    @Override
-    @Transactional
-    public void moveToTrashBox(Long emailID) {
-        Email email = repository.findById(emailID)
-                .orElseThrow(() -> new EmailNotFoundException("Email not found: " + emailID));
-        repository.moveToTrashBox(emailID);
-        Cache cache = cacheManager.getCache("inbox");
-        if (cache != null) {
-            cache.evict(email.getReceiver());
-        }
-    }
-
-    // add @Transactional(readOnly = true) 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Email> sortEmails(String receiverEmail, String sortingOption) {
-        if (sortingOption.equals("priority")) {
-            return repository.sortEmailsByPriority(receiverEmail);
-        } else {
-            return repository.sortEmailsByDate(receiverEmail);
-        }
-    }
-
-    // add @Transactional(readOnly = true) 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Email> filterEmails(String receiverEmail, String filteringOption, String filteringValue) {
-        if (filteringOption.equals("subject")) {
-            return repository.filterEmailsBySubject(receiverEmail, filteringValue);
-        } else {
-            return repository.filterEmailsBySender(receiverEmail, filteringValue);
-        }
-    }
-
-    @Override
-    @CacheEvict(value = "inbox", key = "#receiver")
-    public void evictInboxCache(String receiver) {
-        // Spring AOP handles eviction via annotation
     }
 
     // --- Internal helpers ---
