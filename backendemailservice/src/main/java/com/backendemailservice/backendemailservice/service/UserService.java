@@ -24,6 +24,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -318,7 +320,9 @@ public class UserService implements IUserService {
             repository.save(user);
         }
 
-        return allowedOrigin + "/home?token=" + jwtToken + "&refreshToken=" + refreshToken + "&email=" + email;
+        return allowedOrigin + "/home?token=" + URLEncoder.encode(jwtToken, StandardCharsets.UTF_8)
+                + "&refreshToken=" + URLEncoder.encode(refreshToken, StandardCharsets.UTF_8)
+                + "&email=" + URLEncoder.encode(email, StandardCharsets.UTF_8);
     }
 
 }

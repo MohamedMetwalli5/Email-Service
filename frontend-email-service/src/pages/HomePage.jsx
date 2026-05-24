@@ -4,32 +4,28 @@ import Navbar from '../components/Navbar';
 import HomeMainContent from '../components/HomeMainContent';
 import { AppContext } from '../AppContext.jsx';
 
-// Read refreshToken from Discord OAuth redirect; use replaceState instead of navigate
-
 const HomePage = () => {
+  const params = new URLSearchParams(window.location.search);
+  const tokenFromUrl = params.get('token');
+  const refreshTokenFromUrl = params.get('refreshToken');
+  const emailFromUrl = params.get('email');
 
   const { setSharedUserEmail, setAuthToken, setRefreshToken, sharedUserEmail, authToken } = useContext(AppContext);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token        = params.get('token');
-    const refreshToken = params.get('refreshToken');
-    const email        = params.get('email');
+    if (tokenFromUrl && emailFromUrl) {
+      setAuthToken(tokenFromUrl);
+      setSharedUserEmail(emailFromUrl);
 
-    if (token && email) {
-      setAuthToken(token);
-      setSharedUserEmail(email);
-
-      if (refreshToken) {
-        setRefreshToken(refreshToken);
+      if (refreshTokenFromUrl) {
+        setRefreshToken(refreshTokenFromUrl);
       }
 
-      // Strip query params from browser URL (UX: don't leave tokens in address bar)
       window.history.replaceState({}, document.title, '/home');
     }
   }, []);
 
-  if (!sharedUserEmail || !authToken) {
+  if (!(sharedUserEmail || emailFromUrl) || !(authToken || tokenFromUrl)) {
     return <></>;
   }
   
