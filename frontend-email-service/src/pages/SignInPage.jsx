@@ -5,6 +5,7 @@ import { AppContext } from '../AppContext.jsx';
 import { parseApiError } from '../utils/parseApiError';
 import SignInWithDiscord from '../components/SigninWithDiscord.jsx';
 import apiClient from '../api/apiClient';
+import toast from 'react-hot-toast';
 
 const SignInPage = () => {
   
@@ -18,8 +19,6 @@ const SignInPage = () => {
     email: '',
     password: ''
   });
-  const [error, setError] = useState('');
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
@@ -42,13 +41,17 @@ const SignInPage = () => {
       navigate('/home');
     } catch (error) {
       const parsed = parseApiError(error);
-      // Handle specific error codes for precise UX feedback
       if (parsed.errorCode === 'USER_NOT_FOUND') {
-        setError('Invalid email or password. Please try again.');
+        toast.error('Invalid email or password. Please try again.');
       } else if (parsed.fieldErrors.length > 0) {
-        setError(parsed.fieldErrors.join('\n'));
+        toast.error(parsed.fieldErrors.join('\n'));
       } else {
-        setError(parsed.message);
+        const fallbackMessages = {
+          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+          UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+        };
+        toast.error(fallbackMessages[parsed.errorCode] || 'Sign in failed. Please try again.');
       }
     }
   };

@@ -124,7 +124,7 @@ describe('SettingsMainContent', () => {
     await user.click(screen.getByRole('button', { name: /delete account/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Unauthorized/i)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to delete account/i)).toBeInTheDocument();
     });
   });
 

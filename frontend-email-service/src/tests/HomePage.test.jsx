@@ -119,6 +119,8 @@ describe('HomePage', () => {
 
     const { container } = renderHomePage();
 
-    expect(container.innerHTML).toBe('');
+    // Toaster div is present from AppProvider, but no HomePage content
+    expect(container.querySelector('[data-rht-toaster]')).toBeInTheDocument();
+    expect(container.querySelector('.bg-gray-700')).toBeNull();
   });
 });

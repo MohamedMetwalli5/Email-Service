@@ -1,9 +1,10 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../AppContext.jsx';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/apiClient';
 import { parseApiError } from '../utils/parseApiError';
+import toast from 'react-hot-toast';
 
 const SettingsMainContent = () => {
   
@@ -13,8 +14,6 @@ const SettingsMainContent = () => {
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
   const [file, setFile] = useState(null);
   const [fileSizeError, setFileSizeError] = useState('');
@@ -23,10 +22,10 @@ const SettingsMainContent = () => {
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match!');
+      toast.error('Passwords do not match!');
       return;
     } else if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long!');
+      toast.error('Password must be at least 8 characters long!');
       return;
     }
     try {
@@ -34,18 +33,22 @@ const SettingsMainContent = () => {
         email: sharedUserEmail,
         newPassword: newPassword,
       });
-      setSuccessMessage('Password changed successfully.');
+      toast.success('Password changed successfully.');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
       const parsed = parseApiError(err);
-      // Handle specific error codes for precise UX feedback
       if (parsed.errorCode === 'USER_NOT_FOUND') {
-        setError('User not found. Please check your email address.');
+        toast.error('User not found. Please check your email address.');
       } else if (parsed.fieldErrors.length > 0) {
-        setError(parsed.fieldErrors.join('\n'));
+        toast.error(parsed.fieldErrors.join('\n'));
       } else {
-        setError(parsed.message);
+        const fallbackMessages = {
+          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+          UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+        };
+        toast.error(fallbackMessages[parsed.errorCode] || 'Failed to change password. Please try again.');
       }
     }
   };
@@ -58,13 +61,16 @@ const SettingsMainContent = () => {
       });
       navigate("/");
     } catch (error) {
-      console.error("Account deletion error:", error.response?.data || error.message);
-      // Use parseApiError instead of old errors field; handle specific codes
       const parsed = parseApiError(error);
       if (parsed.fieldErrors.length > 0) {
-        setError(parsed.fieldErrors.join('\n'));
+        toast.error(parsed.fieldErrors.join('\n'));
       } else {
-        setError(parsed.message);
+        const fallbackMessages = {
+          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+          UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+        };
+        toast.error(fallbackMessages[parsed.errorCode] || 'Failed to delete account. Please try again.');
       }
     }
   };
@@ -77,13 +83,15 @@ const SettingsMainContent = () => {
       );
       setSharedUserLanguage(language);
     } catch (error) {
-      console.error("Language update error:", error.response?.data);
-      // Use parseApiError instead of old errors field
       const parsed = parseApiError(error);
       if (parsed.fieldErrors.length > 0) {
-        setError(parsed.fieldErrors.join('\n'));
+        toast.error(parsed.fieldErrors.join('\n'));
       } else {
-        setError(parsed.message);
+        const fallbackMessages = {
+          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+        };
+        toast.error(fallbackMessages[parsed.errorCode] || 'Failed to update language. Please try again.');
       }
     }
   };
@@ -115,7 +123,7 @@ const SettingsMainContent = () => {
 
   const handleUploadProfilePicture = async () => {
     if (!file) {
-      alert('Please select a file to upload.');
+      toast.error('Please select a file to upload.');
       return;
     }
 
@@ -129,18 +137,20 @@ const SettingsMainContent = () => {
             'Content-Type': 'application/octet-stream',
           }
         });
-        alert('Profile picture uploaded successfully!');
+        toast.success('Profile picture uploaded successfully!');
         window.location.reload();
       } catch (error) {
-        console.error('Error uploading profile picture:', error.response?.data);
-        // Use parseApiError; handle INVALID_FILE_FORMAT with specific message
         const parsed = parseApiError(error);
         if (parsed.errorCode === 'INVALID_FILE_FORMAT') {
-          setError('Only PNG and JPEG images under 5 MB are accepted.');
+          toast.error('Only PNG and JPEG images under 5 MB are accepted.');
         } else if (parsed.fieldErrors.length > 0) {
-          setError(parsed.fieldErrors.join('\n'));
+          toast.error(parsed.fieldErrors.join('\n'));
         } else {
-          setError(parsed.message);
+          const fallbackMessages = {
+            INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+            NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+          };
+          toast.error(fallbackMessages[parsed.errorCode] || 'Failed to upload profile picture. Please try again.');
         }
       }
     };
@@ -188,11 +198,9 @@ const SettingsMainContent = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
-            {error && <p className="text-red-500 mb-4">{error}</p>}
-            {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
             <button
               onClick={handlePasswordChange}
-              disabled={newPassword !== confirmPassword || error}
+              disabled={newPassword !== confirmPassword}
               className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
             >
               {t('CHANGE_PASSWORD')}

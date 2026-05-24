@@ -102,7 +102,7 @@ describe('NewMessageComposer', () => {
     await user.click(screen.getByRole('button', { name: /send/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Server error/i)).toBeInTheDocument();
+      expect(screen.getByText(/Something went wrong on our end/i)).toBeInTheDocument();
     });
   });
 

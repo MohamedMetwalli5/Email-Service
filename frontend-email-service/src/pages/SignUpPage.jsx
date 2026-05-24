@@ -5,6 +5,7 @@ import { useContext } from 'react';
 import { parseApiError } from '../utils/parseApiError';
 import LeftCharactersSticker from "../assets/LeftCharactersSticker.svg";
 import apiClient from '../api/apiClient';
+import toast from 'react-hot-toast';
 
 const SignUpPage = () => {
 
@@ -20,8 +21,6 @@ const SignUpPage = () => {
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,13 +34,13 @@ const SignUpPage = () => {
     e.preventDefault();
     
     if (formData.password.length < 8) {
-      alert("Password must be at least 8 characters long!");
+      toast.error("Password must be at least 8 characters long!");
       return;
     } else if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     } else if (!formData.email.endsWith("@seamail.com")) {
-      alert("Emails must end with @seamail.com");
+      toast.error("Emails must end with @seamail.com");
       return;
     }
 
@@ -61,15 +60,18 @@ const SignUpPage = () => {
       navigate('/home');
     } catch (error) {
       const parsed = parseApiError(error);
-      // Handle specific error codes for precise UX feedback
       if (parsed.errorCode === 'USER_ALREADY_EXISTS') {
-        setError('An account with this email already exists. Please sign in instead.');
+        toast.error('An account with this email already exists. Please sign in instead.');
       } else if (parsed.errorCode === 'INVALID_EMAIL_DOMAIN') {
-        setError('Only @seamail.com email addresses are allowed.');
+        toast.error('Only @seamail.com email addresses are allowed.');
       } else if (parsed.fieldErrors.length > 0) {
-        setError(parsed.fieldErrors.join('\n'));
+        toast.error(parsed.fieldErrors.join('\n'));
       } else {
-        setError(parsed.message);
+        const fallbackMessages = {
+          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+        };
+        toast.error(fallbackMessages[parsed.errorCode] || 'Sign up failed. Please try again.');
       }
     }
   };

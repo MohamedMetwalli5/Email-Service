@@ -4,7 +4,7 @@ import { AppContext } from '../../AppContext.jsx';
 import apiClient from '../../api/apiClient';
 import { parseApiError } from '../../utils/parseApiError';
 import { useTranslation } from 'react-i18next';
-import { Toaster, toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 
 const EmailsSnippetView = () => {
@@ -39,8 +39,12 @@ const EmailsSnippetView = () => {
       setEmails(response.data);
     } catch (error) {
       const parsed = parseApiError(error);
-      toast.error(parsed.message);
-      console.error('Email query failed:', parsed.message);
+      const fallbackMessages = {
+        INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+        NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+        UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+      };
+      toast.error(fallbackMessages[parsed.errorCode] || 'Failed to load emails. Please try again.');
     }
   };
 
@@ -61,8 +65,12 @@ const EmailsSnippetView = () => {
       setEmails(response.data);
     } catch (error) {
       const parsed = parseApiError(error);
-      toast.error(parsed.message);
-      console.error('Filter+sort failed:', parsed.message);
+      const fallbackMessages = {
+        INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+        NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+        UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+      };
+      toast.error(fallbackMessages[parsed.errorCode] || 'Failed to load emails. Please try again.');
     }
   };
 
@@ -91,8 +99,12 @@ const EmailsSnippetView = () => {
       setEmails(response.data);
     } catch (error) {
       const parsed = parseApiError(error);
-      toast.error(parsed.message);
-      console.error('Failed to load emails:', parsed.message);
+      const fallbackMessages = {
+        INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+        NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+        UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+      };
+      toast.error(fallbackMessages[parsed.errorCode] || 'Failed to load emails. Please try again.');
     }
   }
 
@@ -105,7 +117,6 @@ const EmailsSnippetView = () => {
 
   return (
     <div className="flex flex-col bg-gray-900 w-fit p-4 rounded-lg h-full text-gray-100">
-      <Toaster position="top-center" />
       <h2 className="text-2xl font-semibold mb-4">
         {sharedMailBoxOption === "Inbox" ? (
           <span>{t('INBOX')}</span>

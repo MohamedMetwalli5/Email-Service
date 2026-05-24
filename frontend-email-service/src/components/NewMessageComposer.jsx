@@ -49,13 +49,16 @@ const NewMessageComposer = ({ onClose }) => {
     } catch (error) {
       console.error("Send error:", error.response?.data || error.message);
       const parsed = parseApiError(error);
-      // Handle specific error codes for precise UX feedback
       if (parsed.errorCode === 'RECEIVER_NOT_FOUND') {
         setFieldError('The recipient was not found. Please check the email address.');
       } else if (parsed.fieldErrors.length > 0) {
         setFieldError(parsed.fieldErrors.join('\n'));
       } else {
-        setFieldError(parsed.message);
+        const fallbackMessages = {
+          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
+          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+        };
+        setFieldError(fallbackMessages[parsed.errorCode] || 'Failed to send email. Please try again.');
       }
     }
   };

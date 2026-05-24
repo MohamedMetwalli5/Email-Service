@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import { AppContext } from '../../AppContext.jsx';
 import apiClient from '../../api/apiClient';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 
 
 const EmailFullView = () => {
@@ -44,7 +45,7 @@ const EmailFullView = () => {
       setEmail({});
       setIsMovedToTrash(true);
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      toast.error('Failed to move email to trash.');
     }
   };
   
@@ -62,7 +63,7 @@ const EmailFullView = () => {
       setEmail({});
       setIsDeletedPermanently(true);
     } catch (error) {
-      console.error(error.response?.data || error.message);
+      toast.error('Failed to delete email permanently.');
     }
   };
 

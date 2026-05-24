@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 const AppContext = createContext(null);
 
@@ -83,6 +84,7 @@ const DataProvider = ({ children }) => {
       sharedUserLanguage, setSharedUserLanguage,
       clearSession,
     }}>
+      <Toaster position="top-center" />
       {children}
     </AppContext.Provider>
   );
