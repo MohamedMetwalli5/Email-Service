@@ -558,6 +558,7 @@ class UserServiceTest {
         String email = "discorduser@seamail.com";
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket_result:" + ticket)).thenReturn(null);
         when(valueOperations.get("discord_ticket:" + ticket)).thenReturn(email);
         when(redisTemplate.delete("discord_ticket:" + ticket)).thenReturn(true);
         when(jwtUtil.generateToken(email)).thenReturn("new-access");
@@ -576,6 +577,7 @@ class UserServiceTest {
         String ticket = "unknown-ticket";
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket_result:" + ticket)).thenReturn(null);
         when(valueOperations.get("discord_ticket:" + ticket)).thenReturn(null);
 
         assertThrows(ResponseStatusException.class,
@@ -591,6 +593,7 @@ class UserServiceTest {
         String email = "discorduser@seamail.com";
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket_result:" + ticket)).thenReturn(null);
         when(valueOperations.get("discord_ticket:" + ticket)).thenReturn(email);
         when(redisTemplate.delete("discord_ticket:" + ticket)).thenReturn(false);
 
@@ -599,5 +602,23 @@ class UserServiceTest {
 
         verify(jwtUtil, never()).generateToken(any());
         verify(jwtUtil, never()).generateRefreshToken();
+    }
+
+    @Test
+    void shouldReturnCachedResultWhenTicketIsExchangedAgain() {
+        String ticket = "valid-ticket";
+        String cachedJson = "{\"accessToken\":\"cached-access\",\"refreshToken\":\"cached-refresh\",\"email\":\"discorduser@seamail.com\"}";
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket_result:" + ticket)).thenReturn(cachedJson);
+
+        DiscordExchangeResponseDto result = userService.exchangeDiscordTicket(ticket);
+
+        assertEquals("cached-access", result.accessToken());
+        assertEquals("cached-refresh", result.refreshToken());
+        assertEquals("discorduser@seamail.com", result.email());
+        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateRefreshToken();
+        verify(redisTemplate, never()).delete(anyString());
     }
 }

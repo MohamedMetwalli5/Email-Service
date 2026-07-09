@@ -41,4 +41,10 @@ describe('ProtectedRoute', () => {
     expect(screen.getByTestId('protected-content')).toBeInTheDocument();
     expect(screen.queryByTestId('sign-in-page')).toBeNull();
   });
+
+  it('[M-08] allows /home with a Discord ticket code so the exchange can complete', () => {
+    renderProtectedRoute('/home?code=discord-ticket');
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
+    expect(screen.queryByTestId('sign-in-page')).toBeNull();
+  });
 });

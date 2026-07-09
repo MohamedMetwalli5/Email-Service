@@ -10,6 +10,8 @@ import com.backendemailservice.backendemailservice.exception.InvalidFileFormatEx
 import com.backendemailservice.backendemailservice.exception.UserNotFoundException;
 import com.backendemailservice.backendemailservice.repository.UserRepository;
 import com.backendemailservice.backendemailservice.util.JwtUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -41,6 +43,8 @@ public class UserService implements IUserService {
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
     private static final String DISCORD_TICKET_PREFIX = "discord_ticket:";
     private static final long DISCORD_TICKET_TTL_SECONDS = 60;
+    private static final String DISCORD_TICKET_RESULT_PREFIX = "discord_ticket_result:";
+    private static final long DISCORD_TICKET_RESULT_TTL_SECONDS = 10;
     private static final String DISCORD_STATE_PREFIX = "discord_state:";
     private static final long DISCORD_STATE_TTL_MINUTES = 5;
 
@@ -332,9 +336,9 @@ public class UserService implements IUserService {
         Map<String, Object> userInfo = userResponse.getBody();
         String email = (String) userInfo.get("email");
 
-        if (email == null || !email.endsWith("@seamail.com")) {
+        if (email == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Discord account email must end with @seamail.com");
+                    "Discord account has no verified email");
         }
 
         // Only the DB user-creation write is here; repository methods are
@@ -358,10 +362,25 @@ public class UserService implements IUserService {
 
     // Exchange a Discord OAuth ticket for access + refresh tokens.
     // Uses delete() as an atomic claim so concurrent exchanges with the same
-    // ticket only succeed once - the loser sees the key already gone and is rejected.
+    // ticket only succeed once. The winning request caches the result for a
+    // short TTL so that React StrictMode double-mounts (or a quick retry)
+    // receive the same tokens instead of a "ticket already used" error.
     @Override
     public DiscordExchangeResponseDto exchangeDiscordTicket(String ticket) {
         String key = DISCORD_TICKET_PREFIX + ticket;
+        String resultKey = DISCORD_TICKET_RESULT_PREFIX + ticket;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String cached = redisTemplate.opsForValue().get(resultKey);
+        if (cached != null) {
+            try {
+                return objectMapper.readValue(cached, DiscordExchangeResponseDto.class);
+            } catch (JsonProcessingException e) {
+                // Corrupted cache - delete it and fall through to the normal flow.
+                redisTemplate.delete(resultKey);
+            }
+        }
+
         String email = redisTemplate.opsForValue().get(key);
         if (email == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -369,12 +388,39 @@ public class UserService implements IUserService {
         }
         Boolean claimed = redisTemplate.delete(key);
         if (!Boolean.TRUE.equals(claimed)) {
+            // Lost the atomic race; another request may have cached the result.
+            // Briefly wait and retry the cache before rejecting.
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            cached = redisTemplate.opsForValue().get(resultKey);
+            if (cached != null) {
+                try {
+                    return objectMapper.readValue(cached, DiscordExchangeResponseDto.class);
+                } catch (JsonProcessingException e) {
+                    // fall through to rejection
+                }
+            }
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "Discord ticket already used");
         }
+
         String newAccessToken = jwtUtil.generateToken(email);
         String newRefreshToken = generateAndStoreRefreshToken(email);
-        return new DiscordExchangeResponseDto(newAccessToken, newRefreshToken, email);
+        DiscordExchangeResponseDto response =
+                new DiscordExchangeResponseDto(newAccessToken, newRefreshToken, email);
+
+        try {
+            redisTemplate.opsForValue().set(resultKey,
+                    objectMapper.writeValueAsString(response),
+                    DISCORD_TICKET_RESULT_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (JsonProcessingException ignored) {
+            // Non-critical: exchange still succeeds even if caching the result fails.
+        }
+
+        return response;
     }
 
 }

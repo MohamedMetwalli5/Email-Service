@@ -38,9 +38,10 @@ const HomePage = () => {
         setSharedUserEmail(email);
         window.history.replaceState({}, document.title, '/home');
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return;
         // Invalid/expired/already-used ticket - send the user to sign-in.
+        console.error('Discord ticket exchange failed:', error);
         window.location.href = '/sign-in';
       })
       .finally(() => {
