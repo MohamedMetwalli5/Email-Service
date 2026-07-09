@@ -286,7 +286,8 @@ Install the [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) 
 - **EnvFile tab** → enable and point to `backendemailservice/.env`
 - **Active profiles** → set to `local`
 
-![image](https://github.com/user-attachments/assets/acb22cd2-5303-4379-9e37-eeccaa230264)
+<img width="1917" height="892" alt="Screenshot" src="https://github.com/user-attachments/assets/1c3b5319-9f1b-451a-9e52-77bab0d8848c" />
+
 
 This activates `application-local.properties` which connects to your local MySQL instead of the Docker `db` host.
 
