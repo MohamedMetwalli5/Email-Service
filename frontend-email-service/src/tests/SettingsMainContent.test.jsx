@@ -37,6 +37,8 @@ describe('SettingsMainContent', () => {
 
     renderSettings();
 
+    const currentInput = screen.getByPlaceholderText(/current password/i);
+    await user.type(currentInput, 'myOldPlainPwd');
     const passwordInputs = screen.getAllByPlaceholderText(/new password/i);
     await user.type(passwordInputs[0], 'myNewPlainPwd');
     const confirmInputs = screen.getAllByPlaceholderText(/confirm new password/i);
@@ -46,6 +48,7 @@ describe('SettingsMainContent', () => {
 
     await waitFor(() => {
       expect(capturedBody.newPassword).toBe('myNewPlainPwd');
+      expect(capturedBody.currentPassword).toBe('myOldPlainPwd');
     });
   });
 
@@ -62,6 +65,8 @@ describe('SettingsMainContent', () => {
 
     renderSettings();
 
+    const currentInput = screen.getByPlaceholderText(/current password/i);
+    await user.type(currentInput, 'oldPlainPwd123');
     const passwordInputs = screen.getAllByPlaceholderText(/new password/i);
     await user.type(passwordInputs[0], 'plainPwd123');
     const confirmInputs = screen.getAllByPlaceholderText(/confirm new password/i);
@@ -151,6 +156,27 @@ describe('SettingsMainContent', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Language is required/i)).toBeInTheDocument();
+    });
+  });
+
+  it('[M-19] sends ISO language code (en/fr/de) to backend, not the long name', async () => {
+    const user = userEvent.setup();
+    let capturedBody;
+
+    server.use(
+      http.put('*/update-language', async ({ request }) => {
+        capturedBody = await request.json();
+        return HttpResponse.json(null, { status: 204 });
+      })
+    );
+
+    renderSettings();
+
+    const languageSelect = screen.getByRole('combobox');
+    await user.selectOptions(languageSelect, 'French');
+
+    await waitFor(() => {
+      expect(capturedBody.language).toBe('fr');
     });
   });
 

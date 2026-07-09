@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 
 const AppContext = createContext(null);
@@ -26,6 +26,42 @@ const DataProvider = ({ children }) => {
   const [sharedUserLanguage, setSharedUserLanguageState] = useState(
     () => localStorage.getItem('sharedUserLanguage') || 'en'
   );
+  const [profilePictureVersion, setProfilePictureVersion] = useState(0);
+
+  // Sync context state when localStorage changes in another tab (storage event)
+  // or when apiClient triggers a same-tab logout (custom app:logout event).
+  // Without this, a stale authToken in context keeps doomed requests going
+  // after the user has already been logged out.
+  useEffect(() => {
+    const handleLogout = () => {
+      setAuthTokenState(null);
+      setRefreshTokenState(null);
+      setSharedUserEmailState(null);
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'authToken') {
+        setAuthTokenState(e.newValue || null);
+      }
+      if (e.key === 'refreshToken') {
+        setRefreshTokenState(e.newValue || null);
+      }
+      if (e.key === 'sharedUserEmail') {
+        setSharedUserEmailState(e.newValue || null);
+      }
+      if (e.key === 'sharedUserLanguage') {
+        setSharedUserLanguageState(e.newValue || 'en');
+      }
+    };
+
+    window.addEventListener('app:logout', handleLogout);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('app:logout', handleLogout);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const setAuthToken = (token) => {
     setAuthTokenState(token);
@@ -82,6 +118,7 @@ const DataProvider = ({ children }) => {
       sharedMailBoxOption, setSharedMailBoxOption,
       sharedEmailToFullyView, setSharedEmailToFullyView,
       sharedUserLanguage, setSharedUserLanguage,
+      profilePictureVersion, bumpProfilePicture: () => setProfilePictureVersion(v => v + 1),
       clearSession,
     }}>
       <Toaster position="top-center" />

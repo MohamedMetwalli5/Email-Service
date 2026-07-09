@@ -39,23 +39,30 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            String email = jwtUtil.extractEmail(token);
+            try {
+                String email = jwtUtil.extractEmail(token);
 
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (jwtUtil.isTokenValid(token, email)) {
-                    // extract roles from JWT claims and populate GrantedAuthority list
-                    List<String> roles = jwtUtil.extractRoles(token);
-                    List<SimpleGrantedAuthority> authorities = roles.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .toList();
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    if (jwtUtil.isTokenValid(token, email)) {
+                        // extract roles from JWT claims and populate GrantedAuthority list
+                        List<String> roles = jwtUtil.extractRoles(token);
+                        List<SimpleGrantedAuthority> authorities = roles.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .toList();
 
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(email, null, authorities);
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else {
-                    // log invalid token events instead of silent failure
-                    log.warn("Invalid or expired JWT received for path: {}", request.getRequestURI());
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(email, null, authorities);
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        // log invalid token events instead of silent failure
+                        log.warn("Invalid or expired JWT received for path: {}", request.getRequestURI());
+                    }
                 }
+            } catch (Exception ex) {
+                // A malformed/expired/unparseable token must never escape the filter
+                // as a 500. Log and continue the chain so the security entry point
+                // returns a clean 401.
+                log.warn("Failed to parse JWT for path {}: {}", request.getRequestURI(), ex.getMessage());
             }
         }
 

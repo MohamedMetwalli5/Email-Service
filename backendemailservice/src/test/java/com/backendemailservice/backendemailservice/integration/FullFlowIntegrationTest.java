@@ -73,8 +73,8 @@ public class FullFlowIntegrationTest {
         mockMvc.perform(get("/api/v1/inbox")
                 .header("Authorization", "Bearer " + receiverToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].sender").value(senderEmail))
-                .andExpect(jsonPath("$[0].subject").value("Integration Test"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].sender").value(senderEmail))
+                .andExpect(jsonPath("$.content[0].subject").value("Integration Test"));
     }
 }

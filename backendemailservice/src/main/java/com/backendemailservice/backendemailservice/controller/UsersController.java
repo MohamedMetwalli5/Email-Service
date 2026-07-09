@@ -43,7 +43,7 @@ public class UsersController {
             @AuthenticationPrincipal String authenticatedEmail,
             @Valid @RequestBody ChangePasswordRequestDto request) {
         userService.changeUserPassword(authenticatedEmail, request.getEmail(),
-                request.getNewPassword());
+                request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.noContent().build();
     }
 
@@ -70,8 +70,13 @@ public class UsersController {
             @AuthenticationPrincipal String authenticatedEmail,
             @PathVariable String email) {
         byte[] picture = userService.fetchProfilePicture(authenticatedEmail, email);
+        if (picture == null || picture.length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+        String contentType = (picture[0] == (byte) 0x89 && picture[1] == (byte) 0x50)
+                ? "image/png" : "image/jpeg";
         return ResponseEntity.ok()
-                .header("Content-Type", "image/jpeg")
+                .header("Content-Type", contentType)
                 .body(picture);
     }
 }

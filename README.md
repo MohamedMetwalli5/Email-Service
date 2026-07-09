@@ -17,16 +17,16 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 # Features
 - **User Registration & Sign-in:** Secure registration and login with server-side BCrypt password hashing.
 - **HTTPS Encryption & Deployment:** Deployed on AWS with a valid SSL certificate issued by Let's Encrypt, ensuring all data is securely encrypted and protected from interception.
-- **OAuth2 Authentication:** Allows users to optionally sign in with their Discord account via a custom server-side OAuth2 callback.
-- **JWT Authentication:** Stateless Bearer token authentication with 30-minute access tokens and automatic silent refresh via rotating refresh tokens.
+- **OAuth2 Authentication:** Allows users to optionally sign in with their Discord account via a custom server-side OAuth2 callback with CSRF state validation and ticket-based token exchange.
+- **JWT Authentication:** Stateless Bearer token authentication with 30-minute access tokens and automatic silent refresh via rotating refresh tokens. Refresh tokens are revoked on account deletion and password change.
 - **Automatic Token Refresh:** A centralised axios interceptor detects expired tokens, silently exchanges the refresh token for a new pair, and retries the original request without interrupting the user.
 - **Multi-language Support:** Enhances accessibility by making the platform available in English, German, and French via i18next.
 - **Email Management:** Allows users to view and manage inbox, outbox, and trashbox for efficient email organisation.
 - **Email Actions:** Send, move to trash, and permanently delete emails directly from any mailbox.
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender, all via a single unified query endpoint.
-- **Password Management:** Allows users to securely change their password to maintain account security.
+- **Password Management:** Allows users to securely change their password (requiring current password verification) to maintain account security.
 - **Account Management:** Allows users to permanently delete their accounts and change their default profile picture (PNG or JPEG, max 5 MB).
-- **Redis Caching:** Caches inbox emails per user using Redis Cloud with a 15-minute TTL to reduce database load and improve response times. Cache is automatically invalidated when emails are received or moved to trash. Redis also stores refresh tokens with a 7-day TTL and automatic rotation on every use.
+- **Redis Caching:** Caches inbox emails per user using Redis Cloud to reduce database load and improve response times. Cache is keyed by user + page + size and automatically invalidated (all entries) when emails are received, moved to trash, or deleted. Redis also stores refresh tokens with a 7-day TTL and automatic rotation on every use, plus Discord OAuth tickets (60s) and CSRF state nonces (5min).
 
 ---
 
@@ -56,11 +56,13 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 **Key design decisions:**
 - **Versioned REST API:** all endpoints live under `/api/v1`, making future versioning straightforward.
 - **DTO layer:** request/response objects are fully decoupled from JPA entities; no entity is ever serialised directly over the wire.
-- **Centralised exception handling:** a single `@RestControllerAdvice` maps every custom domain exception to a consistent JSON error shape (`ErrorResponse` / `ValidationErrorResponse`) with HTTP status, machine-readable error code, message, path, and timestamp.
+- **Centralised exception handling:** a single `@RestControllerAdvice` maps every custom domain exception to a consistent JSON error shape (`ErrorResponse` / `ValidationErrorResponse`) with HTTP status, machine-readable error code, message, path, and timestamp. It also maps malformed body, type mismatch, missing parameter, and data integrity violation exceptions to appropriate 400/409 responses.
 - **Centralised HTTP client:** a single `apiClient.js` axios instance handles Bearer header injection, 401 detection, silent token refresh with request queuing, and redirect to sign-in on refresh failure.
-- **Refresh token rotation:** every call to `POST /api/v1/auth/refresh` deletes the old Redis refresh token key and issues a new access + refresh pair, limiting the window of token reuse.
-- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis with a 15-minute TTL; cache is evicted automatically on send or trash actions.
-- **Stateless security:** a custom `JwtFilter` (extending `OncePerRequestFilter`) validates Bearer tokens and populates the `SecurityContext` with the user's email and authorities before every protected request; no session state is held server-side.
+- **Refresh token rotation:** every call to `POST /api/v1/auth/refresh` atomically claims the old Redis refresh token key via `delete()` (only one concurrent refresh wins; the loser is rejected with 401) and issues a new access + refresh pair, limiting the window of token reuse. Tokens are also revoked on account deletion and password change.
+- **Discord OAuth ticket flow:** `GET /auth/discord/state` generates a CSRF nonce (5-min TTL in Redis), the frontend fetches it before redirecting to Discord. On callback, `GET /auth/discord` validates the state, exchanges the code with Discord, stores an opaque 60-second ticket in Redis, and 302-redirects to `/home?code=<ticket>`. The SPA then `POST /auth/exchange`s the ticket for `{accessToken, refreshToken, email}`. JWTs never appear in URLs.
+- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis, keyed by user + page + size; cache is evicted automatically (all entries) on send, trash, or delete actions.
+- **Stateless security:** a custom `JwtFilter` (extending `OncePerRequestFilter`) validates Bearer tokens and populates the `SecurityContext` with the user's email and authorities before every protected request; no session state is held server-side. The filter catches all parse exceptions and continues the chain so an expired or malformed token yields a clean 401, not a 500.
+- **Frontend route protection:** `/home` and `/settings` are wrapped in a `ProtectedRoute` component that redirects to `/sign-in` when no `authToken` is in context.
 - **Service abstractions:** `UserService` and `EmailService` implement `IUserService` and `IEmailService` interfaces, keeping controllers thin and the service layer fully testable in isolation.
 - **Health monitoring:** Spring Boot Actuator exposes `/actuator/health` with liveness and readiness probe groups (including DB and Redis checks) for AWS load-balancer integration.
 - **SSL Termination:** Nginx handles HTTPS requests using **Let's Encrypt** certificates, ensuring all traffic between the client and the server is encrypted.
@@ -73,7 +75,7 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 |---|---|
 | Frontend | React 18, Vite, TailwindCSS, React Router v7, Axios |
 | Internationalisation | i18next / react-i18next (EN, DE, FR) |
-| Backend | Spring Boot 3.2.3, Java 17, Maven |
+| Backend | Spring Boot 3.2.3, Java 21, Maven |
 | Security | Spring Security, JWT HS256 (JJWT 0.11.5), BCrypt, Discord OAuth2 |
 | Database | MySQL 8.0 |
 | Caching & Token Store | Redis Cloud via Spring Cache + Spring Data Redis (`@Cacheable` / `@CacheEvict` / `StringRedisTemplate`) |
@@ -96,16 +98,18 @@ The token is a 30-minute HS256 JWT. Use `POST /api/v1/auth/refresh` to renew it 
 | POST | `/sign-in` | Public | Authenticates a user; returns `{ accessToken, refreshToken }` |
 | POST | `/sign-up` | Public | Registers a new `@seamail.com` account; returns `{ accessToken, refreshToken }` (201) |
 | POST | `/auth/refresh` | Public | Exchanges a refresh token for a new access + refresh pair (rotation) |
-| GET | `/auth/discord` | Public | Discord OAuth2 callback; 302 redirects to frontend `/home` with tokens in query params |
+| GET | `/auth/discord/state` | Public | Returns a CSRF state nonce `{ state: "..." }` (5-min TTL) |
+| GET | `/auth/discord` | Public | Discord OAuth2 callback; 302 redirects to frontend `/home?code=<opaque ticket>` |
+| POST | `/auth/exchange` | Public | Exchanges a Discord ticket for `{ accessToken, refreshToken, email }` (60s single-use) |
 
 ## Emails `/api/v1`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/inbox` | Bearer | Returns all active inbox emails for the authenticated user |
-| GET | `/outbox` | Bearer | Returns all sent emails for the authenticated user |
-| GET | `/trashbox` | Bearer | Returns all trashed emails for the authenticated user |
-| GET | `/emails` | Bearer | Query endpoint; supports `?sort=priority\|date`, `?filterBy=subject\|sender&filterValue=` |
+| GET | `/inbox` | Bearer | Returns active inbox emails as `Page<EmailResponseDto>` (`?page=0&size=20`) |
+| GET | `/outbox` | Bearer | Returns sent emails as `Page<EmailResponseDto>` (`?page=0&size=20`) |
+| GET | `/trashbox` | Bearer | Returns trashed emails as `Page<EmailResponseDto>` (`?page=0&size=20`) |
+| GET | `/emails` | Bearer | Query endpoint; supports `?sort=priority\|date`, `?filterBy=subject\|sender&filterValue=`, `?mailbox=Inbox\|Outbox\|Trashbox`, `?page=0&size=20` |
 | POST | `/send-email` | Bearer | Sends a new email to a specified recipient (201 empty body) |
 | POST | `/move-to-trash` | Bearer | Moves a specified email to trash (204) |
 | DELETE | `/delete-email` | Bearer | Permanently deletes a specified email (204) |
@@ -114,11 +118,11 @@ The token is a 30-minute HS256 JWT. Use `POST /api/v1/auth/refresh` to renew it 
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| PUT | `/change-password` | Bearer | Updates the authenticated user's password |
+| PUT | `/change-password` | Bearer | Updates the authenticated user's password (requires `currentPassword` in body) |
 | PUT | `/update-language` | Bearer | Updates the authenticated user's language preference |
 | DELETE | `/delete-account` | Bearer | Permanently deletes the authenticated user's account |
 | POST | `/{email}/profile-picture` | Bearer | Uploads a PNG or JPEG profile picture (raw bytes, max 5 MB) |
-| GET | `/{email}/profile-picture` | Bearer | Retrieves the profile picture as `image/jpeg` |
+| GET | `/{email}/profile-picture` | Bearer | Retrieves the profile picture as `image/png` or `image/jpeg`; 404 if none |
 
 ## Actuator
 
@@ -250,7 +254,7 @@ docker compose --env-file .env.docker up --build backend
 # 🛠️ Manual Setup (Local Development)
 
 ## Prerequisites
-- Java 17+
+- Java 21+
 - Maven 3.9+
 - MySQL 8
 - Node.js 20
@@ -340,9 +344,10 @@ mvn test
 | | `EmailServiceTest`: send, sort, filter, trash, delete logic |
 | **Repositories** | `UserRepositoryTest`: custom query methods |
 | | `EmailRepositoryTest`: `moveToTrashBox` bulk UPDATE, inbox/outbox/trash queries |
-| **Controllers** | `AccessControllerTest`: sign-in / sign-up, validation, error shapes |
-| | `EmailsControllerTest`: authorised and unauthorised email endpoints |
-| | `UsersControllerTest`: account management and error paths |
+| **Controllers** | `AccessControllerTest`: sign-in / sign-up, validation, error shapes, malformed body 400 |
+| | `EmailsControllerTest`: authorised and unauthorised email endpoints, paginated responses |
+| | `UsersControllerTest`: account management, current-password verification, error paths |
+| **Filters** | `JwtFilterTest`: malformed/expired token handling, valid-token auth population |
 | **Integration** | `FullFlowIntegrationTest`: end-to-end sign-up → send → inbox → trash → delete |
 
 ## Frontend
@@ -357,18 +362,19 @@ npm test
 | Test file | What it covers |
 |---|---|
 | `parseApiError.test.js` | All 4 error shapes: `ErrorResponse`, `ValidationErrorResponse`, Spring Security 401, network error |
-| `apiClient.test.js` | Bearer header injection, 401 → refresh → retry flow, redirect on refresh failure |
-| `AppContext.test.jsx` | `refreshToken` storage, `clearSession`, `sharedEmailToFullyView` serialisation |
+| `apiClient.test.js` | Bearer header injection, 401 → refresh → retry flow, refresh-fails-mid-queue rejection, redirect on refresh failure |
+| `AppContext.test.jsx` | `refreshToken` storage, `clearSession`, `sharedEmailToFullyView` serialisation, `app:logout` event, `storage` event |
 | `SignInPage.test.jsx` | Plain password sent, `accessToken` + `refreshToken` stored, error display |
 | `SignUpPage.test.jsx` | Domain validation, conflict error, `fieldErrors` display |
-| `SigninWithDiscord.test.jsx` | Redirect URL constructed with correct `VITE_DISCORD_REDIRECT_URI` |
-| `HomePage.test.jsx` | Discord callback reads and stores `refreshToken`, strips query params |
+| `SigninWithDiscord.test.jsx` | Fetches CSRF state from backend, redirect URL with correct `VITE_DISCORD_REDIRECT_URI` |
+| `HomePage.test.jsx` | Discord callback exchanges `?code=` ticket for tokens, stores them, strips URL |
 | `EmailsSnippetView.test.jsx` | `GET /emails?sort=` and `GET /emails?filterBy=`, `emailID` list keys |
 | `NewMessageComposer.test.jsx` | Send form, `fieldErrors` on validation failure |
-| `SettingsMainContent.test.jsx` | Plain password on change, JPEG upload accepted |
+| `SettingsMainContent.test.jsx` | Plain password on change, current password sent, JPEG upload accepted, ISO language codes |
 | `Sidebar.test.jsx` | `clearSession` clears context and localStorage on sign-out |
 | `Navbar.test.jsx` | Profile picture blob uses response `Content-Type` |
 | `EmailFullView.test.jsx` | `emailID` field used throughout, move-to-trash and delete calls |
+| `ProtectedRoute.test.jsx` | Redirects to `/sign-in` when no token; renders content when authenticated |
 
 ---
 
@@ -377,7 +383,7 @@ npm test
 ```
 Email-Service/
 ├── backendemailservice/               # Spring Boot API
-│   ├── pom.xml                        # Maven deps, Java 17, Boot 3.2.3
+│   ├── pom.xml                        # Maven deps, Java 21, Boot 3.2.3
 │   ├── Dockerfile                     # Multi-stage build, exposes 8081
 │   ├── .env.example                   # Backend env template
 │   └── src/main/java/.../
@@ -387,7 +393,7 @@ Email-Service/
 │       ├── controller/                # AccessController, EmailsController,
 │       │                              #   UsersController, OAuth2Controller
 │       ├── dto/                       # Request / response records and beans
-│       ├── entity/                    # User, Email (JPA entities)
+│       ├── entity/                    # User, Email (JPA entities), Mailbox (enum)
 │       ├── exception/                 # ApplicationException, ErrorResponse,
 │       │                              #   ValidationErrorResponse, GlobalExceptionHandler
 │       ├── filter/                    # JwtFilter (OncePerRequestFilter)
@@ -409,8 +415,8 @@ Email-Service/
 │       ├── api/apiClient.js           # Axios instance, Bearer header, refresh interceptor
 │       ├── utils/parseApiError.js     # Normalises all backend error shapes
 │       ├── pages/                     # SignUp, SignIn, Home, Settings screens
-│       ├── components/                # Layout, composer, email views, Discord button
-│       ├── i18n.js                    # English / German / French strings
+│       ├── components/                # Layout, composer, email views, Discord button, ProtectedRoute
+│       ├── i18n.js                    # English / German / French strings (ISO codes: en/fr/de)
 │       └── tests/                     # Vitest + MSW test suite
 ├── SQL Scripts/
 │   └── Tables.sql                     # MySQL schema init for Docker and manual setup
@@ -430,4 +436,4 @@ The Seamail logo combines an envelope with dynamic wave patterns, symbolizing se
 
 ## Author
 **Mohamed Metwalli** - Software Engineer & Technical Writer  
-🌐 [mohamedmetwalli.com](https://www.mohamedmetwalli.com) · [LinkedIn](https://www.linkedin.com/in/mohamed-metwalli5)
+🌐 [mohamedmetwalli.com](https://mohamedmetwalli.com) · [LinkedIn](https://www.linkedin.com/in/mohamed-metwalli5)

@@ -82,11 +82,12 @@ class UsersControllerTest {
                         List.of(new SimpleGrantedAuthority("ROLE_USER")))
         );
         doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized"))
-                .when(userService).changeUserPassword(eq(OTHER_EMAIL), eq(TEST_EMAIL), anyString());
+                .when(userService).changeUserPassword(eq(OTHER_EMAIL), eq(TEST_EMAIL),
+                        anyString(), anyString());
 
         mockMvc.perform(put("/api/v1/change-password")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + TEST_EMAIL + "\",\"newPassword\":\"longEnoughPassword123\"}"))
+                .content("{\"email\":\"" + TEST_EMAIL + "\",\"currentPassword\":\"oldPass123\",\"newPassword\":\"longEnoughPassword123\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -159,14 +160,16 @@ class UsersControllerTest {
 
     @Test
     void shouldReturn204WhenChangeOwnPassword() throws Exception {
+        String currentPass = "oldSecurePass123";
         String newPass = "newSecurePass123";
 
         mockMvc.perform(put("/api/v1/change-password")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + TEST_EMAIL + "\",\"newPassword\":\"" + newPass + "\"}"))
+                .content("{\"email\":\"" + TEST_EMAIL + "\",\"currentPassword\":\"" + currentPass + "\",\"newPassword\":\"" + newPass + "\"}"))
                 .andExpect(status().isNoContent());
 
-        verify(userService).changeUserPassword(eq(TEST_EMAIL), eq(TEST_EMAIL), eq(newPass));
+        verify(userService).changeUserPassword(eq(TEST_EMAIL), eq(TEST_EMAIL),
+                eq(currentPass), eq(newPass));
     }
 
     @Test
@@ -211,7 +214,7 @@ class UsersControllerTest {
     void shouldReturn400WhenChangePasswordWithInvalidData() throws Exception {
         mockMvc.perform(put("/api/v1/change-password")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"test@seamail.com\",\"newPassword\":\"short\"}"))
+                .content("{\"email\":\"test@seamail.com\",\"currentPassword\":\"\",\"newPassword\":\"short\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
 

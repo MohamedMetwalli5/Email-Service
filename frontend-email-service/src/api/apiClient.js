@@ -93,6 +93,10 @@ function redirectToSignIn() {
   localStorage.removeItem('authToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('sharedUserEmail');
+  // Dispatch a custom event so AppContext can clear its in-memory state.
+  // The `storage` event only fires in *other* tabs, not the one that made the
+  // change, so we need this for same-tab logout (e.g. refresh failure).
+  window.dispatchEvent(new CustomEvent('app:logout'));
   window.location.href = '/sign-in';
 }
 

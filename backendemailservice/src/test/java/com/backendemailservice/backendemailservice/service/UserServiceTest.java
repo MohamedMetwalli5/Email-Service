@@ -2,6 +2,7 @@ package com.backendemailservice.backendemailservice.service;
 
 import com.backendemailservice.backendemailservice.config.DiscordOAuthProperties;
 import com.backendemailservice.backendemailservice.dto.AuthResponseDto;
+import com.backendemailservice.backendemailservice.dto.DiscordExchangeResponseDto;
 import com.backendemailservice.backendemailservice.entity.User;
 import com.backendemailservice.backendemailservice.exception.InvalidEmailDomainException;
 import com.backendemailservice.backendemailservice.exception.InvalidFileFormatException;
@@ -20,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -205,15 +207,6 @@ class UserServiceTest {
         verify(userRepository).foundReceiver(email);
     }
 
-    // --- deleteUserAccount (single arg) ---
-
-    @Test
-    void shouldDeleteUserAccountByEmail() {
-        String email = "user@seamail.com";
-        userService.deleteUserAccount(email);
-        verify(userRepository).deleteById(email);
-    }
-
     // --- deleteUserAccount (auth-check overload) ---
 
     @Test
@@ -233,23 +226,84 @@ class UserServiceTest {
         verify(userRepository).deleteById(email);
     }
 
+    @Test
+    void shouldRevokeRefreshTokensWhenDeletingAccount() {
+        String email = "user@seamail.com";
+        String tokenKey1 = "refresh_token:token-1";
+        String tokenKey2 = "refresh_token:token-2";
+
+        when(redisTemplate.keys("refresh_token:*")).thenReturn(Set.of(tokenKey1, tokenKey2, "refresh_token:other-user-token"));
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(tokenKey1)).thenReturn(email);
+        when(valueOperations.get(tokenKey2)).thenReturn(email);
+        when(valueOperations.get("refresh_token:other-user-token")).thenReturn("other@seamail.com");
+
+        userService.deleteUserAccount(email, email);
+
+        verify(redisTemplate).delete(tokenKey1);
+        verify(redisTemplate).delete(tokenKey2);
+        verify(redisTemplate, never()).delete("refresh_token:other-user-token");
+        verify(userRepository).deleteById(email);
+    }
+
     // --- changeUserPassword ---
 
     @Test
-    void shouldChangeUserPasswordWhenUserExists() {
+    void shouldChangeUserPasswordWhenCurrentPasswordMatches() {
         String email = "user@seamail.com";
+        String currentPassword = "oldPassword123";
         String newPassword = "newPassword123";
-        String encodedNewPassword = "encodedNewPassword123";
-        User user = new User(email, "oldEncodedPassword");
+        String encodedCurrent = "encodedOldPassword";
+        String encodedNew = "encodedNewPassword123";
+        User user = new User(email, encodedCurrent);
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode(newPassword)).thenReturn(encodedNewPassword);
+        when(passwordEncoder.matches(currentPassword, encodedCurrent)).thenReturn(true);
+        when(passwordEncoder.encode(newPassword)).thenReturn(encodedNew);
 
-        userService.changeUserPassword(email, newPassword);
+        userService.changeUserPassword(email, email, currentPassword, newPassword);
 
-        assertEquals(encodedNewPassword, user.getPassword());
+        assertEquals(encodedNew, user.getPassword());
         verify(userRepository).findByEmail(email);
+        verify(passwordEncoder).matches(currentPassword, encodedCurrent);
         verify(passwordEncoder).encode(newPassword);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void shouldThrowWhenCurrentPasswordDoesNotMatch() {
+        String email = "user@seamail.com";
+        User user = new User(email, "encodedOldPassword");
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrongCurrent", "encodedOldPassword")).thenReturn(false);
+
+        assertThrows(ResponseStatusException.class,
+                () -> userService.changeUserPassword(email, email, "wrongCurrent", "newPassword123"));
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRevokeRefreshTokensWhenChangingPassword() {
+        String email = "user@seamail.com";
+        String currentPassword = "oldPassword123";
+        String newPassword = "newPassword123";
+        User user = new User(email, "encodedOldPassword");
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(currentPassword, "encodedOldPassword")).thenReturn(true);
+        when(passwordEncoder.encode(newPassword)).thenReturn("encodedNew");
+        when(redisTemplate.keys("refresh_token:*")).thenReturn(Set.of("refresh_token:tok-1", "refresh_token:tok-2"));
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("refresh_token:tok-1")).thenReturn(email);
+        when(valueOperations.get("refresh_token:tok-2")).thenReturn("other@seamail.com");
+
+        userService.changeUserPassword(email, email, currentPassword, newPassword);
+
+        verify(redisTemplate).delete("refresh_token:tok-1");
+        verify(redisTemplate, never()).delete("refresh_token:tok-2");
         verify(userRepository).save(user);
     }
 
@@ -259,7 +313,7 @@ class UserServiceTest {
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
         UserNotFoundException ex = assertThrows(UserNotFoundException.class,
-                () -> userService.changeUserPassword(email, "newPassword123"));
+                () -> userService.changeUserPassword(email, email, "current", "newPassword123"));
 
         assertEquals("USER_NOT_FOUND", ex.getErrorCode());
         verify(userRepository).findByEmail(email);
@@ -276,7 +330,7 @@ class UserServiceTest {
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
 
-        userService.updateLanguage(email, language);
+        userService.updateLanguage(email, email, language);
 
         assertEquals(language, user.getLanguage());
         verify(userRepository).findByEmail(email);
@@ -371,7 +425,7 @@ class UserServiceTest {
 
         when(userRepository.findById(email)).thenReturn(Optional.of(user));
 
-        byte[] result = userService.fetchProfilePicture(email);
+        byte[] result = userService.fetchProfilePicture(email, email);
 
         assertArrayEquals(picture, result);
         verify(userRepository).findById(email);
@@ -383,7 +437,7 @@ class UserServiceTest {
         when(userRepository.findById(email)).thenReturn(Optional.empty());
 
         UserNotFoundException ex = assertThrows(UserNotFoundException.class,
-                () -> userService.fetchProfilePicture(email));
+                () -> userService.fetchProfilePicture(email, email));
 
         assertEquals("USER_NOT_FOUND", ex.getErrorCode());
         verify(userRepository).findById(email);
@@ -428,6 +482,7 @@ class UserServiceTest {
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("refresh_token:" + oldRefreshToken)).thenReturn(email);
+        when(redisTemplate.delete("refresh_token:" + oldRefreshToken)).thenReturn(true);
         when(jwtUtil.generateToken(email)).thenReturn(newAccessToken);
         when(jwtUtil.generateRefreshToken()).thenReturn(newRefreshToken);
 
@@ -438,5 +493,111 @@ class UserServiceTest {
         verify(redisTemplate).delete("refresh_token:" + oldRefreshToken);
         verify(redisTemplate.opsForValue()).set(
                 "refresh_token:" + newRefreshToken, email, 7, TimeUnit.DAYS);
+    }
+
+    @Test
+    void shouldRejectWhenRefreshTokenAlreadyClaimedConcurrently() {
+        String oldRefreshToken = "valid-refresh-token";
+        String email = "user@seamail.com";
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("refresh_token:" + oldRefreshToken)).thenReturn(email);
+        when(redisTemplate.delete("refresh_token:" + oldRefreshToken)).thenReturn(false);
+
+        assertThrows(ResponseStatusException.class,
+                () -> userService.refreshAccessToken(oldRefreshToken));
+
+        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateRefreshToken();
+    }
+
+    // --- exchangeDiscordTicket ---
+    // Note: processDiscordOAuth itself makes live RestTemplate calls to Discord
+    // and is not unit-testable without extracting that client (a pre-existing gap).
+    // These tests cover the ticket-exchange contract, which is the security-critical
+    // half of the fix: tokens are never in the URL, only an opaque single-use code.
+
+    // --- Discord state validation (CSRF) ---
+
+    @Test
+    void shouldGenerateAndStoreDiscordState() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+        String state = userService.generateDiscordState();
+
+        assertNotNull(state);
+        verify(redisTemplate.opsForValue()).set(
+                eq("discord_state:" + state), eq(state), eq(5L), eq(TimeUnit.MINUTES));
+    }
+
+    @Test
+    void shouldThrowWhenDiscordStateIsInvalid() {
+        String state = "invalid-state";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_state:" + state)).thenReturn(null);
+
+        assertThrows(ResponseStatusException.class,
+                () -> userService.validateDiscordState(state));
+    }
+
+    @Test
+    void shouldAcceptAndDeleteValidDiscordState() {
+        String state = "valid-state";
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_state:" + state)).thenReturn(state);
+        when(redisTemplate.delete("discord_state:" + state)).thenReturn(true);
+
+        userService.validateDiscordState(state);
+
+        verify(redisTemplate).delete("discord_state:" + state);
+    }
+
+    @Test
+    void shouldExchangeValidTicketForTokens() {
+        String ticket = "valid-ticket";
+        String email = "discorduser@seamail.com";
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket:" + ticket)).thenReturn(email);
+        when(redisTemplate.delete("discord_ticket:" + ticket)).thenReturn(true);
+        when(jwtUtil.generateToken(email)).thenReturn("new-access");
+        when(jwtUtil.generateRefreshToken()).thenReturn("new-refresh");
+
+        DiscordExchangeResponseDto result = userService.exchangeDiscordTicket(ticket);
+
+        assertEquals("new-access", result.accessToken());
+        assertEquals("new-refresh", result.refreshToken());
+        assertEquals(email, result.email());
+        verify(redisTemplate).delete("discord_ticket:" + ticket);
+    }
+
+    @Test
+    void shouldThrowWhenExchangingInvalidOrExpiredTicket() {
+        String ticket = "unknown-ticket";
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket:" + ticket)).thenReturn(null);
+
+        assertThrows(ResponseStatusException.class,
+                () -> userService.exchangeDiscordTicket(ticket));
+
+        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateRefreshToken();
+    }
+
+    @Test
+    void shouldRejectWhenDiscordTicketAlreadyClaimedConcurrently() {
+        String ticket = "race-ticket";
+        String email = "discorduser@seamail.com";
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("discord_ticket:" + ticket)).thenReturn(email);
+        when(redisTemplate.delete("discord_ticket:" + ticket)).thenReturn(false);
+
+        assertThrows(ResponseStatusException.class,
+                () -> userService.exchangeDiscordTicket(ticket));
+
+        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateRefreshToken();
     }
 }

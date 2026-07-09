@@ -25,9 +25,12 @@ describe('EmailsSnippetView', () => {
 
     server.use(
       http.get('*/inbox', () =>
-        HttpResponse.json([
-          { emailID: 1, subject: 'Default', sender: 'a@b.com', date: '2026-01-01', priority: '1' },
-        ])
+        HttpResponse.json({
+          content: [
+            { emailID: 1, subject: 'Default', sender: 'a@b.com', date: '2026-01-01', priority: '1' },
+          ],
+          totalElements: 1, totalPages: 1,
+        })
       )
     );
   });
@@ -38,7 +41,7 @@ describe('EmailsSnippetView', () => {
       http.get('*/emails', ({ request }) => {
         method = 'GET';
         url = request.url;
-        return HttpResponse.json([{ emailID: 1, subject: 'Priority email' }]);
+        return HttpResponse.json({ content: [{ emailID: 1, subject: 'Priority email' }], totalElements: 1, totalPages: 1 });
       })
     );
 
@@ -67,7 +70,7 @@ describe('EmailsSnippetView', () => {
       http.get('*/emails', ({ request }) => {
         method = 'GET';
         url = request.url;
-        return HttpResponse.json([{ emailID: 1, subject: 'Test' }]);
+        return HttpResponse.json({ content: [{ emailID: 1, subject: 'Test' }], totalElements: 1, totalPages: 1 });
       })
     );
 
@@ -96,10 +99,13 @@ describe('EmailsSnippetView', () => {
   it('[M-14] uses email.emailID as React list key (not email.id)', async () => {
     server.use(
       http.get('*/inbox', () =>
-        HttpResponse.json([
-          { emailID: 42, subject: 'Test', sender: 'a@b.com', date: '2026-01-01', priority: '1' },
-          { emailID: 99, subject: 'Hello', sender: 'c@d.com', date: '2026-01-02', priority: '2' },
-        ])
+        HttpResponse.json({
+          content: [
+            { emailID: 42, subject: 'Test', sender: 'a@b.com', date: '2026-01-01', priority: '1' },
+            { emailID: 99, subject: 'Hello', sender: 'c@d.com', date: '2026-01-02', priority: '2' },
+          ],
+          totalElements: 2, totalPages: 1,
+        })
       )
     );
 
@@ -114,10 +120,13 @@ describe('EmailsSnippetView', () => {
   it('[M-14] does not use email.id as key (which would be undefined)', async () => {
     server.use(
       http.get('*/inbox', () =>
-        HttpResponse.json([
-          { emailID: 1, subject: 'A', sender: 'x@y.com', date: '2026-01-01', priority: '1' },
-          { emailID: 2, subject: 'B', sender: 'z@w.com', date: '2026-01-02', priority: '2' },
-        ])
+        HttpResponse.json({
+          content: [
+            { emailID: 1, subject: 'A', sender: 'x@y.com', date: '2026-01-01', priority: '1' },
+            { emailID: 2, subject: 'B', sender: 'z@w.com', date: '2026-01-02', priority: '2' },
+          ],
+          totalElements: 2, totalPages: 1,
+        })
       )
     );
 
@@ -132,9 +141,12 @@ describe('EmailsSnippetView', () => {
   it('[M-14] uses email.emailID or index fallback in key', async () => {
     server.use(
       http.get('*/inbox', () =>
-        HttpResponse.json([
-          { emailID: 100, subject: 'Unique', sender: 'x@y.com', date: '2026-01-01', priority: '1' },
-        ])
+        HttpResponse.json({
+          content: [
+            { emailID: 100, subject: 'Unique', sender: 'x@y.com', date: '2026-01-01', priority: '1' },
+          ],
+          totalElements: 1, totalPages: 1,
+        })
       )
     );
 
@@ -150,7 +162,7 @@ describe('EmailsSnippetView', () => {
     server.use(
       http.get('*/emails', ({ request }) => {
         capturedUrl = request.url;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ content: [], totalElements: 0, totalPages: 0 });
       })
     );
 
@@ -170,7 +182,7 @@ describe('EmailsSnippetView', () => {
     server.use(
       http.get('*/emails', ({ request }) => {
         capturedUrl = request.url;
-        return HttpResponse.json([]);
+        return HttpResponse.json({ content: [], totalElements: 0, totalPages: 0 });
       })
     );
 

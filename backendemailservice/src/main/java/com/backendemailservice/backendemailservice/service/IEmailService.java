@@ -4,18 +4,16 @@ package com.backendemailservice.backendemailservice.service;
 import com.backendemailservice.backendemailservice.dto.EmailResponseDto;
 import com.backendemailservice.backendemailservice.dto.SendEmailRequestDto;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface IEmailService {
-    // DTO-returning methods for controllers 
-    List<EmailResponseDto> loadInboxDtos(String userEmail);
-    List<EmailResponseDto> loadOutboxDtos(String userEmail);
-    List<EmailResponseDto> loadTrashboxDtos(String userEmail);
-    // sendEmail handles entity construction + receiver check
+    Page<EmailResponseDto> loadInboxDtos(String userEmail, Pageable pageable);
+    Page<EmailResponseDto> loadOutboxDtos(String userEmail, Pageable pageable);
+    Page<EmailResponseDto> loadTrashboxDtos(String userEmail, Pageable pageable);
     void sendEmail(String senderEmail, SendEmailRequestDto request);
-    // auth-check overloads
     void deleteEmail(Long emailID, String userEmail);
     void moveToTrashBox(Long emailID, String userEmail);
-    // unified query with optional sort/filter params and mailbox context
-    List<EmailResponseDto> queryEmails(String email, String sort, String filterBy, String filterValue, String mailbox);
+    Page<EmailResponseDto> queryEmails(String email, String sort, String filterBy,
+                                       String filterValue, String mailbox, Pageable pageable);
 }

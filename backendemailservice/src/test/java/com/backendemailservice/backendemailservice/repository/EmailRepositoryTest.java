@@ -4,6 +4,8 @@ import com.backendemailservice.backendemailservice.entity.Email;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
@@ -24,10 +26,21 @@ class EmailRepositoryTest {
         Email email = buildEmail("sender@seamail.com", "receiver@seamail.com", false);
         Email saved = emailRepository.save(email);
 
-        emailRepository.moveToTrashBox(saved.getEmailID());
+        emailRepository.moveToTrashBox(saved.getEmailID(), "receiver@seamail.com");
 
         Email updated = emailRepository.findById(saved.getEmailID()).orElseThrow();
         assertTrue(updated.isTrash());
+    }
+
+    @Test
+    void shouldNotTrashEmailWhenReceiverDoesNotMatch() {
+        Email email = buildEmail("sender@seamail.com", "receiver@seamail.com", false);
+        Email saved = emailRepository.save(email);
+
+        emailRepository.moveToTrashBox(saved.getEmailID(), "someoneElse@seamail.com");
+
+        Email unchanged = emailRepository.findById(saved.getEmailID()).orElseThrow();
+        assertFalse(unchanged.isTrash());
     }
 
     @Test
@@ -36,10 +49,10 @@ class EmailRepositoryTest {
         Email trashed = buildEmail("c@seamail.com", "b@seamail.com", true);
         emailRepository.saveAll(List.of(live, trashed));
 
-        List<Email> inbox = emailRepository.loadInbox("b@seamail.com");
+        Page<Email> inbox = emailRepository.loadInbox("b@seamail.com", Pageable.unpaged());
 
-        assertEquals(1, inbox.size());
-        assertFalse(inbox.get(0).isTrash());
+        assertEquals(1, inbox.getNumberOfElements());
+        assertFalse(inbox.getContent().get(0).isTrash());
     }
 
     @Test
@@ -49,10 +62,10 @@ class EmailRepositoryTest {
         Email other = buildEmail("other@seamail.com", "c@seamail.com", false);
         emailRepository.saveAll(List.of(sent1, sent2, other));
 
-        List<Email> outbox = emailRepository.loadOutbox("sender@seamail.com");
+        Page<Email> outbox = emailRepository.loadOutbox("sender@seamail.com", Pageable.unpaged());
 
-        assertEquals(2, outbox.size());
-        assertTrue(outbox.stream().allMatch(e -> e.getSender().equals("sender@seamail.com")));
+        assertEquals(2, outbox.getNumberOfElements());
+        assertTrue(outbox.getContent().stream().allMatch(e -> e.getSender().equals("sender@seamail.com")));
     }
 
     @Test
@@ -62,10 +75,10 @@ class EmailRepositoryTest {
         Email trashed2 = buildEmail("c@seamail.com", "user@seamail.com", true);
         emailRepository.saveAll(List.of(live, trashed1, trashed2));
 
-        List<Email> trashbox = emailRepository.loadTrashbox("user@seamail.com");
+        Page<Email> trashbox = emailRepository.loadTrashbox("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(2, trashbox.size());
-        assertTrue(trashbox.stream().allMatch(Email::isTrash));
+        assertEquals(2, trashbox.getNumberOfElements());
+        assertTrue(trashbox.getContent().stream().allMatch(Email::isTrash));
     }
 
     @Test
@@ -75,10 +88,10 @@ class EmailRepositoryTest {
         Email medium = buildEmail("a@b.com", "user@seamail.com", "2", false);
         emailRepository.saveAll(List.of(high, low, medium));
 
-        List<Email> sorted = emailRepository.sortEmailsByPriority("user@seamail.com");
+        Page<Email> sorted = emailRepository.sortEmailsByPriority("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(3, sorted.size());
-        assertTrue(sorted.get(0).getPriority().compareTo(sorted.get(1).getPriority()) <= 0);
+        assertEquals(3, sorted.getNumberOfElements());
+        assertTrue(sorted.getContent().get(0).getPriority().compareTo(sorted.getContent().get(1).getPriority()) <= 0);
     }
 
     @Test
@@ -89,11 +102,11 @@ class EmailRepositoryTest {
         Email middle = buildEmailWithDate("a@b.com", "user@seamail.com", now.minusDays(1), false);
         emailRepository.saveAll(List.of(older, newer, middle));
 
-        List<Email> sorted = emailRepository.sortEmailsByDate("user@seamail.com");
+        Page<Email> sorted = emailRepository.sortEmailsByDate("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(3, sorted.size());
-        assertTrue(sorted.get(0).getDate().isBefore(sorted.get(1).getDate()) ||
-                   sorted.get(0).getDate().isEqual(sorted.get(1).getDate()));
+        assertEquals(3, sorted.getNumberOfElements());
+        assertTrue(sorted.getContent().get(0).getDate().isBefore(sorted.getContent().get(1).getDate()) ||
+                   sorted.getContent().get(0).getDate().isEqual(sorted.getContent().get(1).getDate()));
     }
 
     @Test
@@ -102,10 +115,22 @@ class EmailRepositoryTest {
         Email other = buildEmailWithSubject("a@b.com", "user@seamail.com", "Receipt", false);
         emailRepository.saveAll(List.of(matching, other));
 
-        List<Email> filtered = emailRepository.filterEmailsBySubject("user@seamail.com", "Invoice");
+        Page<Email> filtered = emailRepository.filterEmailsBySubject("user@seamail.com", "Invoice", Pageable.unpaged());
 
-        assertEquals(1, filtered.size());
-        assertEquals("Invoice", filtered.get(0).getSubject());
+        assertEquals(1, filtered.getNumberOfElements());
+        assertEquals("Invoice", filtered.getContent().get(0).getSubject());
+    }
+
+    @Test
+    void shouldExcludeTrashedEmailsWhenFilteringInboxBySubject() {
+        Email live = buildEmailWithSubject("a@b.com", "user@seamail.com", "Invoice", false);
+        Email trashed = buildEmailWithSubject("a@b.com", "user@seamail.com", "Invoice", true);
+        emailRepository.saveAll(List.of(live, trashed));
+
+        Page<Email> filtered = emailRepository.filterEmailsBySubject("user@seamail.com", "Invoice", Pageable.unpaged());
+
+        assertEquals(1, filtered.getNumberOfElements());
+        assertFalse(filtered.getContent().get(0).isTrash());
     }
 
     @Test
@@ -114,10 +139,22 @@ class EmailRepositoryTest {
         Email fromColleague = buildEmail("colleague@b.com", "user@seamail.com", "Hello", false);
         emailRepository.saveAll(List.of(fromBoss, fromColleague));
 
-        List<Email> filtered = emailRepository.filterEmailsBySender("user@seamail.com", "boss@b.com");
+        Page<Email> filtered = emailRepository.filterEmailsBySender("user@seamail.com", "boss@b.com", Pageable.unpaged());
 
-        assertEquals(1, filtered.size());
-        assertEquals("boss@b.com", filtered.get(0).getSender());
+        assertEquals(1, filtered.getNumberOfElements());
+        assertEquals("boss@b.com", filtered.getContent().get(0).getSender());
+    }
+
+    @Test
+    void shouldExcludeTrashedEmailsWhenFilteringInboxBySender() {
+        Email live = buildEmail("boss@b.com", "user@seamail.com", "Meeting", false);
+        Email trashed = buildEmail("boss@b.com", "user@seamail.com", "Meeting", true);
+        emailRepository.saveAll(List.of(live, trashed));
+
+        Page<Email> filtered = emailRepository.filterEmailsBySender("user@seamail.com", "boss@b.com", Pageable.unpaged());
+
+        assertEquals(1, filtered.getNumberOfElements());
+        assertFalse(filtered.getContent().get(0).isTrash());
     }
 
     @Test
@@ -127,10 +164,10 @@ class EmailRepositoryTest {
         Email medium = buildEmail("user@seamail.com", "c@b.com", "2", false);
         emailRepository.saveAll(List.of(high, low, medium));
 
-        List<Email> sorted = emailRepository.sortOutboxByPriority("user@seamail.com");
+        Page<Email> sorted = emailRepository.sortOutboxByPriority("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(3, sorted.size());
-        assertTrue(sorted.get(0).getPriority().compareTo(sorted.get(1).getPriority()) <= 0);
+        assertEquals(3, sorted.getNumberOfElements());
+        assertTrue(sorted.getContent().get(0).getPriority().compareTo(sorted.getContent().get(1).getPriority()) <= 0);
     }
 
     @Test
@@ -141,11 +178,11 @@ class EmailRepositoryTest {
         Email middle = buildEmailWithDate("user@seamail.com", "c@b.com", now.minusDays(1), false);
         emailRepository.saveAll(List.of(older, newer, middle));
 
-        List<Email> sorted = emailRepository.sortOutboxByDate("user@seamail.com");
+        Page<Email> sorted = emailRepository.sortOutboxByDate("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(3, sorted.size());
-        assertTrue(sorted.get(0).getDate().isBefore(sorted.get(1).getDate()) ||
-                   sorted.get(0).getDate().isEqual(sorted.get(1).getDate()));
+        assertEquals(3, sorted.getNumberOfElements());
+        assertTrue(sorted.getContent().get(0).getDate().isBefore(sorted.getContent().get(1).getDate()) ||
+                   sorted.getContent().get(0).getDate().isEqual(sorted.getContent().get(1).getDate()));
     }
 
     @Test
@@ -155,10 +192,10 @@ class EmailRepositoryTest {
         Email medium = buildEmail("c@b.com", "user@seamail.com", "2", true);
         emailRepository.saveAll(List.of(high, low, medium));
 
-        List<Email> sorted = emailRepository.sortTrashboxByPriority("user@seamail.com");
+        Page<Email> sorted = emailRepository.sortTrashboxByPriority("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(3, sorted.size());
-        assertTrue(sorted.get(0).getPriority().compareTo(sorted.get(1).getPriority()) <= 0);
+        assertEquals(3, sorted.getNumberOfElements());
+        assertTrue(sorted.getContent().get(0).getPriority().compareTo(sorted.getContent().get(1).getPriority()) <= 0);
     }
 
     @Test
@@ -169,11 +206,11 @@ class EmailRepositoryTest {
         Email middle = buildEmailWithDate("c@b.com", "user@seamail.com", now.minusDays(1), true);
         emailRepository.saveAll(List.of(older, newer, middle));
 
-        List<Email> sorted = emailRepository.sortTrashboxByDate("user@seamail.com");
+        Page<Email> sorted = emailRepository.sortTrashboxByDate("user@seamail.com", Pageable.unpaged());
 
-        assertEquals(3, sorted.size());
-        assertTrue(sorted.get(0).getDate().isBefore(sorted.get(1).getDate()) ||
-                   sorted.get(0).getDate().isEqual(sorted.get(1).getDate()));
+        assertEquals(3, sorted.getNumberOfElements());
+        assertTrue(sorted.getContent().get(0).getDate().isBefore(sorted.getContent().get(1).getDate()) ||
+                   sorted.getContent().get(0).getDate().isEqual(sorted.getContent().get(1).getDate()));
     }
 
     @Test
@@ -182,10 +219,22 @@ class EmailRepositoryTest {
         Email other = buildEmailWithSubject("user@seamail.com", "b@b.com", "Receipt", false);
         emailRepository.saveAll(List.of(matching, other));
 
-        List<Email> filtered = emailRepository.filterOutboxBySubject("user@seamail.com", "Invoice");
+        Page<Email> filtered = emailRepository.filterOutboxBySubject("user@seamail.com", "Invoice", Pageable.unpaged());
 
-        assertEquals(1, filtered.size());
-        assertEquals("Invoice", filtered.get(0).getSubject());
+        assertEquals(1, filtered.getNumberOfElements());
+        assertEquals("Invoice", filtered.getContent().get(0).getSubject());
+    }
+
+    @Test
+    void shouldExcludeTrashedEmailsWhenFilteringOutboxBySubject() {
+        Email live = buildEmailWithSubject("user@seamail.com", "a@b.com", "Invoice", false);
+        Email trashed = buildEmailWithSubject("user@seamail.com", "a@b.com", "Invoice", true);
+        emailRepository.saveAll(List.of(live, trashed));
+
+        Page<Email> filtered = emailRepository.filterOutboxBySubject("user@seamail.com", "Invoice", Pageable.unpaged());
+
+        assertEquals(1, filtered.getNumberOfElements());
+        assertFalse(filtered.getContent().get(0).isTrash());
     }
 
     @Test
@@ -194,10 +243,22 @@ class EmailRepositoryTest {
         Email toColleague = buildEmail("user@seamail.com", "colleague@b.com", "Hello", false);
         emailRepository.saveAll(List.of(toBoss, toColleague));
 
-        List<Email> filtered = emailRepository.filterOutboxByReceiver("user@seamail.com", "boss@b.com");
+        Page<Email> filtered = emailRepository.filterOutboxByReceiver("user@seamail.com", "boss@b.com", Pageable.unpaged());
 
-        assertEquals(1, filtered.size());
-        assertEquals("boss@b.com", filtered.get(0).getReceiver());
+        assertEquals(1, filtered.getNumberOfElements());
+        assertEquals("boss@b.com", filtered.getContent().get(0).getReceiver());
+    }
+
+    @Test
+    void shouldExcludeTrashedEmailsWhenFilteringOutboxByReceiver() {
+        Email live = buildEmail("user@seamail.com", "boss@b.com", "Meeting", false);
+        Email trashed = buildEmail("user@seamail.com", "boss@b.com", "Meeting", true);
+        emailRepository.saveAll(List.of(live, trashed));
+
+        Page<Email> filtered = emailRepository.filterOutboxByReceiver("user@seamail.com", "boss@b.com", Pageable.unpaged());
+
+        assertEquals(1, filtered.getNumberOfElements());
+        assertFalse(filtered.getContent().get(0).isTrash());
     }
 
     @Test
@@ -206,10 +267,10 @@ class EmailRepositoryTest {
         Email other = buildEmailWithSubject("b@b.com", "user@seamail.com", "Receipt", true);
         emailRepository.saveAll(List.of(matching, other));
 
-        List<Email> filtered = emailRepository.filterTrashBySubject("user@seamail.com", "Invoice");
+        Page<Email> filtered = emailRepository.filterTrashBySubject("user@seamail.com", "Invoice", Pageable.unpaged());
 
-        assertEquals(1, filtered.size());
-        assertEquals("Invoice", filtered.get(0).getSubject());
+        assertEquals(1, filtered.getNumberOfElements());
+        assertEquals("Invoice", filtered.getContent().get(0).getSubject());
     }
 
     @Test
@@ -218,16 +279,16 @@ class EmailRepositoryTest {
         Email fromColleague = buildEmail("colleague@b.com", "user@seamail.com", "Hello", true);
         emailRepository.saveAll(List.of(fromBoss, fromColleague));
 
-        List<Email> filtered = emailRepository.filterTrashBySender("user@seamail.com", "boss@b.com");
+        Page<Email> filtered = emailRepository.filterTrashBySender("user@seamail.com", "boss@b.com", Pageable.unpaged());
 
-        assertEquals(1, filtered.size());
-        assertEquals("boss@b.com", filtered.get(0).getSender());
+        assertEquals(1, filtered.getNumberOfElements());
+        assertEquals("boss@b.com", filtered.getContent().get(0).getSender());
     }
 
     @Test
     void shouldReturnEmptyInboxWhenNoEmailsExist() {
-        List<Email> inbox = emailRepository.loadInbox("empty@seamail.com");
-        assertTrue(inbox.isEmpty());
+        Page<Email> inbox = emailRepository.loadInbox("empty@seamail.com", Pageable.unpaged());
+        assertTrue(inbox.getContent().isEmpty());
     }
 
     private Email buildEmail(String from, String to, boolean trash) {

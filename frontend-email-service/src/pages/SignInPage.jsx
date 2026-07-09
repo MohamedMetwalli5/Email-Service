@@ -6,9 +6,10 @@ import { parseApiError } from '../utils/parseApiError';
 import SignInWithDiscord from '../components/SigninWithDiscord.jsx';
 import apiClient from '../api/apiClient';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const SignInPage = () => {
-  
+  const { t } = useTranslation();
   const termsOfUse = import.meta.env.VITE_TERMS_OF_USE_URL;
   const privacyPolicy = import.meta.env.VITE_PRIVACY_POLICY_URL;
   const { setAuthToken, setRefreshToken, setSharedUserEmail } = useContext(AppContext);
@@ -42,16 +43,16 @@ const SignInPage = () => {
     } catch (error) {
       const parsed = parseApiError(error);
       if (parsed.errorCode === 'USER_NOT_FOUND') {
-        toast.error('Invalid email or password. Please try again.');
+        toast.error(t('INVALID_EMAIL_OR_PASSWORD'));
       } else if (parsed.fieldErrors.length > 0) {
         toast.error(parsed.fieldErrors.join('\n'));
       } else {
         const fallbackMessages = {
-          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
-          UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+          INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+          NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
+          UNAUTHORIZED: t('SESSION_EXPIRED'),
         };
-        toast.error(fallbackMessages[parsed.errorCode] || 'Sign in failed. Please try again.');
+        toast.error(fallbackMessages[parsed.errorCode] || t('SIGNIN_FAILED'));
       }
     }
   };
@@ -61,10 +62,10 @@ const SignInPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white rounded-lg shadow-lg p-8 space-y-6">
         <h2 className="text-4xl font-bold text-center text-blue-700">Seamail</h2>
-        <p className="text-center text-gray-600">Welcome back to Seamail! Sign in to continue.</p>
+        <p className="text-center text-gray-600">{t('WELCOME_BACK')}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-lg text-gray-800">Email</label>
+            <label htmlFor="email" className="block text-lg text-gray-800">{t('EMAIL_LABEL')}</label>
             <input
               type="email"
               id="email"
@@ -77,7 +78,7 @@ const SignInPage = () => {
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-lg text-gray-800">Password</label>
+            <label htmlFor="password" className="block text-lg text-gray-800">{t('PASSWORD_LABEL')}</label>
             <input
               type="password"
               id="password"
@@ -94,7 +95,7 @@ const SignInPage = () => {
               type="submit"
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 rounded-md transition-all duration-300"
             >
-              Sign In
+              {t('SIGN_IN_BUTTON')}
             </button>
           </div>
         </form>
@@ -102,27 +103,26 @@ const SignInPage = () => {
         <SignInWithDiscord />
 
         <p className="text-center text-sm text-gray-500">
-          Don't have an account?{' '}
+          {t('DONT_HAVE_ACCOUNT')}{' '}
           <a href="/" className="text-blue-500 hover:text-blue-700">
-            Sign Up
+            {t('SIGN_UP_LINK')}
           </a>
         </p>
 
         <p className="text-center text-xs text-gray-400 pt-2">
-          By using this website, you agree to our{' '}
-          <a 
+          {t('TERMS_AGREE')}{' '}
+          <a
             href={termsOfUse}
             className="underline hover:text-blue-500 transition-colors duration-200"
           >
-          
-            Terms of Use
+            {t('TERMS_OF_USE')}
           </a>{' '}
           and{' '}
-          <a 
+          <a
             href={privacyPolicy}
             className="underline hover:text-blue-500 transition-colors duration-200"
           >
-            Privacy Policy
+            {t('PRIVACY_POLICY')}
           </a>
           .
         </p>

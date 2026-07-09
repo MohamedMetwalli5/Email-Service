@@ -14,10 +14,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -68,7 +64,8 @@ public class SecurityConfig {
     .authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
         .requestMatchers("/api/v1/sign-in", "/api/v1/sign-up",
-                "/api/v1/auth/discord", "/api/v1/auth/refresh").permitAll()
+                "/api/v1/auth/discord", "/api/v1/auth/discord/state",
+                "/api/v1/auth/refresh", "/api/v1/auth/exchange").permitAll()
         .anyRequest().authenticated()
     )
     .sessionManagement(session -> session
@@ -81,30 +78,11 @@ public class SecurityConfig {
             response.getWriter().write("{\"message\": \"Unauthorized\"}");
         })
     )
-    .authenticationProvider(authenticationProvider())
-    .oauth2Login(Customizer.withDefaults());
+    .authenticationProvider(authenticationProvider());
 
     http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
 }
 
-    @Bean
-    public ClientRegistrationRepository clientRegistrationRepository() {
-        return new InMemoryClientRegistrationRepository(discordClientRegistration());
-    }
-
-    private ClientRegistration discordClientRegistration() {
-        return ClientRegistration.withRegistrationId("discord") // The provider ID
-            .clientId(discordProperties.getClientId())
-            .clientSecret(discordProperties.getClientSecret())
-            .scope("identify", "email") // Scopes you want to request
-            .authorizationUri("https://discord.com/api/oauth2/authorize") // Authorization URL
-            .tokenUri("https://discord.com/api/oauth2/token") // Token exchange URL
-            .userInfoUri("https://discord.com/api/users/@me") // User info endpoint
-            .userNameAttributeName("id") // Specifying the user attribute to use as unique ID
-            .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE) // Granting type
-            .build();
-    }
 }

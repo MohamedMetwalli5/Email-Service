@@ -1,6 +1,8 @@
 package com.backendemailservice.backendemailservice.controller;
 
 import com.backendemailservice.backendemailservice.dto.AuthResponseDto;
+import com.backendemailservice.backendemailservice.dto.DiscordExchangeResponseDto;
+import com.backendemailservice.backendemailservice.dto.DiscordTicketRequestDto;
 import com.backendemailservice.backendemailservice.dto.RefreshTokenRequestDto;
 import com.backendemailservice.backendemailservice.dto.UserRequestDto;
 import com.backendemailservice.backendemailservice.service.IUserService;
@@ -42,6 +44,16 @@ public class AccessController {
     @PostMapping("/auth/refresh")
     public ResponseEntity<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
         AuthResponseDto response = userService.refreshAccessToken(request.refreshToken());
+        return ResponseEntity.ok(response);
+    }
+
+    // Discord OAuth ticket exchange — swaps the opaque ?code= from the redirect
+    // for access + refresh tokens. Public (no Bearer); the ticket is single-use
+    // and expires in 60s.
+    @PostMapping("/auth/exchange")
+    public ResponseEntity<DiscordExchangeResponseDto> exchangeDiscordTicket(
+            @Valid @RequestBody DiscordTicketRequestDto request) {
+        DiscordExchangeResponseDto response = userService.exchangeDiscordTicket(request.code());
         return ResponseEntity.ok(response);
     }
 }

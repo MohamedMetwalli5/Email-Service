@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useContext } from 'react';
 import { AppContext } from '../AppContext.jsx';
 import apiClient from '../api/apiClient';
@@ -23,6 +23,15 @@ const NewMessageComposer = ({ onClose }) => {
   });
 
   const [fieldError, setFieldError] = useState('');
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,21 +59,28 @@ const NewMessageComposer = ({ onClose }) => {
       console.error("Send error:", error.response?.data || error.message);
       const parsed = parseApiError(error);
       if (parsed.errorCode === 'RECEIVER_NOT_FOUND') {
-        setFieldError('The recipient was not found. Please check the email address.');
+        setFieldError(t('RECEIVER_NOT_FOUND_MSG'));
       } else if (parsed.fieldErrors.length > 0) {
         setFieldError(parsed.fieldErrors.join('\n'));
       } else {
         const fallbackMessages = {
-          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+          INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+          NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
         };
-        setFieldError(fallbackMessages[parsed.errorCode] || 'Failed to send email. Please try again.');
+        setFieldError(fallbackMessages[parsed.errorCode] || t('FAILED_SEND_EMAIL'));
       }
     }
   };
 
   return (
-    <div className="bottom-0 right-0 inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div
+      className="bottom-0 right-0 inset-0 flex items-center justify-center bg-black bg-opacity-50"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('NEW_MESSAGE')}
+      ref={dialogRef}
+    >
       <div className="bg-gray-900 text-gray-100 p-6 rounded-lg shadow-lg w-96">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React, { useContext } from 'react';
 import { AppProvider, AppContext } from '../AppContext';
@@ -102,5 +102,39 @@ describe('AppContext', () => {
     expect(localStorage.getItem('sharedUserEmail')).toBeNull();
     expect(getByTestId('authToken').textContent).toBe('null');
     expect(getByTestId('refreshToken').textContent).toBe('null');
+  });
+
+  it('[M-13] clears context state when app:logout custom event fires (same-tab logout)', async () => {
+    localStorage.setItem('authToken', 'tok');
+    localStorage.setItem('refreshToken', 'ref');
+    localStorage.setItem('sharedUserEmail', 'test@test.com');
+
+    const { getByTestId } = renderWithProvider();
+
+    expect(getByTestId('authToken').textContent).toBe('tok');
+
+    window.dispatchEvent(new CustomEvent('app:logout'));
+
+    await waitFor(() => {
+      expect(getByTestId('authToken').textContent).toBe('null');
+      expect(getByTestId('refreshToken').textContent).toBe('null');
+      expect(getByTestId('sharedUserEmail').textContent).toBe('null');
+    });
+  });
+
+  it('[M-13] syncs authToken when storage event fires from another tab', async () => {
+    localStorage.setItem('authToken', 'tok');
+
+    const { getByTestId } = renderWithProvider();
+    expect(getByTestId('authToken').textContent).toBe('tok');
+
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'authToken',
+      newValue: null,
+    }));
+
+    await waitFor(() => {
+      expect(getByTestId('authToken').textContent).toBe('null');
+    });
   });
 });

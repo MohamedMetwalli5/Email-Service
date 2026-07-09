@@ -3,16 +3,21 @@ package com.backendemailservice.backendemailservice.service;
 import com.backendemailservice.backendemailservice.dto.EmailResponseDto;
 import com.backendemailservice.backendemailservice.dto.SendEmailRequestDto;
 import com.backendemailservice.backendemailservice.entity.Email;
+import com.backendemailservice.backendemailservice.entity.Mailbox;
 import com.backendemailservice.backendemailservice.exception.EmailNotFoundException;
 import com.backendemailservice.backendemailservice.exception.ReceiverNotFoundException;
 import com.backendemailservice.backendemailservice.repository.EmailRepository;
 import com.backendemailservice.backendemailservice.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -27,38 +32,27 @@ public class EmailService implements IEmailService {
         this.userRepository = userRepository;
     }
 
-    // --- New DTO-returning methods for controllers ---
-
-    // DTO mapping in service layer, not controller
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "inbox", key = "#userEmail")
-    public List<EmailResponseDto> loadInboxDtos(String userEmail) {
-        return repository.loadInbox(userEmail).stream()
-                .map(this::toDto)
-                .toList();
+    public Page<EmailResponseDto> loadInboxDtos(String userEmail, Pageable pageable) {
+        return repository.loadInbox(userEmail, pageable).map(this::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EmailResponseDto> loadOutboxDtos(String userEmail) {
-        return repository.loadOutbox(userEmail).stream()
-                .map(this::toDto)
-                .toList();
+    public Page<EmailResponseDto> loadOutboxDtos(String userEmail, Pageable pageable) {
+        return repository.loadOutbox(userEmail, pageable).map(this::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EmailResponseDto> loadTrashboxDtos(String userEmail) {
-        return repository.loadTrashbox(userEmail).stream()
-                .map(this::toDto)
-                .toList();
+    public Page<EmailResponseDto> loadTrashboxDtos(String userEmail, Pageable pageable) {
+        return repository.loadTrashbox(userEmail, pageable).map(this::toDto);
     }
 
-    // sendEmail handles entity construction + receiver check 
     @Override
     @Transactional
-    @CacheEvict(value = "inbox", key = "#request.receiver")
+    @CacheEvict(value = "inbox", allEntries = true)
     public void sendEmail(String senderEmail, SendEmailRequestDto request) {
         if (userRepository.findByEmail(request.getReceiver()).isEmpty()) {
             throw new ReceiverNotFoundException("Receiver not found");
@@ -74,52 +68,59 @@ public class EmailService implements IEmailService {
         repository.save(email);
     }
 
-    // auth-check overload
     @Override
     @Transactional
-    @CacheEvict(value = "inbox", key = "#userEmail")
+    @CacheEvict(value = "inbox", allEntries = true)
     public void deleteEmail(Long emailID, String userEmail) {
         Email email = repository.findById(emailID)
                 .orElseThrow(() -> new EmailNotFoundException("Email not found: " + emailID));
+        if (!email.getReceiver().equals(userEmail)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        if (!email.isTrash()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Email must be moved to trash before it can be permanently deleted");
+        }
         repository.deleteById(emailID);
     }
 
-    // auth-check overload
     @Override
     @Transactional
-    @CacheEvict(value = "inbox", key = "#userEmail")
+    @CacheEvict(value = "inbox", allEntries = true)
     public void moveToTrashBox(Long emailID, String userEmail) {
         Email email = repository.findById(emailID)
                 .orElseThrow(() -> new EmailNotFoundException("Email not found: " + emailID));
-        repository.moveToTrashBox(emailID);
+        if (!email.getReceiver().equals(userEmail)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        repository.moveToTrashBox(emailID, userEmail);
     }
 
-    // unified query with optional sort/filter params and mailbox context
     @Override
     @Transactional(readOnly = true)
-    public List<EmailResponseDto> queryEmails(String email, String sort, String filterBy, String filterValue, String mailbox) {
-        String box = (mailbox != null) ? mailbox : "Inbox";
+    public Page<EmailResponseDto> queryEmails(String email, String sort, String filterBy,
+                                              String filterValue, String mailbox, Pageable pageable) {
+        Mailbox box = Mailbox.fromString(mailbox);
 
-        // Combined filter + sort — filter via repository, then sort in-memory
         if (sort != null && filterBy != null && filterValue != null) {
-            List<Email> filtered = getFilteredEmails(email, filterBy, filterValue, box);
-            sortEmailsInPlace(filtered, sort);
-            return filtered.stream().map(this::toDto).toList();
+            Page<Email> filtered = getFilteredEmails(email, filterBy, filterValue, box, pageable);
+            Page<Email> sorted = filterAndSort(filtered, sort);
+            return sorted.map(this::toDto);
         }
 
         if (sort != null) {
             if (sort.equals("priority")) {
                 return switch (box) {
-                    case "Outbox" -> repository.sortOutboxByPriority(email).stream().map(this::toDto).toList();
-                    case "Trashbox" -> repository.sortTrashboxByPriority(email).stream().map(this::toDto).toList();
-                    default -> repository.sortEmailsByPriority(email).stream().map(this::toDto).toList();
+                    case OUTBOX -> repository.sortOutboxByPriority(email, pageable).map(this::toDto);
+                    case TRASHBOX -> repository.sortTrashboxByPriority(email, pageable).map(this::toDto);
+                    default -> repository.sortEmailsByPriority(email, pageable).map(this::toDto);
                 };
             }
             if (sort.equals("date")) {
                 return switch (box) {
-                    case "Outbox" -> repository.sortOutboxByDate(email).stream().map(this::toDto).toList();
-                    case "Trashbox" -> repository.sortTrashboxByDate(email).stream().map(this::toDto).toList();
-                    default -> repository.sortEmailsByDate(email).stream().map(this::toDto).toList();
+                    case OUTBOX -> repository.sortOutboxByDate(email, pageable).map(this::toDto);
+                    case TRASHBOX -> repository.sortTrashboxByDate(email, pageable).map(this::toDto);
+                    default -> repository.sortEmailsByDate(email, pageable).map(this::toDto);
                 };
             }
         }
@@ -127,55 +128,53 @@ public class EmailService implements IEmailService {
         if (filterBy != null && filterValue != null) {
             if (filterBy.equals("subject")) {
                 return switch (box) {
-                    case "Outbox" -> repository.filterOutboxBySubject(email, filterValue).stream().map(this::toDto).toList();
-                    case "Trashbox" -> repository.filterTrashBySubject(email, filterValue).stream().map(this::toDto).toList();
-                    default -> repository.filterEmailsBySubject(email, filterValue).stream().map(this::toDto).toList();
+                    case OUTBOX -> repository.filterOutboxBySubject(email, filterValue, pageable).map(this::toDto);
+                    case TRASHBOX -> repository.filterTrashBySubject(email, filterValue, pageable).map(this::toDto);
+                    default -> repository.filterEmailsBySubject(email, filterValue, pageable).map(this::toDto);
                 };
             }
             if (filterBy.equals("sender")) {
                 return switch (box) {
-                    // In Outbox, "sender" filter maps to receiver (all outbox items share the same sender)
-                    case "Outbox" -> repository.filterOutboxByReceiver(email, filterValue).stream().map(this::toDto).toList();
-                    case "Trashbox" -> repository.filterTrashBySender(email, filterValue).stream().map(this::toDto).toList();
-                    default -> repository.filterEmailsBySender(email, filterValue).stream().map(this::toDto).toList();
+                    case OUTBOX -> repository.filterOutboxByReceiver(email, filterValue, pageable).map(this::toDto);
+                    case TRASHBOX -> repository.filterTrashBySender(email, filterValue, pageable).map(this::toDto);
+                    default -> repository.filterEmailsBySender(email, filterValue, pageable).map(this::toDto);
                 };
             }
         }
 
-        // Default: return current mailbox
         return switch (box) {
-            case "Outbox" -> loadOutboxDtos(email);
-            case "Trashbox" -> loadTrashboxDtos(email);
-            default -> loadInboxDtos(email);
+            case OUTBOX -> loadOutboxDtos(email, pageable);
+            case TRASHBOX -> loadTrashboxDtos(email, pageable);
+            default -> loadInboxDtos(email, pageable);
         };
     }
 
-    // --- Internal helpers ---
-
-    private List<Email> getFilteredEmails(String email, String filterBy, String filterValue, String box) {
+    private Page<Email> getFilteredEmails(String email, String filterBy, String filterValue, Mailbox box, Pageable pageable) {
         if (filterBy.equals("subject")) {
             return switch (box) {
-                case "Outbox" -> repository.filterOutboxBySubject(email, filterValue);
-                case "Trashbox" -> repository.filterTrashBySubject(email, filterValue);
-                default -> repository.filterEmailsBySubject(email, filterValue);
+                case OUTBOX -> repository.filterOutboxBySubject(email, filterValue, pageable);
+                case TRASHBOX -> repository.filterTrashBySubject(email, filterValue, pageable);
+                default -> repository.filterEmailsBySubject(email, filterValue, pageable);
             };
         }
         if (filterBy.equals("sender")) {
             return switch (box) {
-                case "Outbox" -> repository.filterOutboxByReceiver(email, filterValue);
-                case "Trashbox" -> repository.filterTrashBySender(email, filterValue);
-                default -> repository.filterEmailsBySender(email, filterValue);
+                case OUTBOX -> repository.filterOutboxByReceiver(email, filterValue, pageable);
+                case TRASHBOX -> repository.filterTrashBySender(email, filterValue, pageable);
+                default -> repository.filterEmailsBySender(email, filterValue, pageable);
             };
         }
         throw new IllegalArgumentException("Unknown filterBy: " + filterBy);
     }
 
-    private void sortEmailsInPlace(List<Email> emails, String sort) {
+    private Page<Email> filterAndSort(Page<Email> page, String sort) {
+        List<Email> content = new ArrayList<>(page.getContent());
         if (sort.equals("priority")) {
-            emails.sort((a, b) -> a.getPriority().compareTo(b.getPriority()));
+            content.sort((a, b) -> a.getPriority().compareTo(b.getPriority()));
         } else if (sort.equals("date")) {
-            emails.sort((a, b) -> a.getDate().compareTo(b.getDate()));
+            content.sort((a, b) -> a.getDate().compareTo(b.getDate()));
         }
+        return new org.springframework.data.domain.PageImpl<>(content, page.getPageable(), page.getTotalElements());
     }
 
     private EmailResponseDto toDto(Email email) {

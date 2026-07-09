@@ -25,7 +25,7 @@ describe('HomePage', () => {
     localStorage.setItem('sharedEmailToFullyView', JSON.stringify({ emailID: 1, sender: 'a@b.com', subject: 'Test' }));
 
     server.use(
-      http.get('*/inbox', () => HttpResponse.json([])),
+      http.get('*/inbox', () => HttpResponse.json({ content: [], totalElements: 0, totalPages: 0 })),
       http.get('*/profile-picture', () => new HttpResponse(new Uint8Array(0), { status: 200, headers: { 'Content-Type': 'image/jpeg' } }))
     );
   });
@@ -43,11 +43,25 @@ describe('HomePage', () => {
     });
   });
 
-  it('[M-09] stores refreshToken from Discord redirect query params', async () => {
+  it('[M-09] exchanges the Discord ?code= ticket for tokens and stores them', async () => {
+    server.use(
+      http.post('*/auth/exchange', async ({ request }) => {
+        const body = await request.json();
+        if (body.code === 'valid-ticket') {
+          return HttpResponse.json({
+            accessToken: 'discord-jwt',
+            refreshToken: 'discord-refresh',
+            email: 'user@seamail.com',
+          });
+        }
+        return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      })
+    );
+
     Object.defineProperty(window, 'location', {
       configurable: true,
       writable: true,
-      value: new URL('http://localhost:8080/home?token=discord-jwt&refreshToken=discord-refresh&email=user@seamail.com'),
+      value: new URL('http://localhost:8080/home?code=valid-ticket'),
     });
     Object.defineProperty(window, 'history', {
       configurable: true,
@@ -64,33 +78,22 @@ describe('HomePage', () => {
     });
   });
 
-  it('[M-09] does NOT crash when refreshToken is absent from query params', async () => {
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      writable: true,
-      value: new URL('http://localhost:8080/home?token=discord-jwt&email=user@seamail.com'),
-    });
-    Object.defineProperty(window, 'history', {
-      configurable: true,
-      writable: true,
-      value: { ...originalHistory, replaceState: vi.fn() },
-    });
-
-    renderHomePage();
-
-    await waitFor(() => {
-      expect(localStorage.getItem('authToken')).toBe('discord-jwt');
-      expect(localStorage.getItem('sharedUserEmail')).toBe('user@seamail.com');
-      expect(localStorage.getItem('refreshToken')).toBeNull();
-    });
-  });
-
-  it('[M-09] strips query params from browser URL using replaceState', async () => {
+  it('[M-09] does NOT leave tokens in the URL after exchange', async () => {
     const replaceStateMock = vi.fn();
+    server.use(
+      http.post('*/auth/exchange', () =>
+        HttpResponse.json({
+          accessToken: 'discord-jwt',
+          refreshToken: 'discord-refresh',
+          email: 'user@seamail.com',
+        })
+      )
+    );
+
     Object.defineProperty(window, 'location', {
       configurable: true,
       writable: true,
-      value: new URL('http://localhost:8080/home?token=jwt&refreshToken=ref&email=user@seamail.com'),
+      value: new URL('http://localhost:8080/home?code=valid-ticket'),
     });
     Object.defineProperty(window, 'history', {
       configurable: true,
@@ -102,15 +105,33 @@ describe('HomePage', () => {
     renderHomePage();
 
     await waitFor(() => {
-      expect(replaceStateMock).toHaveBeenCalledWith(
-        {},
-        document.title,
-        '/home'
-      );
+      expect(replaceStateMock).toHaveBeenCalledWith({}, document.title, '/home');
     });
   });
 
-  it('[M-09] renders empty fragment when no auth token is available (no query params)', () => {
+  it('[M-09] does NOT store tokens when the ticket is invalid or expired', async () => {
+    server.use(
+      http.post('*/auth/exchange', () =>
+        HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+      )
+    );
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: new URL('http://localhost:8080/home?code=expired-ticket'),
+    });
+
+    renderHomePage();
+
+    await waitFor(() => {
+      expect(localStorage.getItem('authToken')).toBeNull();
+      expect(localStorage.getItem('refreshToken')).toBeNull();
+      expect(localStorage.getItem('sharedUserEmail')).toBeNull();
+    });
+  });
+
+  it('[M-09] renders empty fragment when no code is in the URL and no auth exists', () => {
     Object.defineProperty(window, 'location', {
       configurable: true,
       writable: true,
@@ -119,7 +140,6 @@ describe('HomePage', () => {
 
     const { container } = renderHomePage();
 
-    // Toaster div is present from AppProvider, but no HomePage content
     expect(container.querySelector('[data-rht-toaster]')).toBeInTheDocument();
     expect(container.querySelector('.bg-gray-700')).toBeNull();
   });

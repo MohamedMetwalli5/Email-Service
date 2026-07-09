@@ -139,6 +139,35 @@ describe('apiClient', () => {
     expect(apiClient.defaults.baseURL).toBe(import.meta.env.VITE_BACKEND_API_URL);
   });
 
+  it('[M-14] rejects all queued requests and clears tokens when refresh itself fails', async () => {
+    localStorage.setItem('refreshToken', 'test-refresh-token');
+
+    const originalLocation = window.location;
+    delete window.location;
+    window.location = { href: '' };
+
+    const refreshAdapter = new MockAdapter(axios);
+    refreshAdapter.onPost('/api/v1/auth/refresh').reply(401, { message: 'Unauthorized' });
+
+    mockAdapter.onGet('/inbox').reply(401, { message: 'Unauthorized' });
+    mockAdapter.onGet('/outbox').reply(401, { message: 'Unauthorized' });
+
+    const [inboxResult, outboxResult] = await Promise.allSettled([
+      apiClient.get('/inbox'),
+      apiClient.get('/outbox'),
+    ]);
+
+    expect(inboxResult.status).toBe('rejected');
+    expect(outboxResult.status).toBe('rejected');
+
+    expect(localStorage.getItem('authToken')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(window.location.href).toBe('/sign-in');
+
+    refreshAdapter.restore();
+    window.location = originalLocation;
+  });
+
   it('[M-11] uses a single axios instance (not per-component axios imports)', () => {
     expect(typeof apiClient.get).toBe('function');
     expect(typeof apiClient.post).toBe('function');

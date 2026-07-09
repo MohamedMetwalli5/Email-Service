@@ -45,7 +45,7 @@ const EmailFullView = () => {
       setEmail({});
       setIsMovedToTrash(true);
     } catch (error) {
-      toast.error('Failed to move email to trash.');
+      toast.error(t('FAILED_MOVE_TO_TRASH'));
     }
   };
   
@@ -63,7 +63,7 @@ const EmailFullView = () => {
       setEmail({});
       setIsDeletedPermanently(true);
     } catch (error) {
-      toast.error('Failed to delete email permanently.');
+      toast.error(t('FAILED_DELETE_EMAIL'));
     }
   };
 
@@ -77,9 +77,9 @@ const EmailFullView = () => {
     return (
       <div className="h-full w-full bg-gray-900 text-gray-100 rounded-lg shadow-md p-6">
         {isDeletedPermanently?
-          <h2 className="text-xl font-semibold mb-4 text-red-400">This email has been deleted</h2>
+          <h2 className="text-xl font-semibold mb-4 text-red-400">{t('EMAIL_DELETED')}</h2>
           :
-          <h2 className="text-xl font-semibold mb-4 text-red-400">This email has been moved to trashbox</h2>
+          <h2 className="text-xl font-semibold mb-4 text-red-400">{t('EMAIL_MOVED_TO_TRASH')}</h2>
         }
       </div>
     );

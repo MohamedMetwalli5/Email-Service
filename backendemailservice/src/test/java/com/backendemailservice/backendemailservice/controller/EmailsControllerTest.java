@@ -17,6 +17,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -62,7 +66,7 @@ class EmailsControllerTest {
 
     @Test
     void shouldReturn200WhenLoadingInbox() throws Exception {
-        when(emailService.loadInboxDtos(TEST_EMAIL)).thenReturn(Collections.emptyList());
+        when(emailService.loadInboxDtos(anyString(), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/inbox"))
                 .andExpect(status().isOk())
@@ -71,7 +75,7 @@ class EmailsControllerTest {
 
     @Test
     void shouldReturn200WhenLoadingOutbox() throws Exception {
-        when(emailService.loadOutboxDtos(TEST_EMAIL)).thenReturn(Collections.emptyList());
+        when(emailService.loadOutboxDtos(anyString(), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/outbox"))
                 .andExpect(status().isOk())
@@ -80,7 +84,7 @@ class EmailsControllerTest {
 
     @Test
     void shouldReturn200WhenLoadingTrashbox() throws Exception {
-        when(emailService.loadTrashboxDtos(TEST_EMAIL)).thenReturn(Collections.emptyList());
+        when(emailService.loadTrashboxDtos(anyString(), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/trashbox"))
                 .andExpect(status().isOk());
@@ -146,13 +150,13 @@ class EmailsControllerTest {
                 new EmailResponseDto(1L, "a@b.com", TEST_EMAIL, "S", "B", "1", now, false)
         );
 
-        when(emailService.queryEmails(eq(TEST_EMAIL), eq("priority"), eq(null), eq(null), eq(null)))
-                .thenReturn(sorted);
+        when(emailService.queryEmails(eq(TEST_EMAIL), eq("priority"), eq(null), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(sorted));
 
         mockMvc.perform(get("/api/v1/emails")
                 .param("sort", "priority"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].subject").value("S"));
+                .andExpect(jsonPath("$.content[0].subject").value("S"));
     }
 
     @Test
@@ -162,14 +166,14 @@ class EmailsControllerTest {
                 new EmailResponseDto(2L, "boss@b.com", TEST_EMAIL, "Invoice", "B", "2", now, false)
         );
 
-        when(emailService.queryEmails(eq(TEST_EMAIL), eq(null), eq("subject"), eq("Invoice"), eq(null)))
-                .thenReturn(filtered);
+        when(emailService.queryEmails(eq(TEST_EMAIL), eq(null), eq("subject"), eq("Invoice"), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(filtered));
 
         mockMvc.perform(get("/api/v1/emails")
                 .param("filterBy", "subject")
                 .param("filterValue", "Invoice"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].subject").value("Invoice"));
+                .andExpect(jsonPath("$.content[0].subject").value("Invoice"));
     }
 
     @Test

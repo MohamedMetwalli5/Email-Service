@@ -17,6 +17,7 @@ const EmailsSnippetView = () => {
   const [filterText, setFilterText] = useState("");
   const [sortType, setSortType] = useState("");
   const [emails, setEmails] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -32,19 +33,22 @@ const EmailsSnippetView = () => {
   };
 
   const queryEmails = async (params = {}) => {
+    setLoading(true);
     try {
       const response = await apiClient.get('/emails', {
         params: { ...params, mailbox: sharedMailBoxOption },
       });
-      setEmails(response.data);
+      setEmails(response.data.content);
     } catch (error) {
       const parsed = parseApiError(error);
       const fallbackMessages = {
-        INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-        NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
-        UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+        INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+        NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
+        UNAUTHORIZED: t('SESSION_EXPIRED'),
       };
-      toast.error(fallbackMessages[parsed.errorCode] || 'Failed to load emails. Please try again.');
+      toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_LOAD_EMAILS'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,15 +66,15 @@ const EmailsSnippetView = () => {
       const response = await apiClient.get('/emails', {
         params: { filterBy, filterValue, sort: sortKey, mailbox: sharedMailBoxOption },
       });
-      setEmails(response.data);
+      setEmails(response.data.content);
     } catch (error) {
       const parsed = parseApiError(error);
       const fallbackMessages = {
-        INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-        NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
-        UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+        INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+        NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
+        UNAUTHORIZED: t('SESSION_EXPIRED'),
       };
-      toast.error(fallbackMessages[parsed.errorCode] || 'Failed to load emails. Please try again.');
+      toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_LOAD_EMAILS'));
     }
   };
 
@@ -94,17 +98,20 @@ const EmailsSnippetView = () => {
 
   // Use apiClient for protected endpoints; Bearer header attached by interceptor
   const getEmails = async(sharedMailBoxOption) => {
+    setLoading(true);
     try {
       const response = await apiClient.get(`/${sharedMailBoxOption.toLowerCase()}`);
-      setEmails(response.data);
+      setEmails(response.data.content);
     } catch (error) {
       const parsed = parseApiError(error);
       const fallbackMessages = {
-        INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-        NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
-        UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+        INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+        NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
+        UNAUTHORIZED: t('SESSION_EXPIRED'),
       };
-      toast.error(fallbackMessages[parsed.errorCode] || 'Failed to load emails. Please try again.');
+      toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_LOAD_EMAILS'));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -180,6 +187,11 @@ const EmailsSnippetView = () => {
       </div>
 
       <div className="flex-grow h-52 overflow-y-auto">
+        {loading ? (
+          <p className="text-gray-500 text-center py-8">{t('LOADING')}</p>
+        ) : emails.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">{t('NO_EMAILS')}</p>
+        ) : (
         <ul className="space-y-4">
           {emails.map((email, index) => (
             <li
@@ -196,7 +208,7 @@ const EmailsSnippetView = () => {
                     </>
                   ) : (
                     <>
-                      <span className="text-blue-400">Receiver:</span> {email?.receiver ?? ''}
+                      <span className="text-blue-400">{t('RECEIVER')}:</span> {email?.receiver ?? ''}
                     </>
                   )}
                 </p>
@@ -218,6 +230,7 @@ const EmailsSnippetView = () => {
             </li>
           ))}
         </ul>
+        )}
       </div>
     </div>
   );

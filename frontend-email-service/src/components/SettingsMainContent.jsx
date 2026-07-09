@@ -10,8 +10,9 @@ const SettingsMainContent = () => {
   
   const { t } = useTranslation();
   
-  const { sharedUserEmail, setSharedUserLanguage, sharedUserLanguage } = useContext(AppContext);
+  const { sharedUserEmail, setSharedUserLanguage, sharedUserLanguage, bumpProfilePicture } = useContext(AppContext);
 
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
@@ -22,33 +23,35 @@ const SettingsMainContent = () => {
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match!');
+      toast.error(t('PASSWORDS_DO_NOT_MATCH'));
       return;
     } else if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters long!');
+      toast.error(t('PASSWORD_TOO_SHORT'));
       return;
     }
     try {
       await apiClient.put('/change-password', {
         email: sharedUserEmail,
+        currentPassword: currentPassword,
         newPassword: newPassword,
       });
-      toast.success('Password changed successfully.');
+      toast.success(t('PASSWORD_CHANGED_SUCCESS'));
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
       const parsed = parseApiError(err);
       if (parsed.errorCode === 'USER_NOT_FOUND') {
-        toast.error('User not found. Please check your email address.');
+        toast.error(t('USER_NOT_FOUND_CHECK_EMAIL'));
       } else if (parsed.fieldErrors.length > 0) {
         toast.error(parsed.fieldErrors.join('\n'));
       } else {
         const fallbackMessages = {
-          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
-          UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+          INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+          NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
+          UNAUTHORIZED: t('SESSION_EXPIRED'),
         };
-        toast.error(fallbackMessages[parsed.errorCode] || 'Failed to change password. Please try again.');
+        toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_CHANGE_PASSWORD'));
       }
     }
   };
@@ -66,11 +69,11 @@ const SettingsMainContent = () => {
         toast.error(parsed.fieldErrors.join('\n'));
       } else {
         const fallbackMessages = {
-          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
-          UNAUTHORIZED: 'Your session has expired. Please sign in again.',
+          INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+          NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
+          UNAUTHORIZED: t('SESSION_EXPIRED'),
         };
-        toast.error(fallbackMessages[parsed.errorCode] || 'Failed to delete account. Please try again.');
+        toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_DELETE_ACCOUNT'));
       }
     }
   };
@@ -88,10 +91,10 @@ const SettingsMainContent = () => {
         toast.error(parsed.fieldErrors.join('\n'));
       } else {
         const fallbackMessages = {
-          INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-          NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+          INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+          NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
         };
-        toast.error(fallbackMessages[parsed.errorCode] || 'Failed to update language. Please try again.');
+        toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_UPDATE_LANGUAGE'));
       }
     }
   };
@@ -104,14 +107,14 @@ const SettingsMainContent = () => {
 
     if (selectedFile) {
       if (!allowedTypes.includes(selectedFile.type)) {
-        setFileSizeError('Invalid file type. Please upload a PNG or JPEG image.');
+        setFileSizeError(t('INVALID_FILE_TYPE'));
         setFile(null);
         e.target.value = null;
         return;
       }
 
       if (selectedFile.size > maxSizeInBytes) {
-        setFileSizeError('File size exceeds 5 MB. Please upload a smaller file.');
+        setFileSizeError(t('FILE_TOO_LARGE'));
         setFile(null);
         e.target.value = null;
       } else {
@@ -123,7 +126,7 @@ const SettingsMainContent = () => {
 
   const handleUploadProfilePicture = async () => {
     if (!file) {
-      toast.error('Please select a file to upload.');
+      toast.error(t('SELECT_FILE_TO_UPLOAD'));
       return;
     }
 
@@ -137,20 +140,21 @@ const SettingsMainContent = () => {
             'Content-Type': 'application/octet-stream',
           }
         });
-        toast.success('Profile picture uploaded successfully!');
-        window.location.reload();
+        toast.success(t('PROFILE_PICTURE_UPLOADED'));
+        bumpProfilePicture();
+        setFile(null);
       } catch (error) {
         const parsed = parseApiError(error);
         if (parsed.errorCode === 'INVALID_FILE_FORMAT') {
-          toast.error('Only PNG and JPEG images under 5 MB are accepted.');
+          toast.error(t('ONLY_PNG_JPEG_UNDER_5MB'));
         } else if (parsed.fieldErrors.length > 0) {
           toast.error(parsed.fieldErrors.join('\n'));
         } else {
           const fallbackMessages = {
-            INTERNAL_ERROR: 'Something went wrong on our end. Please try again later.',
-            NETWORK_ERROR: 'Could not connect to the server. Please check your internet connection.',
+            INTERNAL_ERROR: t('INTERNAL_ERROR_MSG'),
+            NETWORK_ERROR: t('NETWORK_ERROR_MSG'),
           };
-          toast.error(fallbackMessages[parsed.errorCode] || 'Failed to upload profile picture. Please try again.');
+          toast.error(fallbackMessages[parsed.errorCode] || t('FAILED_CHANGE_PASSWORD'));
         }
       }
     };
@@ -181,9 +185,16 @@ const SettingsMainContent = () => {
           </button>
         </div>
         
-        {sharedUserEmail.endsWith("@seamail.com") && (
+        {sharedUserEmail?.endsWith("@seamail.com") && (
           <div className="mb-6">
             <h2 className="text-lg text-gray-200 mb-2">{t('CHANGE_PASSWORD')}</h2>
+            <input
+              type="password"
+              placeholder={t('CURRENT_PASSWORD')}
+              className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
             <input
               type="password"
               placeholder={t('NEW_PASSWORD')}
@@ -215,9 +226,9 @@ const SettingsMainContent = () => {
             onChange={(e) => handleLanguageChange(e.target.value)}
             className="p-2 w-full mb-4 rounded-lg bg-gray-700 text-white cursor-pointer"
           >
-            <option value="English">English</option>
-            <option value="French">French</option>
-            <option value="German">German</option>
+            <option value="en">English</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
           </select>
         </div>
 

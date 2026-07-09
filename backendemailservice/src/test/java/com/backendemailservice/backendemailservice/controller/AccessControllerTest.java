@@ -136,4 +136,31 @@ class AccessControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
     }
+
+    @Test
+    void shouldReturn400WhenBodyIsMalformedJson() throws Exception {
+        mockMvc.perform(post("/api/v1/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{not valid json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void shouldReturn400WhenBodyIsEmpty() throws Exception {
+        mockMvc.perform(post("/api/v1/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void shouldReturn400WhenSignUpPasswordIsShorterThan8Chars() throws Exception {
+        mockMvc.perform(post("/api/v1/sign-up")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"new@seamail.com\",\"password\":\"short\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
+    }
 }

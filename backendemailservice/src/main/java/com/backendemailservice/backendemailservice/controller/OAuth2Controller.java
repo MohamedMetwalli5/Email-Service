@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.backendemailservice.backendemailservice.service.IUserService;
+import java.util.Map;
 
 
 
@@ -26,6 +27,14 @@ public class OAuth2Controller {
 
     public OAuth2Controller(IUserService userService) {
         this.userService = userService;
+    }
+
+    // Returns a CSRF state nonce for the Discord OAuth flow.
+    // The frontend fetches this before redirecting to Discord.
+    @GetMapping("/auth/discord/state")
+    public ResponseEntity<Map<String, String>> generateState() {
+        String state = userService.generateDiscordState();
+        return ResponseEntity.ok(Map.of("state", state));
     }
 
     @GetMapping("/auth/discord")
