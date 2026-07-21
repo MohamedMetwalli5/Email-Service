@@ -1,20 +1,24 @@
-version: '3.8'
-
 services:
 
-  # ── MySQL Database ──────────────────────────────────
+  # -- MySQL Database --------------------------------
   db:
     image: mysql:8.0
     container_name: mysql_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      MAIL_DB_NAME: ${MAIL_DB_NAME}
+      MAIL_DB_USER: ${MAIL_DB_USER}
+      MAIL_DB_PASSWORD: ${MAIL_DB_PASSWORD}
+      NOTIFICATION_DB_NAME: ${NOTIFICATION_DB_NAME}
+      NOTIFICATION_DB_USER: ${NOTIFICATION_DB_USER}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./SQL Scripts/Tables.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/init:/docker-entrypoint-initdb.d
     ports:
       - "3307:3306"
     healthcheck:
@@ -23,49 +27,18 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Spring Boot Backend ─────────────────────────────
-  backend:
-    build: ./backendemailservice
-    container_name: spring_backend
+  # -- Redis (refresh tokens, inbox cache) -----------
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
     restart: always
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN}
-      JWT_SECRET: ${JWT_SECRET}
-      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      REDIS_USERNAME: ${REDIS_USERNAME}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "8081:8081"
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
-  # ── React Frontend ──────────────────────────────────
-  frontend:
-    build:
-      context: ./frontend-email-service
-      args:
-        VITE_BACKEND_API_URL: ${VITE_BACKEND_API_URL}
-        VITE_CLIENT_ID: ${VITE_CLIENT_ID}
-        VITE_DISCORD_REDIRECT_URI: ${VITE_DISCORD_REDIRECT_URI}
-        VITE_TERMS_OF_USE_URL: ${VITE_TERMS_OF_USE_URL}
-        VITE_PRIVACY_POLICY_URL: ${VITE_PRIVACY_POLICY_URL}
-    container_name: react_frontend
-    restart: always
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      
 volumes:
   mysql_data:
