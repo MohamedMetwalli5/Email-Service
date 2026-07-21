@@ -27,6 +27,24 @@ spring:
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/v1/notifications/**
+        - id: auth-docs
+          uri: ${AUTH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/v3/api-docs/auth
+          filters:
+            - RewritePath=/v3/api-docs/auth, /v3/api-docs
+        - id: mail-docs
+          uri: ${MAIL_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/v3/api-docs/mail
+          filters:
+            - RewritePath=/v3/api-docs/mail, /v3/api-docs
+        - id: notification-docs
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/v3/api-docs/notification
+          filters:
+            - RewritePath=/v3/api-docs/notification, /v3/api-docs
         - id: mail-api
           uri: ${MAIL_SERVICE_URL:http://localhost:8083}
           predicates:
@@ -47,3 +65,13 @@ management:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth
+      - name: mail-service
+        url: /v3/api-docs/mail
+      - name: notification-service
+        url: /v3/api-docs/notification
