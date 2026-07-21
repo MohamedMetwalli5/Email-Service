@@ -5,7 +5,8 @@ Multi-package full-stack app: a Maven multi-module Spring Boot backend (`api-gat
 ## Commands
 
 ### Backend (root)
-- `mvn test` - run the full reactor test suite (all four modules). Requires Docker running for the Testcontainers ITs (`*IT.java`).
+- `mvn test` - run the unit + slice test suite (all four modules). Docker-free: surefire skips `*IT.java` by default.
+- `mvn verify` - additionally run the Testcontainers integration tests (`AuthFlowIT`/`MailFlowIT`/`NotificationFlowIT`) via the failsafe plugin. Requires Docker running.
 - `mvn -pl mail-service test` - run one module. `mvn -pl mail-service -Dtest=ClassName test` for a single class.
 - `mvn -pl mail-service spring-boot:run -Dspring-boot.run.profiles=local` - run one service locally (needs its dependencies up: `docker compose --env-file .env.docker up -d db redis kafka auth-service`).
 
