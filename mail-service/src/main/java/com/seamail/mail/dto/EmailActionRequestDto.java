@@ -1,0 +1,17 @@
+package com.seamail.mail.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+
+public class EmailActionRequestDto {
+
+    @NotNull(message = "Email ID must not be null")
+    @Positive(message = "Email ID must be a positive number")
+    private Long emailId;
+
+    public EmailActionRequestDto() {}
+
+    public Long getEmailId() { return emailId; }
+    public void setEmailId(Long emailId) { this.emailId = emailId; }
+}
