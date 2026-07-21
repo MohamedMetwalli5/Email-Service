@@ -32,40 +32,43 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 
 # Architecture Overview
 
-```
-┌─────────────────────────────────────────┐
-│              React (Vite)               │
-│   TailwindCSS · React Router · i18next  │
-│   apiClient.js · parseApiError.js       │
-└─────────────────┬───────────────────────┘
-                  │ HTTPS / REST (JSON)
-┌─────────────────▼───────────────────────┐
-│          Spring Boot  /api/v1           │
-│  Controller → Service → Repository      │
-│  JwtFilter · GlobalExceptionHandler     │
-│  Spring Boot Actuator (health probes)   │
-└────────┬───────────────────┬────────────┘
-         │                   │
-┌────────▼──────┐   ┌────────▼───────────────────┐
-│     MySQL     │   │        Redis Cloud         │
-│  Spring Data  │   │  Inbox cache  TTL 15 min   │
-│     JPA       │   │  Refresh tokens TTL 7 days │
-└───────────────┘   └────────────────────────────┘
+## Architecture
+
+```mermaid
+flowchart LR
+    FE[React SPA / nginx] --> GW[api-gateway :8081]
+    GW --> AUTH[auth-service :8082]
+    GW --> MAIL[mail-service :8083]
+    GW --> NOTIF[notification-service :8084]
+    MAIL -->|Feign: receiver exists?| AUTH
+    MAIL -->|EmailSentEvent| K[(Kafka topic: email.sent)]
+    K --> NOTIF
+    AUTH --> DB1[(MySQL: seamail_auth)]
+    MAIL --> DB2[(MySQL: seamail_mail)]
+    NOTIF --> DB3[(MySQL: seamail_notifications)]
+    AUTH --> R[(Redis)]
+    MAIL --> R
+    AUTH -. JWKS public keys .-> MAIL
+    AUTH -. JWKS public keys .-> NOTIF
 ```
 
-**Key design decisions:**
-- **Versioned REST API:** all endpoints live under `/api/v1`, making future versioning straightforward.
-- **DTO layer:** request/response objects are fully decoupled from JPA entities; no entity is ever serialised directly over the wire.
-- **Centralised exception handling:** a single `@RestControllerAdvice` maps every custom domain exception to a consistent JSON error shape (`ErrorResponse` / `ValidationErrorResponse`) with HTTP status, machine-readable error code, message, path, and timestamp. It also maps malformed body, type mismatch, missing parameter, and data integrity violation exceptions to appropriate 400/409 responses.
-- **Centralised HTTP client:** a single `apiClient.js` axios instance handles Bearer header injection, 401 detection, silent token refresh with request queuing, and redirect to sign-in on refresh failure.
-- **Refresh token rotation:** every call to `POST /api/v1/auth/refresh` atomically claims the old Redis refresh token key via `delete()` (only one concurrent refresh wins; the loser is rejected with 401) and issues a new access + refresh pair, limiting the window of token reuse. Tokens are also revoked on account deletion and password change.
-- **Discord OAuth ticket flow:** `GET /auth/discord/state` generates a CSRF nonce (5-min TTL in Redis), the frontend fetches it before redirecting to Discord. On callback, `GET /auth/discord` validates the state, exchanges the code with Discord, stores an opaque 60-second ticket in Redis, and 302-redirects to `/home?code=<ticket>`. The SPA then `POST /auth/exchange`s the ticket for `{accessToken, refreshToken, email}`. JWTs never appear in URLs.
-- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis, keyed by user + page + size; cache is evicted automatically (all entries) on send, trash, or delete actions.
-- **Stateless security:** a custom `JwtFilter` (extending `OncePerRequestFilter`) validates Bearer tokens and populates the `SecurityContext` with the user's email and authorities before every protected request; no session state is held server-side. The filter catches all parse exceptions and continues the chain so an expired or malformed token yields a clean 401, not a 500.
-- **Frontend route protection:** `/home` and `/settings` are wrapped in a `ProtectedRoute` component that redirects to `/sign-in` when no `authToken` is in context.
-- **Service abstractions:** `UserService` and `EmailService` implement `IUserService` and `IEmailService` interfaces, keeping controllers thin and the service layer fully testable in isolation.
-- **Health monitoring:** Spring Boot Actuator exposes `/actuator/health` with liveness and readiness probe groups (including DB and Redis checks) for AWS load-balancer integration.
-- **SSL Termination:** Nginx handles HTTPS requests using **Let's Encrypt** certificates, ensuring all traffic between the client and the server is encrypted.
+| Service | Responsibility |
+|---|---|
+| api-gateway | Single entry point, routing, CORS, Swagger UI aggregation (Spring Cloud Gateway) |
+| auth-service | Sign-up/sign-in, RS256 access tokens + JWKS, rotating refresh tokens, Discord OAuth, user profile |
+| mail-service | Inbox/outbox/trashbox, sorting/filtering, Redis inbox cache, publishes `email.sent` events |
+| notification-service | Consumes `email.sent` idempotently, REST notification feed with unread counts |
+
+## Interview Talking Points
+
+- **JWKS over shared secrets**: auth-service signs RS256 tokens with a private key and publishes only the public key at `/.well-known/jwks.json`; mail/notification validate statelessly with no shared secret. Key rotation only requires a new `kid`.
+- **AFTER_COMMIT events vs transactional outbox**: `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)` so consumers never see rolled-back writes. A full outbox table would upgrade at-most-once to at-least-once; the consumer is already idempotent, so the outbox is the only missing piece.
+- **Idempotent consumer + DLT**: Kafka delivers at-least-once, so notification-service dedupes on a unique `event_id` (check-then-insert plus the unique constraint for races) and routes poison pills to `email.sent.DLT` after bounded exponential backoff.
+- **Refresh-token rotation race**: `redisTemplate.delete(key)` is the atomic claim - only one concurrent refresh wins; the loser is rejected with 401.
+- **Cache eviction**: inbox pages are cached per user+page+size and evicted wholesale on any mutation, trading fine-grained invalidation for simplicity and correctness.
+- **Flyway over ddl-auto**: schema is versioned SQL per service; `ddl-auto=validate` remains as a drift detector between entities and migrations.
+- **Testcontainers over H2**: integration tests run the real MySQL/Redis/Kafka, so Flyway migrations, JSON Kafka serialization, and Redis rotation logic are tested against the same engines as production.
+- **One action, one trace**: a send-email request produces a single Zipkin trace crossing gateway -> mail-service -> Kafka -> notification-service, with trace/span IDs in every log line.
 
 ---
 
@@ -89,7 +92,7 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 # API Reference
 
 All protected endpoints require `Authorization: Bearer <accessToken>`.  
-The token is a 30-minute HS256 JWT. Use `POST /api/v1/auth/refresh` to renew it silently.
+The token is a 30-minute RS256 JWT signed by auth-service; resource servers validate it via the public keys at `GET /.well-known/jwks.json`. Use `POST /api/v1/auth/refresh` to renew it silently.
 
 ## Auth `/api/v1`
 
@@ -123,6 +126,16 @@ The token is a 30-minute HS256 JWT. Use `POST /api/v1/auth/refresh` to renew it 
 | DELETE | `/delete-account` | Bearer | Permanently deletes the authenticated user's account |
 | POST | `/{email}/profile-picture` | Bearer | Uploads a PNG or JPEG profile picture (raw bytes, max 5 MB) |
 | GET | `/{email}/profile-picture` | Bearer | Retrieves the profile picture as `image/png` or `image/jpeg`; 404 if none |
+
+## Notifications `/api/v1`
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/notifications` | Bearer | Returns the authenticated user's notifications as a paginated feed (`?page=0&size=20`) |
+| GET | `/notifications/unread-count` | Bearer | Returns `{ count: N }` unread notifications for the authenticated user |
+| POST | `/notifications/{id}/read` | Bearer | Marks a single notification as read (204); idempotent |
+
+> JWKS: `GET /.well-known/jwks.json` is public (no Bearer) and exposes the auth-service signing keys resource servers use to validate access tokens.
 
 ## Actuator
 
