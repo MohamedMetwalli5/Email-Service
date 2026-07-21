@@ -1,0 +1,59 @@
+package com.seamail.auth.controller;
+
+import com.seamail.auth.dto.AuthResponseDto;
+import com.seamail.auth.dto.DiscordExchangeResponseDto;
+import com.seamail.auth.dto.DiscordTicketRequestDto;
+import com.seamail.auth.dto.RefreshTokenRequestDto;
+import com.seamail.auth.dto.UserRequestDto;
+import com.seamail.auth.service.IUserService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+
+
+@RestController
+@RequestMapping("/api/v1")
+@Validated
+public class AccessController {
+
+    private final IUserService userService;
+
+    public AccessController(IUserService userService) {
+        this.userService = userService;
+    }
+
+    @PostMapping("/sign-in")
+    public ResponseEntity<AuthResponseDto> signin(@Valid @RequestBody UserRequestDto request) {
+        String accessToken = userService.authenticate(request.getEmail(), request.getPassword());
+        String refreshToken = userService.generateAndStoreRefreshToken(request.getEmail());
+        return ResponseEntity.ok(new AuthResponseDto(accessToken, refreshToken));
+    }
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<AuthResponseDto> signup(@Valid @RequestBody UserRequestDto request) {
+        AuthResponseDto response = userService.register(request.getEmail(), request.getPassword());
+        return ResponseEntity.status(201).body(response);
+    }
+
+    // refresh token endpoint — validates refresh token, issues new access+refresh pair 
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
+        AuthResponseDto response = userService.refreshAccessToken(request.refreshToken());
+        return ResponseEntity.ok(response);
+    }
+
+    // Discord OAuth ticket exchange — swaps the opaque ?code= from the redirect
+    // for access + refresh tokens. Public (no Bearer); the ticket is single-use
+    // and expires in 60s.
+    @PostMapping("/auth/exchange")
+    public ResponseEntity<DiscordExchangeResponseDto> exchangeDiscordTicket(
+            @Valid @RequestBody DiscordTicketRequestDto request) {
+        DiscordExchangeResponseDto response = userService.exchangeDiscordTicket(request.code());
+        return ResponseEntity.ok(response);
+    }
+}
