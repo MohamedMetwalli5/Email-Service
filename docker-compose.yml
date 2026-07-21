@@ -92,6 +92,7 @@ services:
       DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}
       JWT_PRIVATE_KEY_PATH: ${JWT_PRIVATE_KEY_PATH:-}
       JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH:-}
+      ZIPKIN_ENDPOINT: http://zipkin:9411
     ports:
       - "8082:8082"
     healthcheck:
@@ -129,6 +130,7 @@ services:
       AUTH_SERVICE_URL: http://auth-service:8082
       JWKS_URI: http://auth-service:8082/.well-known/jwks.json
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ZIPKIN_ENDPOINT: http://zipkin:9411
     ports:
       - "8083:8083"
     healthcheck:
@@ -159,6 +161,7 @@ services:
       DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWKS_URI: http://auth-service:8082/.well-known/jwks.json
+      ZIPKIN_ENDPOINT: http://zipkin:9411
     ports:
       - "8084:8084"
     healthcheck:
@@ -186,6 +189,7 @@ services:
       AUTH_SERVICE_URL: http://auth-service:8082
       MAIL_SERVICE_URL: http://mail-service:8083
       NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      ZIPKIN_ENDPOINT: http://zipkin:9411
     ports:
       - "8081:8081"
     healthcheck:
@@ -193,6 +197,39 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
+
+  # -- Zipkin (distributed tracing) -------------------
+  zipkin:
+    image: openzipkin/zipkin-slim
+    container_name: zipkin_tracing
+    restart: always
+    ports:
+      - "9411:9411"
+
+  # -- Prometheus (metrics) ----------------------------
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus_metrics
+    restart: always
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # -- Grafana (dashboards) ----------------------------
+  grafana:
+    image: grafana/grafana
+    container_name: grafana_dashboards
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: light
+    volumes:
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    ports:
+      - "3000:3000"
 
   # -- React Frontend ---------------------------------
   frontend:
