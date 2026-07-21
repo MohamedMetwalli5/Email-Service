@@ -81,28 +81,11 @@ public class GlobalExceptionHandler {
 
     // --- Domain exceptions (specific -> general) ---
 
-    @ExceptionHandler({UserNotFoundException.class, EmailNotFoundException.class,
-                        ReceiverNotFoundException.class})
+    @ExceptionHandler({EmailNotFoundException.class, ReceiverNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(ApplicationException ex,
                                                          HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(HttpStatus.NOT_FOUND, ex.getErrorCode(),
-                        ex.getMessage(), request.getRequestURI()));
-    }
-
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(ApplicationException ex,
-                                                         HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorResponse.of(HttpStatus.CONFLICT, ex.getErrorCode(),
-                        ex.getMessage(), request.getRequestURI()));
-    }
-
-    @ExceptionHandler({InvalidEmailDomainException.class, InvalidFileFormatException.class})
-    public ResponseEntity<ErrorResponse> handleBadRequest(ApplicationException ex,
-                                                           HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, ex.getErrorCode(),
                         ex.getMessage(), request.getRequestURI()));
     }
 

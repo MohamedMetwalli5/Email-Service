@@ -2,12 +2,12 @@ package com.seamail.mail.service;
 
 import com.seamail.mail.dto.EmailResponseDto;
 import com.seamail.mail.dto.SendEmailRequestDto;
+import com.seamail.mail.client.AuthUserClient;
 import com.seamail.mail.entity.Email;
-import com.seamail.mail.entity.User;
 import com.seamail.mail.exception.EmailNotFoundException;
 import com.seamail.mail.exception.ReceiverNotFoundException;
 import com.seamail.mail.repository.EmailRepository;
-import com.seamail.mail.repository.UserRepository;
+import feign.FeignException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,7 +36,7 @@ class EmailServiceTest {
     private EmailRepository emailRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private AuthUserClient authUserClient;
 
     @InjectMocks
     private EmailService emailService;
@@ -109,9 +109,6 @@ class EmailServiceTest {
         request.setBody("Test Body");
         request.setPriority("1");
 
-        when(userRepository.findByEmail(receiverEmail))
-                .thenReturn(Optional.of(new User(receiverEmail, "pass")));
-
         emailService.sendEmail(senderEmail, request);
 
         ArgumentCaptor<Email> captor = ArgumentCaptor.forClass(Email.class);
@@ -132,7 +129,7 @@ class EmailServiceTest {
         SendEmailRequestDto request = new SendEmailRequestDto();
         request.setReceiver("missing@seamail.com");
 
-        when(userRepository.findByEmail("missing@seamail.com")).thenReturn(Optional.empty());
+        doThrow(FeignException.NotFound.class).when(authUserClient).assertUserExists("missing@seamail.com");
 
         ReceiverNotFoundException ex = assertThrows(ReceiverNotFoundException.class,
                 () -> emailService.sendEmail("sender@seamail.com", request));

@@ -5,21 +5,14 @@ import com.seamail.mail.dto.EmailResponseDto;
 import com.seamail.mail.dto.SendEmailRequestDto;
 import com.seamail.mail.exception.ReceiverNotFoundException;
 import com.seamail.mail.service.IEmailService;
-import com.seamail.mail.util.JwtUtil;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,6 +23,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -44,23 +38,7 @@ class EmailsControllerTest {
     @MockBean
     private IEmailService emailService;
 
-    @MockBean
-    private JwtUtil jwtUtil;
-
     private static final String TEST_EMAIL = "testuser@seamail.com";
-
-    @BeforeEach
-    void setUpSecurity() {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(TEST_EMAIL, null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER")))
-        );
-    }
-
-    @AfterEach
-    void tearDownSecurity() {
-        SecurityContextHolder.clearContext();
-    }
 
     // --- Load inbox/outbox/trashbox ---
 
@@ -68,7 +46,8 @@ class EmailsControllerTest {
     void shouldReturn200WhenLoadingInbox() throws Exception {
         when(emailService.loadInboxDtos(anyString(), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(get("/api/v1/inbox"))
+        mockMvc.perform(get("/api/v1/inbox")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL))))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -77,7 +56,8 @@ class EmailsControllerTest {
     void shouldReturn200WhenLoadingOutbox() throws Exception {
         when(emailService.loadOutboxDtos(anyString(), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(get("/api/v1/outbox"))
+        mockMvc.perform(get("/api/v1/outbox")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL))))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -86,7 +66,8 @@ class EmailsControllerTest {
     void shouldReturn200WhenLoadingTrashbox() throws Exception {
         when(emailService.loadTrashboxDtos(anyString(), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(get("/api/v1/trashbox"))
+        mockMvc.perform(get("/api/v1/trashbox")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL))))
                 .andExpect(status().isOk());
     }
 
@@ -97,6 +78,7 @@ class EmailsControllerTest {
         String receiverEmail = "example2@seamail.com";
 
         mockMvc.perform(post("/api/v1/send-email")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"receiver\":\"" + receiverEmail
                         + "\", \"subject\":\"Subject\", \"body\":\"Body\", \"priority\":\"1\"}"))
@@ -111,6 +93,7 @@ class EmailsControllerTest {
                 .when(emailService).sendEmail(eq(TEST_EMAIL), any(SendEmailRequestDto.class));
 
         mockMvc.perform(post("/api/v1/send-email")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"receiver\":\"nonexistent@seamail.com\", \"subject\":\"Hi\", \"body\":\"Body\", \"priority\":\"1\"}"))
                 .andExpect(status().isNotFound())
@@ -122,6 +105,7 @@ class EmailsControllerTest {
     @Test
     void shouldReturn204WhenMovingEmailToTrash() throws Exception {
         mockMvc.perform(post("/api/v1/move-to-trash")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"emailId\":1}"))
                 .andExpect(status().isNoContent());
@@ -134,6 +118,7 @@ class EmailsControllerTest {
     @Test
     void shouldReturn204WhenDeletingEmail() throws Exception {
         mockMvc.perform(delete("/api/v1/delete-email")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"emailId\":100}"))
                 .andExpect(status().isNoContent());
@@ -154,6 +139,7 @@ class EmailsControllerTest {
                 .thenReturn(new PageImpl<>(sorted));
 
         mockMvc.perform(get("/api/v1/emails")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .param("sort", "priority"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].subject").value("S"));
@@ -170,6 +156,7 @@ class EmailsControllerTest {
                 .thenReturn(new PageImpl<>(filtered));
 
         mockMvc.perform(get("/api/v1/emails")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .param("filterBy", "subject")
                 .param("filterValue", "Invoice"))
                 .andExpect(status().isOk())
@@ -179,6 +166,7 @@ class EmailsControllerTest {
     @Test
     void shouldReturn400WhenSendingEmailWithBlankReceiver() throws Exception {
         mockMvc.perform(post("/api/v1/send-email")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"receiver\":\"\", \"subject\":\"Sub\", \"body\":\"Body\", \"priority\":\"1\"}"))
                 .andExpect(status().isBadRequest())
@@ -188,6 +176,7 @@ class EmailsControllerTest {
     @Test
     void shouldReturn400WhenSendingEmailWithBlankSubject() throws Exception {
         mockMvc.perform(post("/api/v1/send-email")
+                .with(jwt().jwt(j -> j.subject(TEST_EMAIL)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"receiver\":\"user@seamail.com\", \"subject\":\"\", \"body\":\"Body\", \"priority\":\"1\"}"))
                 .andExpect(status().isBadRequest())

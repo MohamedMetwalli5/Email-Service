@@ -7,7 +7,8 @@ import com.seamail.mail.entity.Mailbox;
 import com.seamail.mail.exception.EmailNotFoundException;
 import com.seamail.mail.exception.ReceiverNotFoundException;
 import com.seamail.mail.repository.EmailRepository;
-import com.seamail.mail.repository.UserRepository;
+import com.seamail.mail.client.AuthUserClient;
+import feign.FeignException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,11 +26,11 @@ import java.util.List;
 public class EmailService implements IEmailService {
 
     private final EmailRepository repository;
-    private final UserRepository userRepository;
+    private final AuthUserClient authUserClient;
 
-    public EmailService(EmailRepository repository, UserRepository userRepository) {
+    public EmailService(EmailRepository repository, AuthUserClient authUserClient) {
         this.repository = repository;
-        this.userRepository = userRepository;
+        this.authUserClient = authUserClient;
     }
 
     @Override
@@ -54,8 +55,13 @@ public class EmailService implements IEmailService {
     @Transactional
     @CacheEvict(value = "inbox", allEntries = true)
     public void sendEmail(String senderEmail, SendEmailRequestDto request) {
-        if (userRepository.findByEmail(request.getReceiver()).isEmpty()) {
+        try {
+            authUserClient.assertUserExists(request.getReceiver());
+        } catch (FeignException.NotFound ex) {
             throw new ReceiverNotFoundException("Receiver not found");
+        } catch (FeignException ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Authentication service unavailable");
         }
         Email email = new Email();
         email.setSender(senderEmail);

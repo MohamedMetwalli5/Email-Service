@@ -34,7 +34,7 @@ public class EmailsController {
 
     @GetMapping("/inbox")
     public ResponseEntity<Page<EmailResponseDto>> loadInbox(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal(expression = "subject") String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -43,7 +43,7 @@ public class EmailsController {
 
     @GetMapping("/outbox")
     public ResponseEntity<Page<EmailResponseDto>> loadOutbox(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal(expression = "subject") String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -52,7 +52,7 @@ public class EmailsController {
 
     @GetMapping("/trashbox")
     public ResponseEntity<Page<EmailResponseDto>> loadTrashbox(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal(expression = "subject") String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -61,7 +61,7 @@ public class EmailsController {
 
     @PostMapping("/send-email")
     public ResponseEntity<Void> sendEmail(
-            @AuthenticationPrincipal String senderEmail,
+            @AuthenticationPrincipal(expression = "subject") String senderEmail,
             @Valid @RequestBody SendEmailRequestDto request) {
         emailService.sendEmail(senderEmail, request);
         return ResponseEntity.status(201).build();
@@ -69,7 +69,7 @@ public class EmailsController {
 
     @PostMapping("/move-to-trash")
     public ResponseEntity<Void> moveEmailToTrashbox(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal(expression = "subject") String email,
             @Valid @RequestBody EmailActionRequestDto request) {
         emailService.moveToTrashBox(request.getEmailId(), email);
         return ResponseEntity.noContent().build();
@@ -77,7 +77,7 @@ public class EmailsController {
 
     @DeleteMapping("/delete-email")
     public ResponseEntity<Void> deleteEmail(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal(expression = "subject") String email,
             @Valid @RequestBody EmailActionRequestDto request) {
         emailService.deleteEmail(request.getEmailId(), email);
         return ResponseEntity.noContent().build();
@@ -85,7 +85,7 @@ public class EmailsController {
 
     @GetMapping("/emails")
     public ResponseEntity<Page<EmailResponseDto>> queryEmails(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal(expression = "subject") String email,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String filterBy,
             @RequestParam(required = false) String filterValue,

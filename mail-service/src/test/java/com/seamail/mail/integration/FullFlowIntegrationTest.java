@@ -1,24 +1,26 @@
 package com.seamail.mail.integration;
 
-import com.seamail.mail.entity.User;
+import com.seamail.mail.client.AuthUserClient;
 import com.seamail.mail.repository.EmailRepository;
-import com.seamail.mail.repository.UserRepository;
-import com.seamail.mail.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+// Full mail flow against the real security config (resource server) with the
+// jwt() post-processor standing in for a token; the receiver check is mocked
+// at the Feign boundary. Replaced by Testcontainers MailFlowIT in Task 12.
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -28,38 +30,23 @@ public class FullFlowIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private EmailRepository emailRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtil jwtUtil;
+    @MockBean
+    private AuthUserClient authUserClient;
 
     @BeforeEach
     public void setup() {
         emailRepository.deleteAll();
-        userRepository.deleteAll();
     }
 
     @Test
     public void testUserSendEmailAndReceiverChecksInbox() throws Exception {
-        // 1. Creating two real users in the database
         String senderEmail = "sender@seamail.com";
         String receiverEmail = "receiver@seamail.com";
 
-        userRepository.save(new User(senderEmail, passwordEncoder.encode("pass123")));
-        userRepository.save(new User(receiverEmail, passwordEncoder.encode("pass456")));
-
-        String senderToken = jwtUtil.generateToken(senderEmail);
-        String receiverToken = jwtUtil.generateToken(receiverEmail);
-
-        // 2. Sending an email via the API
         mockMvc.perform(post("/api/v1/send-email")
-                .header("Authorization", "Bearer " + senderToken)
+                .with(jwt().jwt(j -> j.subject(senderEmail)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{" +
                         "\"receiver\":\"" + receiverEmail + "\"," +
@@ -69,9 +56,8 @@ public class FullFlowIntegrationTest {
                         "}"))
                 .andExpect(status().isCreated());
 
-        // 3. Receiver checks inbox via the API
         mockMvc.perform(get("/api/v1/inbox")
-                .header("Authorization", "Bearer " + receiverToken))
+                .with(jwt().jwt(j -> j.subject(receiverEmail))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].sender").value(senderEmail))
