@@ -1,0 +1,39 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "${CORS_ALLOWED_ORIGIN:http://localhost}"
+            allowed-methods: [GET, POST, PUT, DELETE, OPTIONS]
+            allowed-headers: "*"
+            allow-credentials: true
+      # Route order matters: the most specific prefixes must come before the mail catch-all.
+      routes:
+        - id: auth-well-known
+          uri: ${AUTH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/.well-known/**
+        - id: auth-api
+          uri: ${AUTH_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/sign-in,/api/v1/sign-up,/api/v1/auth/**,/api/v1/change-password,/api/v1/update-language,/api/v1/delete-account,/api/v1/*/profile-picture
+        - id: notification-api
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/notifications/**
+        - id: mail-api
+          uri: ${MAIL_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
