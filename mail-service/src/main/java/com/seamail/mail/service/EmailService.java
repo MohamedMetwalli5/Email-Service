@@ -64,7 +64,7 @@ public class EmailService implements IEmailService {
             throw new ReceiverNotFoundException("Receiver not found");
         } catch (FeignException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Authentication service unavailable");
+                    "Authentication service unavailable", ex);
         }
         Email email = new Email();
         email.setSender(senderEmail);

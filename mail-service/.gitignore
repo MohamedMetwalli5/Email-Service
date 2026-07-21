@@ -32,6 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+# Stale build artifacts
+bin/
+target-deps.txt
+
 # Environment variables
 .env
 */.env

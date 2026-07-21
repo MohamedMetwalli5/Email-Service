@@ -151,13 +151,6 @@ public class UserService implements IUserService {
         return findAndValidateUser(email, password);
     }
 
-    // add @Transactional(readOnly = true)
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<User> foundReceiver(String email) {
-        return repository.foundReceiver(email);
-    }
-
     @Override
     @Transactional
     public void deleteUserAccount(String authenticatedEmail, String requestedEmail) {

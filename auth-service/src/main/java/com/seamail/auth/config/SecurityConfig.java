@@ -41,7 +41,7 @@ public class SecurityConfig {
                         "/api/v1/auth/discord", "/api/v1/auth/discord/state",
                         "/api/v1/auth/refresh", "/api/v1/auth/exchange",
                         "/.well-known/jwks.json", "/internal/**",
-                        "/actuator/health/**", "/v3/api-docs/**").permitAll()
+                        "/actuator/health/**", "/actuator/prometheus", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

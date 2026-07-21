@@ -38,24 +38,6 @@ class UserRepositoryTest {
     }
 
     @Test
-    void shouldFindUserByFoundReceiverQuery() {
-        User user = new User("receiver@seamail.com", "pass");
-        userRepository.save(user);
-
-        Optional<User> found = userRepository.foundReceiver("receiver@seamail.com");
-
-        assertTrue(found.isPresent());
-        assertEquals("receiver@seamail.com", found.get().getEmail());
-    }
-
-    @Test
-    void shouldReturnEmptyWhenReceiverNotFound() {
-        Optional<User> found = userRepository.foundReceiver("missing@seamail.com");
-
-        assertFalse(found.isPresent());
-    }
-
-    @Test
     void shouldDeleteUserById() {
         User user = new User("delete@seamail.com", "pass");
         userRepository.save(user);

@@ -13,7 +13,6 @@ public interface IUserService {
     AuthResponseDto refreshAccessToken(String refreshToken);
     void createUser(User user);
     Optional<User> findUser(String email, String password);
-    Optional<User> foundReceiver(String email);
     void deleteUserAccount(String authenticatedEmail, String requestedEmail);
     void changeUserPassword(String authenticatedEmail, String requestedEmail,
                             String currentPassword, String newPassword);

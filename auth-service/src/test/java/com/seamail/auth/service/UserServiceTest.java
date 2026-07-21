@@ -192,21 +192,6 @@ class UserServiceTest {
         verifyNoInteractions(passwordEncoder);
     }
 
-    // --- foundReceiver ---
-
-    @Test
-    void shouldReturnUserWhenReceiverFound() {
-        String email = "receiver@seamail.com";
-        User user = new User(email, "pass");
-        when(userRepository.foundReceiver(email)).thenReturn(Optional.of(user));
-
-        Optional<User> result = userService.foundReceiver(email);
-
-        assertTrue(result.isPresent());
-        assertEquals(email, result.get().getEmail());
-        verify(userRepository).foundReceiver(email);
-    }
-
     // --- deleteUserAccount (auth-check overload) ---
 
     @Test

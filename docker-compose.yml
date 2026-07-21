@@ -93,8 +93,6 @@ services:
       JWT_PRIVATE_KEY_PATH: ${JWT_PRIVATE_KEY_PATH:-}
       JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH:-}
       ZIPKIN_ENDPOINT: http://zipkin:9411
-    ports:
-      - "8082:8082"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep -q UP || exit 1"]
       interval: 15s
@@ -131,8 +129,6 @@ services:
       JWKS_URI: http://auth-service:8082/.well-known/jwks.json
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       ZIPKIN_ENDPOINT: http://zipkin:9411
-    ports:
-      - "8083:8083"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep -q UP || exit 1"]
       interval: 15s
@@ -162,8 +158,6 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWKS_URI: http://auth-service:8082/.well-known/jwks.json
       ZIPKIN_ENDPOINT: http://zipkin:9411
-    ports:
-      - "8084:8084"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep -q UP || exit 1"]
       interval: 15s
