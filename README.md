@@ -11,7 +11,7 @@
 </div>
 
 # Seamail: An Email Service
-Seamail is a full-stack email service designed around the `@seamail.com` domain. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface, backed by JWT-based authentication with automatic token refresh, Redis for token storage and inbox caching, and a fully versioned REST API.
+Seamail is a full-stack email service designed around the `@seamail.com` domain. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface, backed by a Spring Boot microservices architecture: JWT-based authentication with automatic token refresh, Redis for token storage and inbox caching, Kafka for event-driven notifications, and a fully versioned REST API behind a single API gateway.
 It is officially deployed on **Amazon Web Services (AWS)** using a custom domain.
 
 # Features
@@ -26,7 +26,7 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender, all via a single unified query endpoint.
 - **Password Management:** Allows users to securely change their password (requiring current password verification) to maintain account security.
 - **Account Management:** Allows users to permanently delete their accounts and change their default profile picture (PNG or JPEG, max 5 MB).
-- **Redis Caching:** Caches inbox emails per user using Redis Cloud to reduce database load and improve response times. Cache is keyed by user + page + size and automatically invalidated (all entries) when emails are received, moved to trash, or deleted. Redis also stores refresh tokens with a 7-day TTL and automatic rotation on every use, plus Discord OAuth tickets (60s) and CSRF state nonces (5min).
+- **Redis Caching:** Caches inbox emails per user using Redis to reduce database load and improve response times. Cache is keyed by user + page + size and automatically invalidated (all entries) when emails are received, moved to trash, or deleted. Redis also stores refresh tokens with a 7-day TTL and automatic rotation on every use, plus Discord OAuth tickets (60s) and CSRF state nonces (5min).
 
 ---
 
@@ -59,16 +59,16 @@ flowchart LR
 | mail-service | Inbox/outbox/trashbox, sorting/filtering, Redis inbox cache, publishes `email.sent` events |
 | notification-service | Consumes `email.sent` idempotently, REST notification feed with unread counts |
 
-## Interview Talking Points
+## Design Decisions & Trade-offs
 
-- **JWKS over shared secrets**: auth-service signs RS256 tokens with a private key and publishes only the public key at `/.well-known/jwks.json`; mail/notification validate statelessly with no shared secret. Key rotation only requires a new `kid`.
-- **AFTER_COMMIT events vs transactional outbox**: `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)` so consumers never see rolled-back writes. A full outbox table would upgrade at-most-once to at-least-once; the consumer is already idempotent, so the outbox is the only missing piece.
-- **Idempotent consumer + DLT**: Kafka delivers at-least-once, so notification-service dedupes on a unique `event_id` (check-then-insert plus the unique constraint for races) and routes poison pills to `email.sent.DLT` after bounded exponential backoff.
-- **Refresh-token rotation race**: `redisTemplate.delete(key)` is the atomic claim - only one concurrent refresh wins; the loser is rejected with 401.
-- **Cache eviction**: inbox pages are cached per user+page+size and evicted wholesale on any mutation, trading fine-grained invalidation for simplicity and correctness.
-- **Flyway over ddl-auto**: schema is versioned SQL per service; `ddl-auto=validate` remains as a drift detector between entities and migrations.
-- **Testcontainers over H2**: integration tests run the real MySQL/Redis/Kafka, so Flyway migrations, JSON Kafka serialization, and Redis rotation logic are tested against the same engines as production.
-- **One action, one trace**: a send-email request produces a single Zipkin trace crossing gateway -> mail-service -> Kafka -> notification-service, with trace/span IDs in every log line.
+- **Asymmetric JWT signing with JWKS over shared secrets:** auth-service signs access tokens with an RS256 private key and publishes only the public keys at `/.well-known/jwks.json`. mail-service and notification-service validate tokens statelessly as OAuth2 resource servers, so no shared secret is ever distributed. Key rotation only requires publishing a new `kid`.
+- **After-commit event publishing instead of a transactional outbox:** `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)`, so consumers never observe rolled-back writes. A full outbox table would additionally guarantee at-least-once publishing across a broker outage; because the consumer is already idempotent, the lighter after-commit approach is sufficient for now, and the outbox remains a documented upgrade path.
+- **Idempotent consumer with a dead-letter topic:** Kafka delivers at-least-once, so notification-service deduplicates on a unique `event_id` (check-then-insert, with the unique constraint winning concurrent races) and routes poison pills to `email.sent.DLT` after bounded exponential backoff instead of blocking the partition.
+- **Atomic refresh-token rotation:** refresh tokens are rotated on every use and claimed with an atomic `redisTemplate.delete(key)`. Only one concurrent refresh can win the claim; the loser is rejected with 401, which also bounds the damage of a leaked token.
+- **Coarse-grained inbox cache eviction:** inbox pages are cached per user + page + size and all entries are evicted on any mailbox mutation (send, trash, delete). This deliberately trades fine-grained invalidation for simplicity and guaranteed consistency.
+- **Flyway migrations with `ddl-auto=validate`:** every service versions its schema as SQL migrations applied on startup. Hibernate validation is kept on as a drift detector that fails startup if an entity diverges from the migrated schema.
+- **Integration tests on real infrastructure:** Testcontainers tests run against real MySQL, Redis, and Kafka containers, so Flyway migrations, JSON Kafka serialization, and Redis rotation logic are verified against the same engines used in production rather than in-memory stand-ins.
+- **End-to-end distributed tracing:** a single action (sending an email) produces one Zipkin trace crossing api-gateway -> mail-service -> Kafka -> notification-service, with trace/span IDs in every log line for cross-service correlation.
 
 ---
 
@@ -78,13 +78,16 @@ flowchart LR
 |---|---|
 | Frontend | React 18, Vite, TailwindCSS, React Router v7, Axios |
 | Internationalisation | i18next / react-i18next (EN, DE, FR) |
-| Backend | Spring Boot 3.2.3, Java 21, Maven |
-| Security | Spring Security, JWT HS256 (JJWT 0.11.5), BCrypt, Discord OAuth2 |
-| Database | MySQL 8.0 |
-| Caching & Token Store | Redis Cloud via Spring Cache + Spring Data Redis (`@Cacheable` / `@CacheEvict` / `StringRedisTemplate`) |
-| Monitoring | Spring Boot Actuator (health, liveness, readiness) |
+| Backend | Spring Boot 3.2.3, Spring Cloud (Gateway, OpenFeign), spring-kafka, Java 21, Maven |
+| Security | Spring Security, RS256 JWT (Nimbus JOSE) with JWKS, OAuth2 resource servers, BCrypt, Discord OAuth2, Spring Cloud Gateway |
+| Database | MySQL 8.0 (per-service schemas, versioned with Flyway migrations) |
+| Messaging | Apache Kafka (KRaft) |
+| Caching & Token Store | Redis via Spring Cache + Spring Data Redis (`@Cacheable` / `@CacheEvict` / `StringRedisTemplate`); local container in dev |
+| Observability | Micrometer, Prometheus, Zipkin (distributed tracing), Grafana |
+| API Docs | springdoc-openapi (Swagger UI aggregated at the gateway) |
+| Monitoring | Spring Boot Actuator (health, liveness, readiness, Prometheus endpoint) |
 | Infrastructure | Docker, Nginx |
-| Backend Testing | JUnit 5, `@WebMvcTest`, `@DataJpaTest`, Mockito, AssertJ, H2 |
+| Backend Testing | JUnit 5, `@WebMvcTest`, `@DataJpaTest`, Mockito, H2 (slices), Testcontainers (integration) |
 | Frontend Testing | Vitest, React Testing Library, MSW (Mock Service Worker), axios-mock-adapter |
 
 ---
@@ -197,13 +200,13 @@ Seamail uses separate environment files depending on the context. Each file live
 | `.env.docker` | Docker Compose | Local Docker |
 | `.env.production` | Docker Compose | AWS production |
 
-> The `.env` files inside `frontend-email-service/` and `backendemailservice/` are only read during IDE development. Docker Compose always reads from the root directory env file.
+> The `.env` files inside `frontend-email-service/` and the backend module directories (`api-gateway/`, `auth-service/`, `mail-service/`, `notification-service/`) are only read during IDE/Maven local development. Docker Compose always reads from the root directory env file.
 
 ---
 
 # 🐳 Docker Setup
 
-Docker runs the entire stack (MySQL + Spring Boot + React/Nginx) with a single command. No need to install Java, Node.js, or MySQL locally.
+Docker runs the entire stack (MySQL, Redis, Kafka, the four backend services, the observability stack, and the React/Nginx frontend) with a single command. No need to install Java, Node.js, or MySQL locally.
 
 ## Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
@@ -221,7 +224,7 @@ cd Email-Service
 Create a `.env.docker` file in the root `Email-Service` directory. Use `.env.docker.example` as a template. Then fill in your values.
 
 Discord credentials can be obtained from the [Discord Developer Portal](https://discord.com/developers/applications).  
-Redis credentials can be obtained from [Redis Cloud](https://redis.io/cloud/) (free tier available).
+Redis needs no external account: Docker Compose runs a local Redis container.
 
 > Make sure `http://localhost:8081/api/v1/auth/discord` is added as a redirect URI in your Discord Developer Portal under **OAuth2 → Redirects**. Set the same value as `DISCORD_REDIRECT_URI` in your env file and `VITE_DISCORD_REDIRECT_URI` for the frontend.
 
@@ -237,7 +240,11 @@ docker compose --env-file .env.docker up --build
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost |
-| Backend API | http://localhost:8081 |
+| Backend API (api-gateway entry point) | http://localhost:8081 |
+| Swagger UI (aggregated API docs) | http://localhost:8081/swagger-ui.html |
+| Grafana (admin/admin) | http://localhost:3000 |
+| Prometheus | http://localhost:9090 |
+| Zipkin | http://localhost:9411 |
 
 **6. Subsequent runs** (after the first build)
 ```bash
@@ -256,8 +263,9 @@ docker compose --env-file .env.docker down -v
 # View logs
 docker compose logs -f
 
-# Rebuild a specific service
-docker compose --env-file .env.docker up --build backend
+# Rebuild a specific service (services: api-gateway, auth-service,
+# mail-service, notification-service, frontend)
+docker compose --env-file .env.docker up --build mail-service
 ```
 
 > Note: MySQL data is stored in a Docker volume and persists across restarts. It is only deleted when you run `docker compose down -v`.
@@ -269,49 +277,58 @@ docker compose --env-file .env.docker up --build backend
 ## Prerequisites
 - Java 21+
 - Maven 3.9+
-- MySQL 8
 - Node.js 20
-- Redis Cloud account
+- Docker Desktop (provides the local MySQL, Redis, and Kafka containers, so no external database or cache accounts are needed)
 
 ## Database Setup
-Run the `Tables.sql` script in the "SQL Scripts" folder to set up your database tables.
-
-## Redis Cache Setup
-1. Create a free account on [Redis Cloud](https://redis.io/cloud/)
-2. Create a new database and note down your connection details (host, port, username, and password)
+No manual schema setup is required. Each service manages its own schema through Flyway migrations under `<service>/src/main/resources/db/migration`, applied automatically on startup. Hibernate runs with `ddl-auto=validate`, so a service fails fast at startup if an entity drifts from the migrated schema.
 
 ## Backend Setup
 
-**1. Navigate to the backend directory**
+The backend is a Maven multi-module reactor (`api-gateway`, `auth-service`, `mail-service`, `notification-service`). All Maven commands run from the root `Email-Service` directory.
+
+**1. Start the infrastructure**
+
+MySQL, Redis, and Kafka are easiest to run as Docker containers:
 ```bash
-cd backendemailservice
+docker compose --env-file .env.docker up -d db redis kafka
 ```
 
 **2. Create `.env`**
 
-Create a `.env` file in the root `backendemailservice` directory. Use `.env.example` as a template. Then fill in your values.
+Create a `.env` file in the root `Email-Service` directory (see `.env.docker.example` for the variable names). Each backend service reads `DB_NAME`, `DB_USER`, `DB_PASSWORD`, plus Redis and Discord values; the `local` Spring profile retargets the datasource and Redis at `localhost`.
 
-> Note: `DB_USER=root` here (local MySQL), vs `DB_USER=seamail_user` in Docker.
+> When running several services side by side, point each run configuration at that module's own `.env` (e.g. `mail-service/.env`) so each service gets its own schema credentials.
 
 **3. Configure IntelliJ run configuration**
 
 Install the [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) in IntelliJ, then in your run configuration:
-- **EnvFile tab** → enable and point to `backendemailservice/.env`
+- **EnvFile tab** → enable and point to the root `.env`
 - **Active profiles** → set to `local`
 
 <img width="1917" height="892" alt="Screenshot" src="https://github.com/user-attachments/assets/1c3b5319-9f1b-451a-9e52-77bab0d8848c" />
 
 
-This activates `application-local.properties` which connects to your local MySQL instead of the Docker `db` host.
+This activates `application-local.properties`, which connects to `localhost` instead of the Docker container hostnames.
 
-**4. Run the backend**
+**4. Run a service**
 
-Either run directly from IntelliJ, or:
+Either run its `*Application` class directly from IntelliJ, or from the root:
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn -pl mail-service spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-The backend will start on http://localhost:8081
+Replace `mail-service` with `api-gateway`, `auth-service`, or `notification-service` to run a different module. Note that mail-service needs auth-service running as well (Feign receiver validation and JWKS), so start it first.
+
+The services listen on:
+| Service | URL |
+|---------|-----|
+| api-gateway | http://localhost:8081 |
+| auth-service | http://localhost:8082 |
+| mail-service | http://localhost:8083 |
+| notification-service | http://localhost:8084 |
+
+The gateway on `:8081` is the only entry point the frontend talks to. Alternatively, run the whole stack via Docker (see Docker Setup above).
 
 ## Frontend Setup
 
@@ -337,7 +354,7 @@ Create a `.env` file in the root `frontend-email-service` directory. Use `.env.e
 npm run dev
 ```
 
-The frontend will start on http://localhost:8080
+The frontend will start on http://localhost:8080, proxying `/api` to http://localhost:8081 (the api-gateway).
 
 ---
 
@@ -345,24 +362,33 @@ The frontend will start on http://localhost:8080
 
 ## Backend
 
-Tests use JUnit 5, Spring `@WebMvcTest`, `@DataJpaTest`, Mockito, and AssertJ. The `test` profile uses an in-memory H2 database (`ddl-auto=create-drop`) and simple in-memory cache instead of Redis, so no external services are needed to run the suite.
+Unit and slice tests use JUnit 5, Spring `@WebMvcTest` and `@DataJpaTest` slices, and Mockito. The `test` profile uses an in-memory H2 database (`ddl-auto=create-drop`) and a simple in-memory cache instead of Redis, and controller slices use a test security configuration with the `jwt()` MockMvc post-processor, matching the OAuth2 resource-server setup without real JWKS or token signing. The suite is Docker-free:
 
 ```bash
-cd backendemailservice
 mvn test
+```
+
+Integration tests run via Testcontainers against real MySQL, Redis, and Kafka containers (requires Docker):
+
+```bash
+mvn verify
 ```
 
 | Layer | Tests |
 |---|---|
 | **Services** | `UserServiceTest`: registration, credential validation, domain enforcement |
 | | `EmailServiceTest`: send, sort, filter, trash, delete logic |
+| | `NotificationServiceTest`: idempotent event recording, duplicate/race skipping, feed, unread count, mark-as-read ownership |
 | **Repositories** | `UserRepositoryTest`: custom query methods |
 | | `EmailRepositoryTest`: `moveToTrashBox` bulk UPDATE, inbox/outbox/trash queries |
+| | `NotificationRepositoryTest`: unique `event_id` constraint, per-recipient unread counts, paged feed |
 | **Controllers** | `AccessControllerTest`: sign-in / sign-up, validation, error shapes, malformed body 400 |
 | | `EmailsControllerTest`: authorised and unauthorised email endpoints, paginated responses |
 | | `UsersControllerTest`: account management, current-password verification, error paths |
-| **Filters** | `JwtFilterTest`: malformed/expired token handling, valid-token auth population |
-| **Integration** | `FullFlowIntegrationTest`: end-to-end sign-up → send → inbox → trash → delete |
+| | `NotificationControllerTest`: paged feed, unread count, mark-as-read, 404 on missing notification |
+| **Integration** | `AuthFlowIT`: sign-up → sign-in → refresh rotation → JWKS against real MySQL and Redis |
+| | `MailFlowIT`: send persists the email and publishes exactly one Kafka event (real MySQL/Redis/Kafka) |
+| | `NotificationFlowIT`: consumes `email.sent` idempotently and exposes the REST feed (real Kafka/MySQL) |
 
 ## Frontend
 
@@ -396,46 +422,42 @@ npm test
 
 ```
 Email-Service/
-├── backendemailservice/               # Spring Boot API
-│   ├── pom.xml                        # Maven deps, Java 21, Boot 3.2.3
-│   ├── Dockerfile                     # Multi-stage build, exposes 8081
-│   ├── .env.example                   # Backend env template
-│   └── src/main/java/.../
-│       ├── BackendemailserviceApplication.java   # Entry point
-│       ├── config/                    # SecurityConfig, CorsConfig, RedisConfig,
-│       │                              #   DiscordOAuthProperties, CachingConfig
-│       ├── controller/                # AccessController, EmailsController,
-│       │                              #   UsersController, OAuth2Controller
-│       ├── dto/                       # Request / response records and beans
-│       ├── entity/                    # User, Email (JPA entities), Mailbox (enum)
-│       ├── exception/                 # ApplicationException, ErrorResponse,
-│       │                              #   ValidationErrorResponse, GlobalExceptionHandler
-│       ├── filter/                    # JwtFilter (OncePerRequestFilter)
-│       ├── health/                    # CustomRedisHealthIndicator
-│       ├── repository/                # UserRepository, EmailRepository
-│       ├── service/                   # IUserService, IEmailService (interfaces)
-│       │                              #   UserService, EmailService (implementations)
-│       │                              #   CustomUserDetailsService
-│       └── util/                      # JwtUtil
-├── frontend-email-service/            # React SPA
-│   ├── package.json                   # Scripts: dev, build, test (vitest run)
-│   ├── vite.config.js                 # Port 8080, /api proxy, vitest config
-│   ├── Dockerfile                     # Node 20 build + nginx serve
-│   ├── nginx.conf                     # SPA fallback + /api/v1/ proxy to backend
-│   ├── .env.example                   # VITE_* variables
+├── pom.xml                          # Aggregator parent (com.seamail:seamail-parent)
+├── Dockerfile.backend               # Parameterized per-module build (ARG MODULE)
+├── docker-compose.yml               # db, redis, kafka, 4 app services, zipkin, prometheus, grafana, frontend
+├── db/init/                         # 01-schemas.sh: per-service MySQL schemas + scoped users
+├── observability/
+│   ├── prometheus.yml               # Scrape config for all services
+│   └── grafana/                     # Datasource + dashboard provisioning
+├── api-gateway/                     # Spring Cloud Gateway (:8081)
+│   └── src/main/java/.../gateway/   # Routes, global CORS, Swagger aggregation (application.yml)
+├── auth-service/                    # Identity, RS256 + JWKS, refresh rotation, Discord OAuth (:8082)
+│   └── src/main/java/.../auth/      # config, controller, dto, entity, exception,
+│                                    #   health, repository, service
+├── mail-service/                    # Mail domain, resource server, Feign, Kafka producer (:8083)
+│   └── src/main/java/.../mail/      # client (Feign), config, controller, dto, entity, event,
+│                                    #   exception, health, messaging (producer), repository, service
+├── notification-service/            # Kafka consumer, idempotent feed (:8084)
+│   └── src/main/java/.../notification/  # config, controller, dto, entity, event,
+│                                    #   exception, messaging (consumer + DLT), repository, service
+├── frontend-email-service/          # React SPA
+│   ├── package.json                 # Scripts: dev, build, test (vitest run)
+│   ├── vite.config.js               # Port 8080, /api proxy, vitest config
+│   ├── Dockerfile                   # Node 20 build + nginx serve
+│   ├── nginx.conf                   # SPA fallback + /api/v1/ proxy to api-gateway
+│   ├── .env.example                 # VITE_* variables
 │   └── src/
-│       ├── main.jsx                   # Router: /, /sign-in, /home, /settings
-│       ├── AppContext.jsx              # Auth + mailbox global state, localStorage
-│       ├── api/apiClient.js           # Axios instance, Bearer header, refresh interceptor
-│       ├── utils/parseApiError.js     # Normalises all backend error shapes
-│       ├── pages/                     # SignUp, SignIn, Home, Settings screens
-│       ├── components/                # Layout, composer, email views, Discord button, ProtectedRoute
-│       ├── i18n.js                    # English / German / French strings (ISO codes: en/fr/de)
-│       └── tests/                     # Vitest + MSW test suite
+│       ├── main.jsx                 # Router: /, /sign-in, /home, /settings
+│       ├── AppContext.jsx           # Auth + mailbox global state, localStorage
+│       ├── api/apiClient.js         # Axios instance, Bearer header, refresh interceptor
+│       ├── utils/parseApiError.js   # Normalises all backend error shapes
+│       ├── pages/                   # SignUp, SignIn, Home, Settings screens
+│       ├── components/              # Layout, composer, email views, Discord button, ProtectedRoute
+│       ├── i18n.js                  # English / German / French strings (ISO codes: en/fr/de)
+│       └── tests/                   # Vitest + MSW test suite
 ├── SQL Scripts/
-│   └── Tables.sql                     # MySQL schema init for Docker and manual setup
-├── docker-compose.yml                 # db + backend + frontend services
-└── .env.docker.example                # Compose env template
+│   └── Tables.sql                   # Retired - schema now managed by Flyway per service
+└── .env.docker.example              # Compose env template
 ```
 
 ---
