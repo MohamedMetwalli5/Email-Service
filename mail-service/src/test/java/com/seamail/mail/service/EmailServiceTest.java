@@ -38,6 +38,9 @@ class EmailServiceTest {
     @Mock
     private AuthUserClient authUserClient;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private EmailService emailService;
 
@@ -122,6 +125,7 @@ class EmailServiceTest {
         assertEquals("1", saved.getPriority());
         assertFalse(saved.isTrash());
         assertNotNull(saved.getDate());
+        verify(eventPublisher).publishEvent(any(com.seamail.mail.event.EmailSentEvent.class));
     }
 
     @Test

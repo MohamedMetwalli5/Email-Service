@@ -27,10 +27,13 @@ public class EmailService implements IEmailService {
 
     private final EmailRepository repository;
     private final AuthUserClient authUserClient;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    public EmailService(EmailRepository repository, AuthUserClient authUserClient) {
+    public EmailService(EmailRepository repository, AuthUserClient authUserClient,
+                        org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.authUserClient = authUserClient;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -72,6 +75,15 @@ public class EmailService implements IEmailService {
         email.setDate(LocalDateTime.now());
         email.setTrash(false);
         repository.save(email);
+        eventPublisher.publishEvent(new com.seamail.mail.event.EmailSentEvent(
+                java.util.UUID.randomUUID().toString(),
+                "EMAIL_SENT",
+                java.time.Instant.now().toString(),
+                email.getEmailID(),
+                senderEmail,
+                request.getReceiver(),
+                request.getSubject()
+        ));
     }
 
     @Override

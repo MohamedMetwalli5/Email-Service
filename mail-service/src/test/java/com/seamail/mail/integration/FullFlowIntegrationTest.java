@@ -1,6 +1,7 @@
 package com.seamail.mail.integration;
 
 import com.seamail.mail.client.AuthUserClient;
+import com.seamail.mail.event.EmailSentEvent;
 import com.seamail.mail.repository.EmailRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,9 +37,17 @@ public class FullFlowIntegrationTest {
     @MockBean
     private AuthUserClient authUserClient;
 
+    @MockBean
+    private KafkaTemplate<String, EmailSentEvent> kafkaTemplate;
+
     @BeforeEach
     public void setup() {
         emailRepository.deleteAll();
+        org.mockito.Mockito.lenient()
+                .when(kafkaTemplate.send(org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any(EmailSentEvent.class)))
+                .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
     }
 
     @Test
