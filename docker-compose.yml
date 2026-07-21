@@ -137,6 +137,36 @@ services:
       timeout: 5s
       retries: 10
 
+  # -- notification-service ---------------------------
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        MODULE: notification-service
+    container_name: notification_service
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    environment:
+      DB_NAME: ${NOTIFICATION_DB_NAME}
+      DB_USER: ${NOTIFICATION_DB_USER}
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWKS_URI: http://auth-service:8082/.well-known/jwks.json
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep -q UP || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
   # -- api-gateway (single entry point) ---------------
   api-gateway:
     build:
