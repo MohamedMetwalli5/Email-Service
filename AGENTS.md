@@ -24,7 +24,7 @@ Multi-package full-stack app: a Maven multi-module Spring Boot backend (`api-gat
 `application.properties` is Docker-oriented (MySQL host `db`, `ddl-auto=validate`). Selecting a profile only overrides what differs:
 - `local` - `application-local.properties` points at `localhost:3306` and CORS origin `:8080`. Use with `-Dspring-boot.run.profiles=local` or IntelliJ Active profiles `local`.
 - `test` - `application-test.properties` switches to H2 (`ddl-auto=create-drop`), dummy Discord + Redis values, and `spring.cache.type=simple` to bypass Redis. **Do not rely on Redis/Mysql being available for tests.**
-- (default) - Docker compose profile; expects all `DB_*`/`REDIS_*`/`DISCORD_*`/`JWT_SECRET` placeholders to be resolved from env.
+- (default) - Docker compose profile; expects all `DB_*`/`REDIS_*`/`DISCORD_*`/`JWT_*` (`JWT_PRIVATE_KEY_PATH`/`JWT_PUBLIC_KEY_PATH`) placeholders to be resolved from env.
 
 Each service has its own `application.properties` plus sibling `application-local.properties`, `application-test.properties`, and `application-it.properties`. The `it` profile is used by the Testcontainers integration tests (`AuthFlowIT`/`MailFlowIT`/`NotificationFlowIT`) and leaves the datasource, Redis, and Kafka connection details to `@ServiceConnection`, so no hard-coded host/port is needed in `application-it.properties`.
 
