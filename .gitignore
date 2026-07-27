@@ -24,13 +24,14 @@ dist-ssr
 *.sw?
 
 
-# Environment variables
+# Environment variables (real .env files are gitignored; .env.example templates are tracked)
 .env
 .env.docker
 .env.production
-*/
-.env
+*/.env
 .superpowers/
+!.env.example
+!*/.env.example
 
 # Maven build output
 target/

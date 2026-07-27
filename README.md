@@ -204,14 +204,18 @@ There are two ways to run Seamail:
 
 ## Environment Files Overview
 
-Seamail uses separate environment files depending on the context. Each file lives in the **root `Email-Service` directory** and is never committed to version control.
+Seamail uses separate environment files depending on the context. Each is never committed to version control - copy the matching `.env.example` template and fill in real values.
 
 | File | Used By | When |
 |------|---------|------|
-| `.env` | IDE / `npm run dev` | Local development without Docker |
-| `.env.docker` | Docker Compose | Local Docker |
+| `auth-service/.env` | IntelliJ `AuthServiceApplication` run config | Local dev (auth-service) |
+| `mail-service/.env` | IntelliJ `MailServiceApplication` run config | Local dev (mail-service) |
+| `notification-service/.env` | IntelliJ `NotificationServiceApplication` run config | Local dev (notification-service) |
+| `api-gateway/.env` | IntelliJ `ApiGatewayApplication` run config | Local dev (api-gateway) |
+| `.env.docker` | Docker Compose | Local Docker (full stack) |
+| `frontend-email-service/.env` | Vite (`npm run dev`) | Frontend build args |
 
-> The `.env` files inside `frontend-email-service/` and the backend module directories (`api-gateway/`, `auth-service/`, `mail-service/`, `notification-service/`) are only read during IDE/Maven local development. Docker Compose always reads from the root directory env file.
+> Each service has its own `.env` in its own module directory with its own schema credentials and inter-service URLs. Copy the matching `.env.example` template in each module folder and fill in real values. Docker Compose reads the root `.env.docker` for the full-stack run.
 
 ---
 
@@ -305,22 +309,34 @@ MySQL, Redis, and Kafka are easiest to run as Docker containers:
 docker compose --env-file .env.docker up -d db redis kafka
 ```
 
-**2. Create `.env`**
+**2. Create the per-service `.env` files**
 
-Create a `.env` file in the root `Email-Service` directory (see `.env.docker.example` for the variable names). Each backend service reads `DB_NAME`, `DB_USER`, `DB_PASSWORD`, plus Redis and Discord values; the `local` Spring profile retargets the datasource and Redis at `localhost`.
+Each service reads `DB_NAME`, `DB_USER`, `DB_PASSWORD` (its own schema + scoped MySQL user, matching the values that `docker compose` used to initialise the database) plus whatever inter-service URLs and Discord values it needs. The `local` Spring profile retargets the datasource at `localhost:3307` (Docker's published MySQL port) and Redis at `localhost`.
 
-> When running several services side by side, point each run configuration at that module's own `.env` (e.g. `mail-service/.env`) so each service gets its own schema credentials.
+Create one `.env` per module, pointing the IntelliJ EnvFile plugin at the matching file (see step 3):
+
+| Run config | EnvFile target | Schema | DB user |
+|---|---|---|---|
+| `AuthServiceApplication` | `auth-service/.env` | `seamail_auth` | `seamail_auth_user` |
+| `MailServiceApplication` | `mail-service/.env` | `seamail_mail` | `seamail_mail_user` |
+| `NotificationServiceApplication` | `notification-service/.env` | `seamail_notifications` | `seamail_notification_user` |
+| `ApiGatewayApplication` | `api-gateway/.env` | (no DB) | (no DB) |
+
+Use each module's `.env.example` for the exact variable names that service needs (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `REDIS_HOST`, `DISCORD_*`, `JWKS_URI`, `AUTH_SERVICE_URL`, `KAFKA_BOOTSTRAP_SERVERS`, etc.). The scoped MySQL users and their passwords are the ones the `db/init/01-schemas.sh` script created on first startup of the Docker MySQL. Keep each service's `.env` scoped to that service so two parallel runs never cross credentials.
+
 
 **3. Configure IntelliJ run configuration**
 
-Install the [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) in IntelliJ, then in your run configuration:
-- **EnvFile tab** → enable and point to the root `.env`
-- **Active profiles** → set to `local`
+Since this is a multi-module Maven project, first make sure all four services (`api-gateway`, `auth-service`, `mail-service`, `notification-service`) are imported as separate Maven modules. Right-click the root `pom.xml` and select **Add as Maven Project** if they don't already show up individually in the Maven tool window.
 
-<img width="1917" height="892" alt="Screenshot" src="https://github.com/user-attachments/assets/1c3b5319-9f1b-451a-9e52-77bab0d8848c" />
+Install the [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) in IntelliJ, then create a **separate run configuration for each service**:
 
+- **Main class**: that service's `Application` class (e.g. `com.seamail.auth.AuthServiceApplication`)
+- **Classpath / module**: select that service's own module (e.g. `auth-service`), not the parent `Email-Service` module
+- **Active profiles**: set to `local`
+- **EnvFile tab**: enable and point at **that service's `.env`** from the table above - each run config has its own env file because each service has its own DB credentials. The api-gateway run config needs no active profile (it uses `application.yml`, not `.properties`).
 
-This activates `application-local.properties`, which connects to `localhost` instead of the Docker container hostnames.
+This activates `application-local.properties` for that service, which connects to `localhost` instead of the Docker container hostnames.
 
 **4. Run a service**
 
@@ -441,14 +457,18 @@ Email-Service/
 │   ├── prometheus.yml               # Scrape config for all services
 │   └── grafana/                     # Datasource + dashboard provisioning
 ├── api-gateway/                     # Spring Cloud Gateway (:8081)
+│   ├── .env.example                 # IDE env template (CORS + downstream URLs)
 │   └── src/main/java/.../gateway/   # Routes, global CORS, Swagger aggregation (application.yml)
 ├── auth-service/                    # Identity, RS256 + JWKS, refresh rotation, Discord OAuth (:8082)
+│   ├── .env.example                 # IDE env template (auth DB user + Discord + Redis)
 │   └── src/main/java/.../auth/      # config, controller, dto, entity, exception,
 │                                    #   health, repository, service
 ├── mail-service/                    # Mail domain, resource server, Feign, Kafka producer (:8083)
+│   ├── .env.example                 # IDE env template (mail DB user + Kafka + Feign + JWKS)
 │   └── src/main/java/.../mail/      # client (Feign), config, controller, dto, entity, event,
 │                                    #   exception, health, messaging (producer), repository, service
 ├── notification-service/            # Kafka consumer, idempotent feed (:8084)
+│   ├── .env.example                 # IDE env template (notification DB user + Kafka + JWKS)
 │   └── src/main/java/.../notification/  # config, controller, dto, entity, event,
 │                                    #   exception, messaging (consumer + DLT), repository, service
 ├── frontend-email-service/          # React SPA

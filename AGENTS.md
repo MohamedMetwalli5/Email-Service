@@ -33,10 +33,10 @@ api-gateway is the exception: it uses `application.yml` (Spring Cloud Gateway We
 
 ## Env files and loading (gotcha)
 
-- Repo-root env files (`.env`, `.env.docker`) are the source of truth. The `.env` files inside each subdirectory are only read during IDE/Maven/npm local dev.
-- Spring does **not** read `.env` itself. Local backend runs require the IntelliJ [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) pointed at the root `.env`, or env vars exported in the shell. Vite reads `frontend-email-service/.env` natively.
-- `.env` files are gitignored. Never edit them; ask the user. Templates are `.env.example` / `.env.docker.example`.
-- `DB_USER=root` in local `.env` vs per-service users (`seamail_auth_user` / `seamail_mail_user` / `seamail_notification_user`) in `.env.docker` - keep them distinct.
+- Each backend service has its own `.env` in its module directory (`auth-service/.env`, `mail-service/.env`, `notification-service/.env`, `api-gateway/.env`) for IDE/Maven local dev. Docker Compose uses the root `.env.docker` for the full-stack run.
+- Spring does **not** read `.env` itself. Local backend runs require the IntelliJ [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) pointed at that service's own `.env` (e.g. `mail-service/.env` for mail-service), or env vars exported in the shell. Vite reads `frontend-email-service/.env` natively.
+- `.env` files are gitignored. Never edit them; ask the user. Templates: `auth-service/.env.example`, `mail-service/.env.example`, `notification-service/.env.example`, `api-gateway/.env.example`, plus the compose-wide `.env.docker.example`.
+- Per-service scoped MySQL users (`seamail_auth_user` / `seamail_mail_user` / `seamail_notification_user`) are created by `db/init/01-schemas.sh` on first Docker MySQL startup and are the credentials the per-module `.env` files must use. Root (`DB_USER=root`) is only used for ad-hoc admin access, never by a running service.
 - Vite `VITE_*` vars are baked in at build time. The frontend Dockerfile forwards them as build args; changing them requires a frontend rebuild.
 - Per-service DB vars (`AUTH_DB_*`, `MAIL_DB_*`, `NOTIFICATION_DB_*`) point each service at its own MySQL schema.
 - `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` empty means auth-service generates an ephemeral dev keypair at startup (not safe for shared environments).
