@@ -33,36 +33,36 @@ Seamail is a full-stack email service built around the `@seamail.com` domain. It
 ```
                        ┌────────────────────────────────────────────┐
                        │              React SPA / nginx             │
-                       │   TailwindCSS · React Router · i18next      │
-                       │   apiClient.js · parseApiError.js           │
+                       │   TailwindCSS · React Router · i18next     │
+                       │   apiClient.js · parseApiError.js          │
                        └─────────────────────┬──────────────────────┘
                                              │ /api/v1 (HTTPS)
                        ┌─────────────────────▼──────────────────────┐
                        │            api-gateway  :8081              │
                        │  Spring Cloud Gateway · CORS · Swagger UI  │
                        │  single entry point; routes /api/v1/**     │
-                       └──────┬──────────┬───────────────┬───────────┘
-                              │          │               │
-                ┌──────────────▼┐  ┌──────▼───────┐  ┌────▼─────────────┐
-                │ auth-service   │  │ mail-service │  │  notification-  │
-                │   :8082        │◀─┤   :8083      │  │   service :8084  │
-                │ RS256 + JWKS   │  │ resource     │  │ resource server │
-                │ refresh rotate │  │ server +     │  │ + idempotent    │
-                │ Discord OAuth  │  │ Feign check  │  │ Kafka consumer  │
-                └───────┬────────┘  └──────┬───────┘  └────────┬────────┘
+                       └──────┬──────────┬─────────────────┬────────┘
+                              │          │                 │
+                ┌─────────────▼─┐   ┌────▼─────────┐  ┌────▼────────────┐
+                │ auth-service  │   │ mail-service │  │  notification-  │
+                │   :8082       │◀─┤   :8083      │  │   service :8084 │
+                │ RS256 + JWKS  │   │ resource     │  │ resource server │
+                │ refresh rotate│   │ server +     │  │ + idempotent    │
+                │ Discord OAuth │   │ Feign check  │  │ Kafka consumer  │
+                └───────┬───────┘   └──────┬───────┘  └────────┬────────┘
                         │ JWKS             │ EmailSentEvent    │
                         │ pub keys ────────┤ (AFTER_COMMIT)    │
                         │                  ▼                   │ consume
                    ┌────▼───┐         ┌──────────────┐         │
                    │ Redis  │         │  Kafka KRaft │─────────┘
-                   │ tokens │         │  email.sent   │
-                   │ inbox  │         │  + email.sent │
-                   │ cache  │         │    .DLT       │
+                   │ tokens │         │  email.sent  │
+                   │ inbox  │         │ + email.sent │
+                   │ cache  │         │    .DLT      │
                    └────────┘         └──────────────┘
 
      MySQL 8.0 (one server, three Flyway-managed schemas):
      ┌─────────────┬─────────────┬──────────────────────────┐
-     │ seamail_auth│ seamail_mail│ seamail_notifications     │
+     │ seamail_auth│ seamail_mail│ seamail_notifications    │
      └─────────────┴─────────────┴──────────────────────────┘
 ```
 
