@@ -32,43 +32,57 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 
 # Architecture Overview
 
-## Architecture
+```
+                       ┌────────────────────────────────────────────┐
+                       │              React SPA / nginx             │
+                       │   TailwindCSS · React Router · i18next      │
+                       │   apiClient.js · parseApiError.js           │
+                       └─────────────────────┬──────────────────────┘
+                                             │ /api/v1 (HTTPS)
+                       ┌─────────────────────▼──────────────────────┐
+                       │            api-gateway  :8081              │
+                       │  Spring Cloud Gateway · CORS · Swagger UI  │
+                       │  single entry point; routes /api/v1/**     │
+                       └──────┬──────────┬───────────────┬───────────┘
+                              │          │               │
+                ┌──────────────▼┐  ┌──────▼───────┐  ┌────▼─────────────┐
+                │ auth-service   │  │ mail-service │  │  notification-  │
+                │   :8082        │◀─┤   :8083      │  │   service :8084  │
+                │ RS256 + JWKS   │  │ resource     │  │ resource server │
+                │ refresh rotate │  │ server +     │  │ + idempotent    │
+                │ Discord OAuth  │  │ Feign check  │  │ Kafka consumer  │
+                └───────┬────────┘  └──────┬───────┘  └────────┬────────┘
+                        │ JWKS             │ EmailSentEvent    │
+                        │ pub keys ────────┤ (AFTER_COMMIT)    │
+                        │                  ▼                   │ consume
+                   ┌────▼───┐         ┌──────────────┐         │
+                   │ Redis  │         │  Kafka KRaft │─────────┘
+                   │ tokens │         │  email.sent   │
+                   │ inbox  │         │  + email.sent │
+                   │ cache  │         │    .DLT       │
+                   └────────┘         └──────────────┘
 
-```mermaid
-flowchart LR
-    FE[React SPA / nginx] --> GW[api-gateway :8081]
-    GW --> AUTH[auth-service :8082]
-    GW --> MAIL[mail-service :8083]
-    GW --> NOTIF[notification-service :8084]
-    MAIL -->|Feign: receiver exists?| AUTH
-    MAIL -->|EmailSentEvent| K[(Kafka topic: email.sent)]
-    K --> NOTIF
-    AUTH --> DB1[(MySQL: seamail_auth)]
-    MAIL --> DB2[(MySQL: seamail_mail)]
-    NOTIF --> DB3[(MySQL: seamail_notifications)]
-    AUTH --> R[(Redis)]
-    MAIL --> R
-    AUTH -. JWKS public keys .-> MAIL
-    AUTH -. JWKS public keys .-> NOTIF
+     MySQL 8.0 (one server, three Flyway-managed schemas):
+     ┌─────────────┬─────────────┬──────────────────────────┐
+     │ seamail_auth│ seamail_mail│ seamail_notifications     │
+     └─────────────┴─────────────┴──────────────────────────┘
 ```
 
-| Service | Responsibility |
-|---|---|
-| api-gateway | Single entry point, routing, CORS, Swagger UI aggregation (Spring Cloud Gateway) |
-| auth-service | Sign-up/sign-in, RS256 access tokens + JWKS, rotating refresh tokens, Discord OAuth, user profile |
-| mail-service | Inbox/outbox/trashbox, sorting/filtering, Redis inbox cache, publishes `email.sent` events |
-| notification-service | Consumes `email.sent` idempotently, REST notification feed with unread counts |
-
-## Design Decisions & Trade-offs
-
-- **Asymmetric JWT signing with JWKS over shared secrets:** auth-service signs access tokens with an RS256 private key and publishes only the public keys at `/.well-known/jwks.json`. mail-service and notification-service validate tokens statelessly as OAuth2 resource servers, so no shared secret is ever distributed. Key rotation only requires publishing a new `kid`.
-- **After-commit event publishing instead of a transactional outbox:** `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)`, so consumers never observe rolled-back writes. A full outbox table would additionally guarantee at-least-once publishing across a broker outage; because the consumer is already idempotent, the lighter after-commit approach is sufficient for now, and the outbox remains a documented upgrade path.
-- **Idempotent consumer with a dead-letter topic:** Kafka delivers at-least-once, so notification-service deduplicates on a unique `event_id` (check-then-insert, with the unique constraint winning concurrent races) and routes poison pills to `email.sent.DLT` after bounded exponential backoff instead of blocking the partition.
-- **Atomic refresh-token rotation:** refresh tokens are rotated on every use and claimed with an atomic `redisTemplate.delete(key)`. Only one concurrent refresh can win the claim; the loser is rejected with 401, which also bounds the damage of a leaked token.
-- **Coarse-grained inbox cache eviction:** inbox pages are cached per user + page + size and all entries are evicted on any mailbox mutation (send, trash, delete). This deliberately trades fine-grained invalidation for simplicity and guaranteed consistency.
-- **Flyway migrations with `ddl-auto=validate`:** every service versions its schema as SQL migrations applied on startup. Hibernate validation is kept on as a drift detector that fails startup if an entity diverges from the migrated schema.
-- **Integration tests on real infrastructure:** Testcontainers tests run against real MySQL, Redis, and Kafka containers, so Flyway migrations, JSON Kafka serialization, and Redis rotation logic are verified against the same engines used in production rather than in-memory stand-ins.
-- **End-to-end distributed tracing:** a single action (sending an email) produces one Zipkin trace crossing api-gateway -> mail-service -> Kafka -> notification-service, with trace/span IDs in every log line for cross-service correlation.
+**Key design decisions:**
+- **Versioned REST API:** all endpoints live under `/api/v1`, making future versioning straightforward.
+- **Asymmetric JWT signing with JWKS:** auth-service signs access tokens with an RS256 private key and publishes only the public keys at `/.well-known/jwks.json`; mail-service and notification-service validate them statelessly as OAuth2 resource servers, so no shared secret is ever distributed and key rotation just means publishing a new `kid`.
+- **Stateless security via OAuth2 resource servers:** no HTTP sessions are held server-side; controllers read the caller email from `@AuthenticationPrincipal(expression = "subject")`. An expired or malformed token yields a clean 401 from the resource-server authentication entry point, not a 500.
+- **After-commit Kafka publishing:** `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)`, so consumers never observe rolled-back writes. A full transactional outbox would additionally guarantee at-least-once publishing across a broker outage; because the consumer is already idempotent, the lighter after-commit approach is sufficient for now, and the outbox remains a documented upgrade path.
+- **Idempotent consumer with a dead-letter topic:** Kafka delivers at-least-once, so notification-service deduplicates on a unique `event_id` (check-then-insert guarded by a unique constraint) and routes poison pills to `email.sent.DLT` after bounded exponential backoff instead of blocking the partition.
+- **Atomic refresh-token rotation:** every `POST /api/v1/auth/refresh` atomically claims the old Redis refresh key via `delete()` (only one concurrent refresh wins; the loser is rejected with 401) and issues a new access + refresh pair. Tokens are also revoked on account deletion and password change.
+- **Discord OAuth ticket flow:** `GET /auth/discord/state` generates a CSRF nonce (5-min TTL in Redis), the frontend fetches it before redirecting to Discord. On callback, `GET /auth/discord` validates the state, exchanges the code with Discord, stores an opaque 60-second ticket in Redis, and 302-redirects to `/home?code=<ticket>`. The SPA then `POST /auth/exchange`s the ticket for tokens. JWTs never appear in URLs.
+- **Feign receiver check before persist:** before saving an email, mail-service calls auth-service's `/internal/users/{email}/exists` via Spring Cloud OpenFeign; a 404 surfaces as `ReceiverNotFoundException`, and a timeout or 5xx returns 503 with a `SERVICE_UNAVAILABLE` error code so the sender gets a clear "auth service unavailable" message.
+- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis, keyed by user + page + size; cache is evicted automatically (all entries) on send, trash, or delete actions. This trades fine-grained invalidation for simplicity and guaranteed consistency.
+- **Per-service schemas with Flyway + `ddl-auto=validate`:** one MySQL 8.0 server hosts three schemas (`seamail_auth`, `seamail_mail`, `seamail_notifications`), each owned by one service with its own Flyway migrations and a database user scoped to that schema. Hibernate validation is kept on as a drift detector that fails startup if an entity diverges from the migrated schema.
+- **Spring Cloud Gateway as the only public entry point:** all `/api/v1/**` traffic routes through `:8081`; CORS is enforced only here (downstream services trust the gateway origin), and `/internal/**` endpoints are not exposed through the gateway. Swagger UI is aggregated at `/swagger-ui.html` so all three services appear in one place.
+- **Centralised exception handling:** a `@RestControllerAdvice` in every service maps every custom domain exception to a consistent JSON error shape (`ErrorResponse` / `ValidationErrorResponse`) with HTTP status, machine-readable error code, message, path, and timestamp. It also maps malformed body, type mismatch, missing parameter, and data integrity violation exceptions to appropriate 400/409 responses. A custom OAuth2 `AuthenticationEntryPoint` keeps the 401 body in the same shape so the frontend `parseApiError.js` keeps working.
+- **Integration tests on real infrastructure:** Testcontainers ITs run against real MySQL, Redis, and Kafka containers using `@ServiceConnection`, so Flyway migrations, JSON Kafka serialisation, and Redis rotation logic are verified against the same engines used in production rather than in-memory stand-ins. The surefire/failsafe split keeps `mvn test` Docker-free and routes `*IT` classes to `mvn verify`.
+- **End-to-end distributed tracing:** a single action (sending an email) produces one Zipkin trace crossing api-gateway -> mail-service -> Kafka -> notification-service, with trace/span IDs in every log line for cross-service correlation. Sampling is `1.0` in dev.
 
 ---
 
