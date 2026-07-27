@@ -33,7 +33,7 @@ api-gateway is the exception: it uses `application.yml` (Spring Cloud Gateway We
 
 ## Env files and loading (gotcha)
 
-- Repo-root env files (`.env`, `.env.docker`, `.env.production` per README) are the source of truth. The `.env` files inside each subdirectory are only read during IDE/Maven/npm local dev.
+- Repo-root env files (`.env`, `.env.docker`) are the source of truth. The `.env` files inside each subdirectory are only read during IDE/Maven/npm local dev.
 - Spring does **not** read `.env` itself. Local backend runs require the IntelliJ [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) pointed at the root `.env`, or env vars exported in the shell. Vite reads `frontend-email-service/.env` natively.
 - `.env` files are gitignored. Never edit them; ask the user. Templates are `.env.example` / `.env.docker.example`.
 - `DB_USER=root` in local `.env` vs per-service users (`seamail_auth_user` / `seamail_mail_user` / `seamail_notification_user`) in `.env.docker` - keep them distinct.

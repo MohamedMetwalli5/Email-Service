@@ -3,7 +3,6 @@
 ![Database](https://img.shields.io/badge/Database-MySQL-white.svg)
 ![Cache](https://img.shields.io/badge/Cache-Redis-red.svg)
 ![Container](https://img.shields.io/badge/Container-Docker-blue.svg)
-![Deployment](https://img.shields.io/badge/Deployment-AWS-orange.svg)
 ![License](https://img.shields.io/badge/License-GPL--3.0-yellow.svg)
 
 <div align="center">
@@ -12,11 +11,9 @@
 
 # Seamail: An Email Service
 Seamail is a full-stack email service built around the `@seamail.com` domain. It provides secure, efficient, and user-friendly email management through an intuitive interface, backed by a Spring Boot microservices architecture: JWT-based authentication with automatic token refresh, Redis for token storage and inbox caching, Kafka for event-driven notifications, and a fully versioned REST API behind a single API gateway.
-It is officially deployed on **Amazon Web Services (AWS)** using a custom domain.
 
 # Features
 - **User Registration & Sign-in:** Secure registration and login with server-side BCrypt password hashing.
-- **HTTPS Encryption & Deployment:** Deployed on AWS with a valid SSL certificate issued by Let's Encrypt, ensuring all data is securely encrypted and protected from interception.
 - **OAuth2 Authentication:** Allows users to optionally sign in with their Discord account via a custom server-side OAuth2 callback with CSRF state validation and ticket-based token exchange.
 - **JWT Authentication:** Stateless Bearer token authentication with 30-minute access tokens and automatic silent refresh via rotating refresh tokens. Refresh tokens are revoked on account deletion and password change.
 - **Automatic Token Refresh:** A centralised axios interceptor detects expired tokens, silently exchanges the refresh token for a new pair, and retries the original request without interrupting the user.
@@ -82,7 +79,7 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 - **Per-service schemas with Flyway + `ddl-auto=validate`:** one MySQL 8.0 server hosts three schemas (`seamail_auth`, `seamail_mail`, `seamail_notifications`), each owned by one service with its own Flyway migrations and a database user scoped to that schema. Hibernate validation is kept on as a drift detector that fails startup if an entity diverges from the migrated schema.
 - **Spring Cloud Gateway as the only public entry point:** all `/api/v1/**` traffic routes through `:8081`; CORS is enforced only here (downstream services trust the gateway origin), and `/internal/**` endpoints are not exposed through the gateway. Swagger UI is aggregated at `/swagger-ui.html` so all three services appear in one place.
 - **Centralised exception handling:** a `@RestControllerAdvice` in every service maps every custom domain exception to a consistent JSON error shape (`ErrorResponse` / `ValidationErrorResponse`) with HTTP status, machine-readable error code, message, path, and timestamp. It also maps malformed body, type mismatch, missing parameter, and data integrity violation exceptions to appropriate 400/409 responses. A custom OAuth2 `AuthenticationEntryPoint` keeps the 401 body in the same shape so the frontend `parseApiError.js` keeps working.
-- **Integration tests on real infrastructure:** Testcontainers ITs run against real MySQL, Redis, and Kafka containers using `@ServiceConnection`, so Flyway migrations, JSON Kafka serialisation, and Redis rotation logic are verified against the same engines used in production rather than in-memory stand-ins. The surefire/failsafe split keeps `mvn test` Docker-free and routes `*IT` classes to `mvn verify`.
+- **Integration tests on real infrastructure:** Testcontainers ITs run against real MySQL, Redis, and Kafka containers using `@ServiceConnection`, so Flyway migrations, JSON Kafka serialisation, and Redis rotation logic are verified against the same engines used in deployment rather than in-memory stand-ins. The surefire/failsafe split keeps `mvn test` Docker-free and routes `*IT` classes to `mvn verify`.
 - **End-to-end distributed tracing:** a single action (sending an email) produces one Zipkin trace crossing api-gateway -> mail-service -> Kafka -> notification-service, with trace/span IDs in every log line for cross-service correlation. Sampling is `1.0` in dev.
 
 ---
@@ -160,7 +157,7 @@ The token is a 30-minute RS256 JWT signed by auth-service; resource servers vali
 | Method | Path | Description |
 |---|---|---|
 | GET | `/actuator/health` | Overall health status |
-| GET | `/actuator/health/liveness` | Liveness probe (AWS ALB) |
+| GET | `/actuator/health/liveness` | Liveness probe |
 | GET | `/actuator/health/readiness` | Readiness probe; includes DB and Redis checks |
 
 ---
@@ -213,7 +210,6 @@ Seamail uses separate environment files depending on the context. Each file live
 |------|---------|------|
 | `.env` | IDE / `npm run dev` | Local development without Docker |
 | `.env.docker` | Docker Compose | Local Docker |
-| `.env.production` | Docker Compose | AWS production |
 
 > The `.env` files inside `frontend-email-service/` and the backend module directories (`api-gateway/`, `auth-service/`, `mail-service/`, `notification-service/`) are only read during IDE/Maven local development. Docker Compose always reads from the root directory env file.
 
