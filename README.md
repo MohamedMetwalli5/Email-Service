@@ -11,7 +11,7 @@
 </div>
 
 # Seamail: An Email Service
-Seamail is a full-stack email service designed around the `@seamail.com` domain. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface, backed by a Spring Boot microservices architecture: JWT-based authentication with automatic token refresh, Redis for token storage and inbox caching, Kafka for event-driven notifications, and a fully versioned REST API behind a single API gateway.
+Seamail is a full-stack email service built around the `@seamail.com` domain. It provides secure, efficient, and user-friendly email management through an intuitive interface, backed by a Spring Boot microservices architecture: JWT-based authentication with automatic token refresh, Redis for token storage and inbox caching, Kafka for event-driven notifications, and a fully versioned REST API behind a single API gateway.
 It is officially deployed on **Amazon Web Services (AWS)** using a custom domain.
 
 # Features
@@ -26,6 +26,7 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 - **Email Sorting & Filtering:** Sort emails by priority or date, and filter them by subject or sender, all via a single unified query endpoint.
 - **Password Management:** Allows users to securely change their password (requiring current password verification) to maintain account security.
 - **Account Management:** Allows users to permanently delete their accounts and change their default profile picture (PNG or JPEG, max 5 MB).
+- **Event-Driven Notifications:** When an email is sent, mail-service publishes an `EmailSentEvent` to Kafka; notification-service consumes it idempotently and exposes a personal notification feed (per-recipient unread counts, mark-as-read) over REST.
 - **Redis Caching:** Caches inbox emails per user using Redis to reduce database load and improve response times. Cache is keyed by user + page + size and automatically invalidated (all entries) when emails are received, moved to trash, or deleted. Redis also stores refresh tokens with a 7-day TTL and automatic rotation on every use, plus Discord OAuth tickets (60s) and CSRF state nonces (5min).
 
 ---
@@ -72,12 +73,12 @@ It is officially deployed on **Amazon Web Services (AWS)** using a custom domain
 - **Versioned REST API:** all endpoints live under `/api/v1`, making future versioning straightforward.
 - **Asymmetric JWT signing with JWKS:** auth-service signs access tokens with an RS256 private key and publishes only the public keys at `/.well-known/jwks.json`; mail-service and notification-service validate them statelessly as OAuth2 resource servers, so no shared secret is ever distributed and key rotation just means publishing a new `kid`.
 - **Stateless security via OAuth2 resource servers:** no HTTP sessions are held server-side; controllers read the caller email from `@AuthenticationPrincipal(expression = "subject")`. An expired or malformed token yields a clean 401 from the resource-server authentication entry point, not a 500.
-- **After-commit Kafka publishing:** `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)`, so consumers never observe rolled-back writes. A full transactional outbox would additionally guarantee at-least-once publishing across a broker outage; because the consumer is already idempotent, the lighter after-commit approach is sufficient for now, and the outbox remains a documented upgrade path.
+- **After-commit Kafka publishing:** `EmailSentEvent` is published via `@TransactionalEventListener(AFTER_COMMIT)`, so consumers never observe rolled-back writes. Combined with the idempotent consumer on the other side of the topic, this gives safe at-least-once delivery on a per-event basis without introducing a transactional outbox table.
 - **Idempotent consumer with a dead-letter topic:** Kafka delivers at-least-once, so notification-service deduplicates on a unique `event_id` (check-then-insert guarded by a unique constraint) and routes poison pills to `email.sent.DLT` after bounded exponential backoff instead of blocking the partition.
 - **Atomic refresh-token rotation:** every `POST /api/v1/auth/refresh` atomically claims the old Redis refresh key via `delete()` (only one concurrent refresh wins; the loser is rejected with 401) and issues a new access + refresh pair. Tokens are also revoked on account deletion and password change.
 - **Discord OAuth ticket flow:** `GET /auth/discord/state` generates a CSRF nonce (5-min TTL in Redis), the frontend fetches it before redirecting to Discord. On callback, `GET /auth/discord` validates the state, exchanges the code with Discord, stores an opaque 60-second ticket in Redis, and 302-redirects to `/home?code=<ticket>`. The SPA then `POST /auth/exchange`s the ticket for tokens. JWTs never appear in URLs.
 - **Feign receiver check before persist:** before saving an email, mail-service calls auth-service's `/internal/users/{email}/exists` via Spring Cloud OpenFeign; a 404 surfaces as `ReceiverNotFoundException`, and a timeout or 5xx returns 503 with a `SERVICE_UNAVAILABLE` error code so the sender gets a clear "auth service unavailable" message.
-- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis, keyed by user + page + size; cache is evicted automatically (all entries) on send, trash, or delete actions. This trades fine-grained invalidation for simplicity and guaranteed consistency.
+- **Focused caching:** only the inbox (the highest-traffic read) is cached in Redis, keyed by user + page + size; cache is evicted automatically (all entries) on send, trash, or delete actions, trading fine-grained invalidation for guaranteed consistency.
 - **Per-service schemas with Flyway + `ddl-auto=validate`:** one MySQL 8.0 server hosts three schemas (`seamail_auth`, `seamail_mail`, `seamail_notifications`), each owned by one service with its own Flyway migrations and a database user scoped to that schema. Hibernate validation is kept on as a drift detector that fails startup if an entity diverges from the migrated schema.
 - **Spring Cloud Gateway as the only public entry point:** all `/api/v1/**` traffic routes through `:8081`; CORS is enforced only here (downstream services trust the gateway origin), and `/internal/**` endpoints are not exposed through the gateway. Swagger UI is aggregated at `/swagger-ui.html` so all three services appear in one place.
 - **Centralised exception handling:** a `@RestControllerAdvice` in every service maps every custom domain exception to a consistent JSON error shape (`ErrorResponse` / `ValidationErrorResponse`) with HTTP status, machine-readable error code, message, path, and timestamp. It also maps malformed body, type mismatch, missing parameter, and data integrity violation exceptions to appropriate 400/409 responses. A custom OAuth2 `AuthenticationEntryPoint` keeps the 401 body in the same shape so the frontend `parseApiError.js` keeps working.
@@ -401,8 +402,8 @@ mvn verify
 | | `UsersControllerTest`: account management, current-password verification, error paths |
 | | `NotificationControllerTest`: paged feed, unread count, mark-as-read, 404 on missing notification |
 | **Integration** | `AuthFlowIT`: sign-up → sign-in → refresh rotation → JWKS against real MySQL and Redis |
-| | `MailFlowIT`: send persists the email and publishes exactly one Kafka event (real MySQL/Redis/Kafka) |
-| | `NotificationFlowIT`: consumes `email.sent` idempotently and exposes the REST feed (real Kafka/MySQL) |
+| | `MailFlowIT`: full mailbox lifecycle (send → inbox + outbox → trash → delete) and exactly one Kafka event on real MySQL/Redis/Kafka |
+| | `NotificationFlowIT`: consumes `email.sent` idempotently (duplicate `event_id` stays one row) and exposes the REST feed on real Kafka/MySQL |
 
 ## Frontend
 
