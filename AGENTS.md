@@ -23,22 +23,24 @@ Multi-package full-stack app: a Maven multi-module Spring Boot backend (`api-gat
 ## Spring profiles (backend)
 
 `application.properties` is Docker-oriented (MySQL host `db`, `ddl-auto=validate`). Selecting a profile only overrides what differs:
-- `local` - `application-local.properties` points at `localhost:3306` and CORS origin `:8080`. Use with `-Dspring-boot.run.profiles=local` or IntelliJ Active profiles `local`.
+- `local` - `application-local.properties` points at `localhost:3307` (Docker's published MySQL port) and CORS origin `:8080`. Use with `-Dspring-boot.run.profiles=local` or IntelliJ Active profiles `local`.
 - `test` - `application-test.properties` switches to H2 (`ddl-auto=create-drop`), dummy Discord + Redis values, and `spring.cache.type=simple` to bypass Redis. **Do not rely on Redis/Mysql being available for tests.**
 - (default) - Docker compose profile; expects all `DB_*`/`REDIS_*`/`DISCORD_*`/`JWT_*` (`JWT_PRIVATE_KEY_PATH`/`JWT_PUBLIC_KEY_PATH`) placeholders to be resolved from env.
 
-Each service has its own `application.properties` plus sibling `application-local.properties`, `application-test.properties`, and `application-it.properties`. The `it` profile is used by the Testcontainers integration tests (`AuthFlowIT`/`MailFlowIT`/`NotificationFlowIT`) and leaves the datasource, Redis, and Kafka connection details to `@ServiceConnection`, so no hard-coded host/port is needed in `application-it.properties`.
+auth-service, mail-service, and notification-service each have their own `application.properties` plus sibling `application-local.properties`, `application-test.properties`, and `application-it.properties`. The `it` profile is used by the Testcontainers integration tests (`AuthFlowIT`/`MailFlowIT`/`NotificationFlowIT`) and leaves the datasource, Redis, and Kafka connection details to `@ServiceConnection`, so no hard-coded host/port is needed in `application-it.properties`.
+
+api-gateway is the exception: it uses `application.yml` (Spring Cloud Gateway WebFlux convention) and has no `local`/`test`/`it` profile siblings - its only test is `ApiGatewayApplicationTests` which loads the default config. Routes are defined inline in `application.yml`; **route order matters** - the specific auth/notification/docs routes must come before the `/api/v1/**` mail catch-all at the bottom.
 
 ## Env files and loading (gotcha)
 
 - Repo-root env files (`.env`, `.env.docker`, `.env.production` per README) are the source of truth. The `.env` files inside each subdirectory are only read during IDE/Maven/npm local dev.
 - Spring does **not** read `.env` itself. Local backend runs require the IntelliJ [EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile) pointed at the root `.env`, or env vars exported in the shell. Vite reads `frontend-email-service/.env` natively.
 - `.env` files are gitignored. Never edit them; ask the user. Templates are `.env.example` / `.env.docker.example`.
-- `DB_USER=root` in local `.env` vs `DB_USER=seamail_user` in `.env.docker` - keep them distinct.
+- `DB_USER=root` in local `.env` vs per-service users (`seamail_auth_user` / `seamail_mail_user` / `seamail_notification_user`) in `.env.docker` - keep them distinct.
 - Vite `VITE_*` vars are baked in at build time. The frontend Dockerfile forwards them as build args; changing them requires a frontend rebuild.
 - Per-service DB vars (`AUTH_DB_*`, `MAIL_DB_*`, `NOTIFICATION_DB_*`) point each service at its own MySQL schema.
 - `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` empty means auth-service generates an ephemeral dev keypair at startup (not safe for shared environments).
-- `KAFKA_BOOTSTRAP_SERVERS` (e.g. `kafka:29092`), `JWKS_URI` (e.g. `http://auth-service:8082/.well-known/jwks.json`), and per-service URLs (`AUTH_SERVICE_URL`, `MAIL_SERVICE_URL`, `NOTIFICATION_SERVICE_URL`) wire inter-service calls in Docker.
+- Inter-service wiring (`KAFKA_BOOTSTRAP_SERVERS`, `JWKS_URI`, `AUTH_SERVICE_URL`, `MAIL_SERVICE_URL`, `NOTIFICATION_SERVICE_URL`, `ZIPKIN_ENDPOINT`) is **hardcoded inside `docker-compose.yml`** (e.g. `AUTH_SERVICE_URL: http://auth-service:8082`), not read from `.env.docker`. The `.env.docker.example` template intentionally does not include them. They appear as env vars *inside* each container but are not user-configurable without editing `docker-compose.yml`.
 
 ## Schema and JPA
 
@@ -59,7 +61,7 @@ Each service has its own `application.properties` plus sibling `application-loca
 - `deleteEmail` requires the email to already be trashed (`trash=true`); permanent delete is a separate step from soft-delete (move-to-trash).
 - `Mailbox` enum in `entity/` replaces magic strings for inbox/outbox/trashbox switching in `queryEmails`.
 - mail-service validates the receiver through `AuthUserClient` (Spring Cloud OpenFeign, calls auth-service `InternalUsersController.existsByEmail`) before persisting an email, and publishes an `EmailSentEvent` via `@TransactionalEventListener(AFTER_COMMIT)` so consumers never see rolled-back writes.
-- notification-service consumes `email.sent` idempotently: each event carries a unique `event_id`, the consumer check-then-inserts against a unique constraint to win races, and poison pills are routed to `email.sent.DLT` after bounded exponential backoff.
+- notification-service consumes `email.sent` idempotently: each event carries a unique `event_id`, the consumer check-then-inserts against a unique constraint to win races, and poison pills are routed to `email.sent.DLT` after bounded exponential backoff. notification-service has no Redis dependency (no inbox cache, no refresh tokens) - its `application-it.properties` does not set `spring.cache.type=simple` for that reason.
 - The api-gateway (Spring Cloud Gateway, `:8081`) is the only public entry point: it routes `/api/v1/**` to the downstream services, terminates CORS, and aggregates Swagger UI. `/internal/**` is routed nowhere (not exposed through the gateway). Downstream services listen on `:8082` (auth), `:8083` (mail), `:8084` (notification).
 - CORS is enforced only at the gateway; downstream services trust the gateway origin.
 - Actuator health: `/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness` (readiness includes DB + Redis checks via `health/CustomRedisHealthIndicator`).
