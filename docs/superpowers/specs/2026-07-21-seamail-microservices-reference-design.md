@@ -207,16 +207,28 @@ Spring Cloud Gateway (WebFlux), Spring Cloud 2023.0.x. Static routes from env-co
     `UserRepositoryTest`, refresh-rotation and Discord-flow tests.
   - `JwtFilterTest` is deleted with the filter; resource-server behavior is covered by
     controller slices using `jwt()` post-processors and by integration tests.
-- New Testcontainers tests (`@ServiceConnection`, containers reused where legal):
+- New Testcontainers tests (`@ServiceConnection`, containers reused where legal).
+  Auth in these ITs uses the `jwt()` MockMvc post-processor (the same synthetic
+  `Jwt` principal used by the controller slices) rather than launching auth-service and
+  signing real RS256 tokens. This keeps each IT scoped to its own module's container
+  lifecycle and avoids coupling two services' startup in a single test. Resource-server
+  filter behavior (abort on missing/invalid token, subject extraction) is already proven
+  by the controller-level `@WebMvcTest` slices; the ITs focus on the things only real
+  MySQL/Redis/Kafka can prove (Flyway migrations, JSON Kafka serialization, refresh
+  rotation against Redis, idempotent Kafka consumption against a real broker). An
+  end-to-end IT exercising real JWKS fetch from a live auth-service container is a
+  documented upgrade path, deliberately not built to keep these tests fast and decoupled.
   - auth-service `AuthFlowIT`: MySQL + Redis; sign-up -> sign-in -> refresh rotation
     (second use of old token -> 401) -> JWKS endpoint returns the public key.
   - mail-service `MailFlowIT`: MySQL + Redis + Kafka; migrated `FullFlowIntegrationTest`
-    plus: send email -> a test consumer asserts exactly one `EmailSentEvent` on
+    plus the full mailbox lifecycle (send -> inbox + outbox -> move-to-trash -> trashbox
+    -> permanent delete) and a test consumer asserting exactly one `EmailSentEvent` on
     `email.sent` with matching payload; Feign client is `@MockBean`-ed (WireMock noted as
     an alternative).
   - notification-service `NotificationFlowIT`: MySQL + Kafka; publish a real
     `EmailSentEvent` to the topic -> feed returns it, unread-count is 1, mark-read works,
-    publishing the same `eventId` twice still yields one row.
+    publishing the same `eventId` twice still yields one row (asserted via a stability
+    window so a slow duplicate insert cannot slip through after the test ends).
 - H2 remains for lightweight slices; the `test` profile keeps `spring.cache.type=simple`
   where Redis semantics are irrelevant.
 - Root `mvn test` runs all modules; frontend `npm test` unchanged.

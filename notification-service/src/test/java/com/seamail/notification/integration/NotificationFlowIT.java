@@ -95,9 +95,20 @@ class NotificationFlowIT {
                 .andExpect(jsonPath("$.count").value(0));
     }
 
-    // Polls the feed until the consumer has processed the event (or fails after 15s).
+    // Returns the single notification's id once the feed has held exactly one entry
+    // for a stability window. At-least-once Kafka delivery means the duplicate event
+    // *will* reach the consumer during the window; correct dedup keeps the feed at 1,
+    // broken dedup grows it past 1. We fail fast on size > 1 - that state is never
+    // legitimate for one unique event under correct idempotency - and require the feed
+    // to stay at 1 long enough to prove the duplicate was processed and dropped.
+    private static final long STABILITY_WINDOW_MS = 2000;
+    private static final long POLL_INTERVAL_MS = 250;
+    private static final long TOTAL_TIMEOUT_MS = 20000;
+
     private long awaitSingleNotification(String receiver) throws Exception {
-        long deadline = System.currentTimeMillis() + 15000;
+        long deadline = System.currentTimeMillis() + TOTAL_TIMEOUT_MS;
+        long stableSince = 0;
+        long notificationId = -1;
         while (System.currentTimeMillis() < deadline) {
             MvcResult result = mockMvc.perform(get("/api/v1/notifications")
                     .with(jwt().jwt(j -> j.subject(receiver))))
@@ -105,12 +116,25 @@ class NotificationFlowIT {
                     .andReturn();
             JsonNode content = objectMapper.readTree(result.getResponse().getContentAsString())
                     .get("content");
-            if (content.size() == 1) {
-                return content.get(0).get("id").asLong();
+            int size = content.size();
+            if (size > 1) {
+                fail("Notification feed grew to " + size
+                        + " entries during the idempotency window - duplicate event_id was inserted");
             }
-            Thread.sleep(500);
+            if (size == 1) {
+                if (stableSince == 0) {
+                    stableSince = System.currentTimeMillis();
+                    notificationId = content.get(0).get("id").asLong();
+                } else if (System.currentTimeMillis() - stableSince >= STABILITY_WINDOW_MS) {
+                    return notificationId;
+                }
+            } else {
+                stableSince = 0;
+            }
+            Thread.sleep(POLL_INTERVAL_MS);
         }
-        fail("Notification feed did not contain exactly one entry within 15s");
+        fail("Notification feed did not stabilise at exactly one entry within "
+                + TOTAL_TIMEOUT_MS + "ms");
         return -1; // unreachable
     }
 }
