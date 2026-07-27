@@ -28,5 +28,13 @@ dist-ssr
 .env
 .env.docker
 .env.production
-*/.env
+*/
+.env
 .superpowers/
+
+# Maven build output
+target/
+
+# IntelliJ
+*.iml
+.idea/

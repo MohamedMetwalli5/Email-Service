@@ -50,8 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // post-processor. Real JWKS validation against a live auth-service is intentionally not
 // wired here: doing so would couple two services' container lifecycle into one IT and
 // duplicate what controller-level slice tests already prove (resource-server 401 on
-// missing/invalid tokens). See docs/superpowers/specs/2026-07-21-seamail-microservices-reference-design.md
-// "Testing strategy" for the trade-off.
+// missing/invalid tokens); the slice tests already cover that filter behavior.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("it")
