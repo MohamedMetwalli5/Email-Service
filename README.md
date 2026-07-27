@@ -217,6 +217,8 @@ Seamail uses separate environment files depending on the context. Each is never 
 
 > Each service has its own `.env` in its own module directory with its own schema credentials and inter-service URLs. Copy the matching `.env.example` template in each module folder and fill in real values. Docker Compose reads the root `.env.docker` for the full-stack run.
 
+<img width="1918" height="963" alt="Screenshot" src="https://github.com/user-attachments/assets/adfaf71d-8820-4eea-b382-b35310aaf957" />
+
 ---
 
 # 🐳 Docker Setup
