@@ -14,6 +14,8 @@
 Seamail is a full-stack email service designed around the `@seamail.com` domain. It provides secure, efficient, and user-friendly functionalities for managing emails through an intuitive interface, backed by JWT-based authentication with automatic token refresh, Redis for token storage and inbox caching, and a fully versioned REST API.
 It is officially deployed on **Amazon Web Services (AWS)** using a custom domain.
 
+> **Microservices reference architecture:** a refactored version of this project, split into `api-gateway`, `auth-service`, `mail-service`, and `notification-service` with RS256/JWKS auth, Kafka, Flyway, Testcontainers, and Prometheus/Zipkin/Grafana observability, lives on the [`architecture/microservices`](https://github.com/MohamedMetwalli5/Email-Service/tree/architecture/microservices) branch.
+
 # Features
 - **User Registration & Sign-in:** Secure registration and login with server-side BCrypt password hashing.
 - **HTTPS Encryption & Deployment:** Deployed on AWS with a valid SSL certificate issued by Let's Encrypt, ensuring all data is securely encrypted and protected from interception.
